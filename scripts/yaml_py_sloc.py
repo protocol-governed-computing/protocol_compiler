@@ -10,7 +10,7 @@ import sys
 
 REPO_PATHS = {
     "pgs_governance": "pgs_governance",
-    "pgs_compiler": "pgs_compiler",
+    "compiler": "compiler",
     "pgs_transport": "pgs_transport",
     "pgs_capabilities": "pgs_capabilities",
     "pgs_blockchain": "pgs_blockchain",
@@ -21,7 +21,7 @@ REPO_PATHS = {
 GROUPS = {
     "INFRASTRUCTURE": [
         "pgs_governance",    # constitutional governance + structure
-        "pgs_compiler",      # compiler pipeline + tooling
+        "compiler",      # compiler pipeline + tooling
         "pgs_transport",     # ingress/egress adapters
     ],
     "CAPABILITIES": [

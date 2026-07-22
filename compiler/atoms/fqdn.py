@@ -9,7 +9,7 @@ Example: pgs_governance::CT_SCAN_ARTIFACTS_V0
 Design:
 - FQDN is PRIMARY identity (all references use FQDN)
 - artifact_code is display/logging ONLY (not guaranteed unique)
-- Namespace prevents collision across layers (e.g., pgs_governance, pgs_compiler)
+- Namespace prevents collision across layers (e.g., pgs_governance, compiler)
 - Parse/build functions for deterministic construction
 """
 
@@ -112,7 +112,7 @@ def build_fqdn(source_path: Path, layer_root: Path, artifact_code: str) -> FQDN:
     Build FQDN from source path and layer root.
 
     Derives namespace from directory structure:
-    - Namespace = layer_root.name (e.g., pgs_governance, pgs_compiler)
+    - Namespace = layer_root.name (e.g., pgs_governance, compiler)
 
     Args:
         source_path: Path to artifact source file

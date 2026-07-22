@@ -88,7 +88,7 @@ class PPSProjectionBuilder:
         if not snapshot.exists():
             raise FileNotFoundError(
                 f"protocol_snapshot/ not found at {self._root}. "
-                "Run `pgs_compiler compile` for all structures before building PPS."
+                "Run `compiler compile` for all structures before building PPS."
             )
 
     def _load_artifacts(self) -> dict[str, dict]:
@@ -160,7 +160,7 @@ class PPSProjectionBuilder:
         Build the full cross-referenced index as a plain JSON-serializable dict.
 
         Mirrors the PPSIndex.build() logic in pgs_agent without importing it.
-        The output format is the contract between pgs_compiler and pgs_agent.
+        The output format is the contract between compiler and pgs_agent.
         """
         workflows: dict[str, dict] = {}
         capability_contracts: dict[str, dict] = {}

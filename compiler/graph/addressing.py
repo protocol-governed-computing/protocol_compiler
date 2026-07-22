@@ -25,10 +25,10 @@ import hashlib
 import json
 from types import MappingProxyType
 
-from pgs_compiler.compiler.graph.types import NodeKind, EdgeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.edge import Edge
-from pgs_compiler.compiler.graph.graph import Graph, GraphBuilder
+from compiler.graph.types import NodeKind, EdgeKind
+from compiler.graph.node import Node
+from compiler.graph.edge import Edge
+from compiler.graph.graph import Graph, GraphBuilder
 
 
 # Address space partitions

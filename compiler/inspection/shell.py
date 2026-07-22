@@ -16,7 +16,7 @@ import shlex
 
 import click
 
-from pgs_compiler.inspection.errors import InspectionError
+from compiler.inspection.errors import InspectionError
 
 # Bare artifact code: versioned, fully uppercase, no domain separator.
 _CODE_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*_V\d+$")
@@ -24,7 +24,7 @@ _CODE_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*_V\d+$")
 
 def run_shell(session) -> None:
     """Run the interactive pi shell over an open session."""
-    from pgs_compiler.inspection.cli import pi  # late import — avoids cycle
+    from compiler.inspection.cli import pi  # late import — avoids cycle
 
     # Open the workspace now — fail hard before the first prompt.
     _ = session.workspace

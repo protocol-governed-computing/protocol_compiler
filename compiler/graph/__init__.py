@@ -6,13 +6,13 @@ representing the entire governed system. Graph is the sole
 semantic authority from which all projections are derived.
 """
 
-from pgs_compiler.compiler.graph.types import NodeKind, EdgeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.edge import Edge
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.evidence import (
+from compiler.graph.types import NodeKind, EdgeKind
+from compiler.graph.node import Node
+from compiler.graph.edge import Edge
+from compiler.graph.graph import Graph
+from compiler.graph.trace import TraceEvent
+from compiler.graph.state import State
+from compiler.graph.evidence import (
     EventFamily,
     EventKind,
     EVENT_KIND_TO_FAMILY,

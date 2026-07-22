@@ -8,7 +8,7 @@ Materializes the join the snapshot already declares in three places:
     evidence graph               →  WF_BINDS_RB, WF_CONTAINS_NODE, CC_BINDS_CS
 
 into: store → owning structure, declared path, binding surface
-(RB + CS + workflows + consumer CCs). Emitted by `pgs_compiler.cli build`
+(RB + CS + workflows + consumer CCs). Emitted by `compiler.cli build`
 alongside the artifact index (same query-metadata projection family):
 
     <workspace>/protocol_snapshot/artifact_index/stores.json
@@ -20,7 +20,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pgs_compiler.compiler.projections import (
+from compiler.projections import (
     ARTIFACT_INDEX_SCHEMA_VERSION,
     COMPILER_VERSION,
 )
@@ -86,7 +86,7 @@ def build_store_index(workspace: Path) -> dict[str, Any]:
     return {
         "schema_version": ARTIFACT_INDEX_SCHEMA_VERSION,
         "compiler_version": COMPILER_VERSION,
-        "generated_by": "pgs_compiler.cli build",
+        "generated_by": "compiler.cli build",
         "store_count": len(indexed),
         "stores": dict(sorted(indexed.items())),
     }

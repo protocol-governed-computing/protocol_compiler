@@ -5,7 +5,7 @@ keys, both via `build_projection`) — so "semantic projection" is a reusable la
 (2) it computes a real blast radius with Projection Closure + determinism; (3) the Public Semantic
 Surface (cross-boundary consumers) is well-defined here because the subject already exists.
 
-Run: PGS_WORKSPACE=/abs python -m pgs_compiler.inspection._impact_projection_selftest
+Run: PGS_WORKSPACE=/abs python -m compiler.inspection._impact_projection_selftest
 """
 
 from __future__ import annotations
@@ -14,10 +14,10 @@ import os
 import sys
 from pathlib import Path
 
-from pgs_compiler.inspection.loader import Workspace
-from pgs_compiler.inspection.traversal import SemanticGraph
-from pgs_compiler.inspection.impact_projection import compute_impact_projection
-from pgs_compiler.inspection.discovery import TransformationScope, compute_discovery_projection
+from compiler.inspection.loader import Workspace
+from compiler.inspection.traversal import SemanticGraph
+from compiler.inspection.impact_projection import compute_impact_projection
+from compiler.inspection.discovery import TransformationScope, compute_discovery_projection
 
 PASS, FAIL = "✅", "❌"
 _IDENTITY_KEYS = {"projection_type", "protocol_version", "source_snapshot_id", "subject",

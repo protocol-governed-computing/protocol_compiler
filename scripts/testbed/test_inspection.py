@@ -15,11 +15,11 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from pgs_compiler.compiler.projections.store_index import build_store_index
-from pgs_compiler.inspection import behavior_logic
-from pgs_compiler.inspection.cli import pi
-from pgs_compiler.inspection.loader import classify_lifecycle, parse_header_fields
-from pgs_compiler.inspection.traces import list_traces, resolve_trace_jsonl
+from compiler.projections.store_index import build_store_index
+from compiler.inspection import behavior_logic
+from compiler.inspection.cli import pi
+from compiler.inspection.loader import classify_lifecycle, parse_header_fields
+from compiler.inspection.traces import list_traces, resolve_trace_jsonl
 
 PASS = 0
 FAIL = 0

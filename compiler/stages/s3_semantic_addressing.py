@@ -10,12 +10,12 @@ semantic addressing forever — addresses are compile-time allocated,
 never runtime-generated.
 """
 
-from pgs_compiler.compiler.graph.addressing import allocate_addresses
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
+from compiler.graph.addressing import allocate_addresses
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
 
 
 def s3_semantic_addressing(state: State) -> State:

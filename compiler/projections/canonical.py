@@ -30,14 +30,14 @@ Transient pipeline fields (source_path) are stripped.
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.types import NodeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.graph.hashing import compute_projection_hash
-from pgs_compiler.compiler.atoms.sorting import ensure_deterministic_output
-from pgs_compiler.compiler.projections import (
+from compiler.graph.types import NodeKind
+from compiler.graph.node import Node
+from compiler.graph.graph import Graph
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.graph.hashing import compute_projection_hash
+from compiler.atoms.sorting import ensure_deterministic_output
+from compiler.projections import (
     Projection,
     ProjectionType,
     make_metadata,

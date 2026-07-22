@@ -31,7 +31,7 @@ def assert_snapshot_valid(workspace: Path) -> None:
     if not snapshot_status_file.exists():
         print(
             "ERROR: snapshot_status.json not found — snapshot has not been built.\n"
-            "       Run 'pgs_compiler build --workspace <path>' first.",
+            "       Run 'compiler build --workspace <path>' first.",
             file=sys.stderr,
         )
         sys.exit(1)

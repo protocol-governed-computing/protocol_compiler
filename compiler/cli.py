@@ -22,8 +22,8 @@ from typing import Any
 
 import click
 
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.stages import (
+from compiler.graph.state import State
+from compiler.stages import (
     s1_extract,
     s2_canonicalize,
     s3_semantic_addressing,
@@ -34,8 +34,8 @@ from pgs_compiler.compiler.stages import (
     s8_verify,
     s9_attest,
 )
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.structure_loader import FORBIDDEN_STRUCTURE
+from compiler.atoms.errors import CompilerError
+from compiler.structure_loader import FORBIDDEN_STRUCTURE
 
 
 def assert_structure_integrity(structure_code: str) -> None:
@@ -140,7 +140,7 @@ def compile(
                     "the Phase B aggregation compile path is retired. Per-domain "
                     "vocabulary is materialized in Phase A (S7); cross-structure "
                     "query metadata (protocol_snapshot/artifact_index/) is emitted "
-                    "by `pgs_compiler.cli build`. Aggregation STRUCTUREs are not "
+                    "by `compiler.cli build`. Aggregation STRUCTUREs are not "
                     "compilable."
                 )
             _run_compile(struct_code, verbose=verbose)
@@ -181,11 +181,11 @@ def build_pps(workspace: str, verbose: bool) -> None:
     Emits:
       pps_snapshot/index.json  — consumed by pgs_agent
 
-    Run AFTER all `pgs_compiler compile` and vocabulary aggregation steps complete.
+    Run AFTER all `compiler compile` and vocabulary aggregation steps complete.
     """
     from pathlib import Path
-    from pgs_compiler.compiler.atoms.snapshot_gate import assert_snapshot_valid
-    from pgs_compiler.compiler.stages.s10_pps_projection import PPSProjectionBuilder
+    from compiler.atoms.snapshot_gate import assert_snapshot_valid
+    from compiler.stages.s10_pps_projection import PPSProjectionBuilder
 
     ws = Path(workspace)
 
@@ -290,8 +290,8 @@ def inspect(
         sys.exit(1)
 
     # Load via consumer contract
-    from pgs_compiler.visualization.consumers.evidence_reader import load_evidence_graph
-    from pgs_compiler.visualization.consumers.evidence_projection import EvidenceProjection
+    from compiler.visualization.consumers.evidence_reader import load_evidence_graph
+    from compiler.visualization.consumers.evidence_projection import EvidenceProjection
 
     try:
         query = load_evidence_graph(evidence_graph_path)
@@ -329,7 +329,7 @@ def _run_compile(structure: str, verbose: bool) -> None:
 
     assert_structure_integrity(structure)
 
-    from pgs_compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
+    from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
 
     try:
         structure_config = load_structure_artifact(structure, get_bootstrap_search_roots())
@@ -398,7 +398,7 @@ def _get_aggregation_type(structure_code: str) -> str | None:
     Aggregation structures (Phase Type B) have an `aggregation_type` field
     and must NOT be routed through _run_compile().
     """
-    from pgs_compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
+    from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
     try:
         config = load_structure_artifact(structure_code, get_bootstrap_search_roots())
         return config.get("aggregation_type") or None
@@ -418,9 +418,9 @@ def _resolve_evidence_graph_path(structure_code: str) -> "Path":
       <evidence_projection_path>/<structure_id>/evidence_graph.json
     """
     from pathlib import Path
-    from pgs_compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
+    from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
     from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
-    from pgs_compiler.compiler.projections import get_structure_scope
+    from compiler.projections import get_structure_scope
 
     try:
         structure_config = load_structure_artifact(structure_code, get_bootstrap_search_roots())

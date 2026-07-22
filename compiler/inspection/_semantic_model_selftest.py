@@ -7,7 +7,7 @@ projections-as-queries — Discovery/Impact-shaped selections are `select(...)` 
 derivation coverage — domain/kind are fully determined, subdomain/visibility partially (the `undetermined`
 count is the signal for the next compiler-model enrichment, e.g. first-class subdomain).
 
-Run: PGS_WORKSPACE=/abs python -m pgs_compiler.inspection._semantic_model_selftest
+Run: PGS_WORKSPACE=/abs python -m compiler.inspection._semantic_model_selftest
 """
 
 from __future__ import annotations
@@ -16,9 +16,9 @@ import os
 import sys
 from pathlib import Path
 
-from pgs_compiler.inspection.loader import Workspace
-from pgs_compiler.inspection.traversal import SemanticGraph
-from pgs_compiler.inspection.semantic_model import (
+from compiler.inspection.loader import Workspace
+from compiler.inspection.traversal import SemanticGraph
+from compiler.inspection.semantic_model import (
     compute_semantic_model, select, derivation_coverage, DIMENSIONS, UNDETERMINED)
 
 PASS, FAIL = "✅", "❌"

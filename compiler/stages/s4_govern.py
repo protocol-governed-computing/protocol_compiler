@@ -17,14 +17,14 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.types import NodeKind, EdgeKind
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.query import Query
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
+from compiler.graph.types import NodeKind, EdgeKind
+from compiler.graph.graph import Graph
+from compiler.graph.query import Query
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
 
 
 def s4_govern(state: State) -> State:
@@ -254,7 +254,7 @@ def _precompute_structural_analysis(
     assertion handlers need. This projects graph topology into the
     dict shapes handlers expect.
     """
-    from pgs_compiler.compiler.graph.query import Query
+    from compiler.graph.query import Query
     query = Query(graph)
 
     # --- Topology-level analysis ---

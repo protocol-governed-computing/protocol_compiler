@@ -1,5 +1,5 @@
 """
-pgs_compiler.inspection — Protocol Inspection library (the pi core).
+compiler.inspection — Protocol Inspection library (the pi core).
 
 One verified model, three surfaces: this library is the core; the pi
 CLI/shell and the --json output are its projections. All surfaces are
@@ -10,14 +10,14 @@ read-only, fail-hard, zero-inference, query-only (V0 Principle):
 
 Library usage (in-ecosystem tooling):
 
-    from pgs_compiler.inspection import open_workspace, Resolver, SemanticGraph
+    from compiler.inspection import open_workspace, Resolver, SemanticGraph
 
     ws = open_workspace("/abs/path/to/pgs_workspace")
     fqdn, entry = Resolver(ws).resolve("blockchain::CC_GENERATE_TX_ID_V0")
     consumers = SemanticGraph(ws).refs(fqdn, transitive=True)
 """
 
-from pgs_compiler.inspection.errors import (
+from compiler.inspection.errors import (
     AmbiguousCode,
     InspectionError,
     ProjectionMissing,
@@ -25,9 +25,9 @@ from pgs_compiler.inspection.errors import (
     UnresolvedFqdn,
     WorkspaceNotDeclared,
 )
-from pgs_compiler.inspection.loader import Workspace
-from pgs_compiler.inspection.resolver import Resolver
-from pgs_compiler.inspection.traversal import Edge, SemanticGraph
+from compiler.inspection.loader import Workspace
+from compiler.inspection.resolver import Resolver
+from compiler.inspection.traversal import Edge, SemanticGraph
 
 
 def open_workspace(workspace: str | None = None) -> Workspace:

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.types import NodeKind
+from compiler.graph.types import NodeKind
 
 
 # Sentinel for empty immutable mappings

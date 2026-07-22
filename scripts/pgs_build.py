@@ -12,7 +12,7 @@ Pipeline:
   5. snapshot_status.json        (verification contract — written only on full pass)
 
 Usage:
-  python pgs_compiler/scripts/pgs_build.py --workspace /abs/path/to/pgs_workspace
+  python compiler/scripts/pgs_build.py --workspace /abs/path/to/pgs_workspace
 
 Hard gates:
   - Sync script failure → exit 1, no status written
@@ -66,11 +66,11 @@ def step_artifact_index(workspace: Path) -> None:
     projections into the FQDN index consumed by the inspection surface (pi).
     """
     print("[pgs build] ── Step 2: artifact index ───────────────────────────")
-    from pgs_compiler.compiler.projections.artifact_index import (
+    from compiler.projections.artifact_index import (
         build_artifact_index,
         write_artifact_index,
     )
-    from pgs_compiler.compiler.projections.store_index import (
+    from compiler.projections.store_index import (
         build_store_index,
         write_store_index,
     )
@@ -114,7 +114,7 @@ def step_conformance(workspace: Path):
     # state is queryable (pi snapshot validate/violations) without rebuilding.
     results_payload = {
         "schema_version": "v0",
-        "generated_by": "pgs_compiler.cli build",
+        "generated_by": "compiler.cli build",
         "artifact_count": result.artifact_count,
         "passed": result.passed,
         "failed": result.failed,

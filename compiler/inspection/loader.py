@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from pgs_compiler.inspection.errors import (
+from compiler.inspection.errors import (
     ProjectionMissing,
     SnapshotInvalid,
     WorkspaceNotDeclared,
@@ -74,7 +74,7 @@ class Workspace:
             raise SnapshotInvalid(
                 f"snapshot is not VALID (status: {status.get('status', 'UNKNOWN')}, "
                 f"reason: {status.get('reason', 'n/a')}) — "
-                f"rebuild with: pgs_compiler.cli build --workspace {root}"
+                f"rebuild with: compiler.cli build --workspace {root}"
             )
         return ws
 
@@ -95,7 +95,7 @@ class Workspace:
     def artifact_index(self) -> dict[str, Any]:
         index = self._load_json(
             "protocol_snapshot/artifact_index/index.json",
-            hint="artifact index not materialized — rebuild with pgs_compiler.cli build",
+            hint="artifact index not materialized — rebuild with compiler.cli build",
         )
         version = index.get("schema_version")
         if version not in _SUPPORTED_INDEX_SCHEMA_VERSIONS:
@@ -145,7 +145,7 @@ class Workspace:
     def pps(self) -> dict[str, Any]:
         return self._load_json(
             "pps_snapshot/index.json",
-            hint="PPS snapshot not materialized — run pgs_compiler.cli build-pps",
+            hint="PPS snapshot not materialized — run compiler.cli build-pps",
         )
 
     def pps_entry(self, fqdn: str, kind: str) -> dict[str, Any]:
@@ -172,7 +172,7 @@ class Workspace:
     def store_index(self) -> dict[str, Any]:
         index = self._load_json(
             "protocol_snapshot/artifact_index/stores.json",
-            hint="store index not materialized — rebuild with pgs_compiler.cli build",
+            hint="store index not materialized — rebuild with compiler.cli build",
         )
         version = index.get("schema_version")
         if version not in _SUPPORTED_INDEX_SCHEMA_VERSIONS:
@@ -186,7 +186,7 @@ class Workspace:
     def conformance_results(self) -> dict[str, Any]:
         return self._load_json(
             "conformance_results.json",
-            hint="conformance results not materialized — rebuild with pgs_compiler.cli build",
+            hint="conformance results not materialized — rebuild with compiler.cli build",
         )
 
     # ── Behavior Logic ───────────────────────────────────────────

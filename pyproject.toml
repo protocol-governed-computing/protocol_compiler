@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pgs-compiler"
-version = "0.9.0"
-description = "Protocol-Governed Systems — compiler: topology-native governance compilation with multi-projection output"
+name = "protocol_compiler"
+version = "1.0.0"
+description = "Protocol-Governed Computing — protocol compiler: topology-native governance compilation with multi-projection output (import package: compiler)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -50,21 +50,17 @@ Repository = "https://github.com/bachipeachy/pgs_compiler"
 [tool.setuptools]
 include-package-data = true
 packages = [
-  "pgs_compiler",
-  "pgs_compiler.compiler",
-  "pgs_compiler.compiler.atoms",
-  "pgs_compiler.compiler.graph",
-  "pgs_compiler.compiler.stages",
-  "pgs_compiler.compiler.projections",
-  "pgs_compiler.compiler.governance",
-  "pgs_compiler.inspection",
-  "pgs_compiler.visualization",
-  "pgs_compiler.visualization.consumers",
-  "pgs_compiler.visualization.views",
+  "compiler",
+  "compiler.atoms",
+  "compiler.graph",
+  "compiler.stages",
+  "compiler.projections",
+  "compiler.governance",
+  "compiler.inspection",
+  "compiler.visualization",
+  "compiler.visualization.consumers",
+  "compiler.visualization.views",
 ]
-
-[tool.setuptools.package-dir]
-"pgs_compiler" = "."
 
 [tool.setuptools.package-data]
 "*" = ["*.md", "*.yaml", "*.json", "*.sh"]

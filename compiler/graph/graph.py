@@ -13,9 +13,9 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.types import NodeKind, EdgeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.edge import Edge
+from compiler.graph.types import NodeKind, EdgeKind
+from compiler.graph.node import Node
+from compiler.graph.edge import Edge
 
 
 # Sentinel empty containers

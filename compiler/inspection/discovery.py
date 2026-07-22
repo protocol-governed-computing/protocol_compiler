@@ -51,7 +51,7 @@ from typing import Any
 
 # Discovery Projection is an INSTANCE of the shared Semantic Projection Protocol (SPP · DP5) — it reuses
 # the contract (identity, determinism, snapshot fingerprint) rather than defining its own.
-from pgs_compiler.inspection.semantic_projection import (
+from compiler.inspection.semantic_projection import (
     build_projection, sha256_of, snapshot_fingerprint)
 
 # Inclusion provenance — WHY a node is in the neighbourhood (Projection Closure).

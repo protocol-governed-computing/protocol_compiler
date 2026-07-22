@@ -22,7 +22,7 @@ from enum import Enum
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.trace import TraceEvent
+from compiler.graph.trace import TraceEvent
 
 
 # ---------------------------------------------------------------------------

@@ -25,12 +25,12 @@ from typing import Any
 
 from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
 
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
-from pgs_compiler.compiler.projections import ProjectionType, get_structure_scope
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
+from compiler.projections import ProjectionType, get_structure_scope
 
 
 _ATTESTATION_VERSION = "V0"

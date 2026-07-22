@@ -6,7 +6,7 @@ inspection surface (pi). Maps every compiled artifact FQDN to its
 domain, owning STRUCTURE(s), artifact kind, canonical path, evidence
 path, and per-structure vocabulary address.
 
-Emitted by `pgs_compiler.cli build` (scripts/pgs_build.py) after the
+Emitted by `compiler.cli build` (scripts/pgs_build.py) after the
 snapshot sync step — the only point with the full federated view of
 all materialized projections. Written to:
 
@@ -28,11 +28,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-from pgs_compiler.compiler.projections import (
+from compiler.projections import (
     ARTIFACT_INDEX_SCHEMA_VERSION,
     COMPILER_VERSION,
 )
-from pgs_compiler.structure_loader import (
+from compiler.structure_loader import (
     get_bootstrap_search_roots,
     load_structure_artifact,
 )
@@ -124,7 +124,7 @@ def build_artifact_index(workspace: Path) -> dict[str, Any]:
     return {
         "schema_version": ARTIFACT_INDEX_SCHEMA_VERSION,
         "compiler_version": COMPILER_VERSION,
-        "generated_by": "pgs_compiler.cli build",
+        "generated_by": "compiler.cli build",
         "artifact_count": len(artifacts),
         "structures": dict(sorted(scope_structures.items())),
         "artifacts": dict(sorted(artifacts.items())),

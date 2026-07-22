@@ -31,11 +31,11 @@ Architectural doctrine:
 
 from types import MappingProxyType
 
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.hashing import compute_projection_hash
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.projections import (
+from compiler.graph.graph import Graph
+from compiler.graph.hashing import compute_projection_hash
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.projections import (
     COMPILER_VERSION,
     PROJECTION_SCHEMA_VERSION,
     Projection,

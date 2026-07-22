@@ -22,15 +22,15 @@ import yaml
 from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
 from pgs_governance.implementation.structure.loading.protocol_loader import _get_artifact_type_dir_from_prefix
 
-from pgs_compiler.compiler.graph.types import NodeKind
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily, EvidenceGraph
-from pgs_compiler.compiler.graph.hashing import compute_projection_hash
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
-from pgs_compiler.compiler.projections import (
+from compiler.graph.types import NodeKind
+from compiler.graph.graph import Graph
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily, EvidenceGraph
+from compiler.graph.hashing import compute_projection_hash
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
+from compiler.projections import (
     COMPILER_VERSION,
     EVIDENCE_GRAPH_SCHEMA_VERSION,
     ProjectionClass,
@@ -896,8 +896,8 @@ def _materialize_evidence_views(
     warnings: list[str] = []
 
     try:
-        from pgs_compiler.visualization.consumers import load_evidence_graph
-        from pgs_compiler.visualization.views import (
+        from compiler.visualization.consumers import load_evidence_graph
+        from compiler.visualization.views import (
             build_family_view, write_family_view_png,
             build_materialization_view, write_materialization_view_png,
         )
@@ -1105,7 +1105,7 @@ def _generate_workflow_graphs(
     warnings: list[str] = []
 
     try:
-        from pgs_compiler.visualization.wf_graph_generator import generate_workflow_graph
+        from compiler.visualization.wf_graph_generator import generate_workflow_graph
     except ImportError as e:
         warnings.append(f"Graph generation skipped: visualization module not available ({e})")
         return warnings

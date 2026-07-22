@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
 
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.atoms.errors import CompilerError
+from compiler.graph.graph import Graph
+from compiler.graph.trace import TraceEvent
+from compiler.atoms.errors import CompilerError
 
 
 @dataclass(frozen=True)

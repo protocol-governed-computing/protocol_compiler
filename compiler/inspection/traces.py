@@ -10,7 +10,7 @@ pi never parses trace content. These helpers enumerate the trace tree
 from pathlib import Path
 from typing import Any
 
-from pgs_compiler.inspection.errors import ProjectionMissing
+from compiler.inspection.errors import ProjectionMissing
 
 
 def list_traces(

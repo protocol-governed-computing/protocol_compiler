@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from pgs_compiler.inspection.loader import Workspace
+from compiler.inspection.loader import Workspace
 
 
 @dataclass(frozen=True)

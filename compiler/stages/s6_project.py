@@ -15,16 +15,16 @@ Current projections:
     - evidence: dual-form observability/replay substrate (evidence_snapshot/)
 """
 
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.projections import ProjectionType
-from pgs_compiler.compiler.projections.canonical import project_canonical
-from pgs_compiler.compiler.projections.vocabulary import project_vocabulary
-from pgs_compiler.compiler.projections.tokenized import project_tokenized
-from pgs_compiler.compiler.projections.evidence import project_evidence
-from pgs_compiler.compiler.projections.dispatch import project_dispatch
-from pgs_compiler.compiler.projections.handlers import project_handlers
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.atoms.errors import CompilerError
+from compiler.projections import ProjectionType
+from compiler.projections.canonical import project_canonical
+from compiler.projections.vocabulary import project_vocabulary
+from compiler.projections.tokenized import project_tokenized
+from compiler.projections.evidence import project_evidence
+from compiler.projections.dispatch import project_dispatch
+from compiler.projections.handlers import project_handlers
 
 
 def s6_project(state: State) -> State:

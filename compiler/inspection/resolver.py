@@ -9,8 +9,8 @@ names the candidate FQDNs — resolution help, never a guess.
 
 from typing import Any
 
-from pgs_compiler.inspection.errors import AmbiguousCode, UnresolvedFqdn
-from pgs_compiler.inspection.loader import Workspace
+from compiler.inspection.errors import AmbiguousCode, UnresolvedFqdn
+from compiler.inspection.loader import Workspace
 
 
 class Resolver:

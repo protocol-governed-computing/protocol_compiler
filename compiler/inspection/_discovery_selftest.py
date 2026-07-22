@@ -15,7 +15,7 @@ neighbourhood. Here the PLATFORM computes that neighbourhood. The proof asserts:
   * Projection Closure invariant — every existing node carries an inclusion reason.
   * Determinism — same snapshot + same scope ⇒ identical projection_id.
 
-Run:  PGS_WORKSPACE=/abs python -m pgs_compiler.inspection._discovery_selftest
+Run:  PGS_WORKSPACE=/abs python -m compiler.inspection._discovery_selftest
 """
 
 from __future__ import annotations
@@ -24,9 +24,9 @@ import os
 import sys
 from pathlib import Path
 
-from pgs_compiler.inspection.loader import Workspace
-from pgs_compiler.inspection.traversal import SemanticGraph
-from pgs_compiler.inspection.discovery import TransformationScope, compute_discovery_projection
+from compiler.inspection.loader import Workspace
+from compiler.inspection.traversal import SemanticGraph
+from compiler.inspection.discovery import TransformationScope, compute_discovery_projection
 
 PASS, FAIL = "✅", "❌"
 

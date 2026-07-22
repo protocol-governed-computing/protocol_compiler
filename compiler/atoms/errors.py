@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode, ERROR_SUGGESTIONS
+from compiler.atoms.error_codes import ErrorCode, ERROR_SUGGESTIONS
 
 
 class Severity(Enum):

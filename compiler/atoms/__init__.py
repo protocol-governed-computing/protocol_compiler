@@ -9,19 +9,19 @@ Design:
 - Reusable across phases
 """
 
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode, ERROR_SUGGESTIONS
-from pgs_compiler.compiler.atoms.errors import CompilerError, Severity
-from pgs_compiler.compiler.atoms.fqdn import FQDN, parse_fqdn, build_fqdn, to_fqdn
-from pgs_compiler.compiler.atoms.invariants import require, require_not_none, require_exists
-from pgs_compiler.compiler.atoms.phase import PhaseResult, PhaseStatus, PhaseMetrics
-from pgs_compiler.compiler.atoms.pipeline import strip_transient_pipeline_fields
-from pgs_compiler.compiler.atoms.sorting import (
+from compiler.atoms.error_codes import ErrorCode, ERROR_SUGGESTIONS
+from compiler.atoms.errors import CompilerError, Severity
+from compiler.atoms.fqdn import FQDN, parse_fqdn, build_fqdn, to_fqdn
+from compiler.atoms.invariants import require, require_not_none, require_exists
+from compiler.atoms.phase import PhaseResult, PhaseStatus, PhaseMetrics
+from compiler.atoms.pipeline import strip_transient_pipeline_fields
+from compiler.atoms.sorting import (
     ensure_deterministic_output,
     sort_artifacts_by_fqdn,
     sort_by_fqdn,
     sort_dict_keys,
 )
-from pgs_compiler.compiler.atoms.snapshot_gate import assert_snapshot_valid
+from compiler.atoms.snapshot_gate import assert_snapshot_valid
 
 __all__ = [
     # Error model

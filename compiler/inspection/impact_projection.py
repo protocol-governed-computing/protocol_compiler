@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pgs_compiler.inspection.semantic_projection import build_projection, snapshot_fingerprint
+from compiler.inspection.semantic_projection import build_projection, snapshot_fingerprint
 
 INCLUSION_CONSUMER = "consumer"   # included because it (transitively) references the subject
 

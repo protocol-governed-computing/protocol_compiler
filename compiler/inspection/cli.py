@@ -15,18 +15,18 @@ from typing import Any
 
 import click
 
-from pgs_compiler.inspection import behavior_logic as behavior_logic_lib
-from pgs_compiler.inspection import traces as trace_lib
-from pgs_compiler.inspection.errors import AmbiguousCode, InspectionError, UnresolvedFqdn
-from pgs_compiler.inspection.loader import (
+from compiler.inspection import behavior_logic as behavior_logic_lib
+from compiler.inspection import traces as trace_lib
+from compiler.inspection.errors import AmbiguousCode, InspectionError, UnresolvedFqdn
+from compiler.inspection.loader import (
     PPS_SECTION_BY_KIND,
     Workspace,
     classify_lifecycle,
     parse_header_fields,
 )
-from pgs_compiler.inspection.render import emit, field, fqdn_line, heading, render_tree
-from pgs_compiler.inspection.resolver import Resolver
-from pgs_compiler.inspection.traversal import SemanticGraph
+from compiler.inspection.render import emit, field, fqdn_line, heading, render_tree
+from compiler.inspection.resolver import Resolver
+from compiler.inspection.traversal import SemanticGraph
 
 KIND_OBJECTS = {
     "wf": "WF", "cc": "CC", "ct": "CT", "cs": "CS",
@@ -82,7 +82,7 @@ def pi(ctx: click.Context, workspace: str | None) -> None:
     if ctx.obj is None:  # shell dispatch passes its warm session via obj=
         ctx.obj = Session(workspace)
     if ctx.invoked_subcommand is None:
-        from pgs_compiler.inspection.shell import run_shell
+        from compiler.inspection.shell import run_shell
         run_shell(ctx.obj)
 
 
@@ -808,7 +808,7 @@ def snapshot_discover(session: Session, domain: str, subdomain: str | None,
     The platform ACQUIRES the neighbourhood deterministically (existing / absent / structural /
     relationships / authority evidence, each existing node with inclusion provenance). It never
     DISPOSES of it — RELEVANT/EXCLUDED/NEW are the worker's judgment (SPP)."""
-    from pgs_compiler.inspection.discovery import (
+    from compiler.inspection.discovery import (
         TransformationScope, compute_discovery_projection)
     scope = TransformationScope(
         domain=domain, subdomain=subdomain,
@@ -848,7 +848,7 @@ def snapshot_impact_projection(session: Session, ref: str, as_json: bool) -> Non
     platform ACQUIRES who is impacted; whether that impact matters to a change is the worker's judgment
     (Knowledge Partition Theorem). The Public Semantic Surface (cross-boundary consumers) is well-defined
     here because the subject already exists."""
-    from pgs_compiler.inspection.impact_projection import compute_impact_projection
+    from compiler.inspection.impact_projection import compute_impact_projection
     fqdn, _ = session.resolver.resolve(ref)
     result = compute_impact_projection(session.graph, fqdn)
 
@@ -877,7 +877,7 @@ def snapshot_semantic_model(session: Session, as_json: bool) -> None:
     one model. Every dimension carries its derivation source; a property that would need inference is not
     a dimension but a disposition (Knowledge Partition Theorem). `undetermined` counts are the signal for
     the next compiler-model enrichment."""
-    from pgs_compiler.inspection.semantic_model import (
+    from compiler.inspection.semantic_model import (
         compute_semantic_model, derivation_coverage, DIMENSIONS)
     model = compute_semantic_model(session.graph, session.workspace)
     cov = derivation_coverage(model)

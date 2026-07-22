@@ -1,1 +1,1 @@
-"""Compiler core — stages, data model, projections, governance."""
+"""compiler — Protocol Intermediate Representation compiler for PGS."""

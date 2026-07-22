@@ -13,14 +13,14 @@ Builds:
 
 from typing import Any
 
-from pgs_compiler.compiler.graph.types import NodeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.graph import Graph, GraphBuilder
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
+from compiler.graph.types import NodeKind
+from compiler.graph.node import Node
+from compiler.graph.graph import Graph, GraphBuilder
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
 
 from types import MappingProxyType
 

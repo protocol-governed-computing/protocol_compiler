@@ -15,16 +15,16 @@ from typing import Any
 
 import yaml
 
-from pgs_compiler.compiler.graph.types import NodeKind, EdgeKind
-from pgs_compiler.compiler.graph.node import Node
-from pgs_compiler.compiler.graph.edge import Edge
-from pgs_compiler.compiler.graph.graph import GraphBuilder
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
-from pgs_compiler.structure_loader import (
+from compiler.graph.types import NodeKind, EdgeKind
+from compiler.graph.node import Node
+from compiler.graph.edge import Edge
+from compiler.graph.graph import GraphBuilder
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
+from compiler.structure_loader import (
     load_structure_artifact,
     get_bootstrap_search_roots,
 )

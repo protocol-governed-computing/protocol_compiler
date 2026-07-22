@@ -18,16 +18,16 @@ from typing import Any
 
 from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
 
-from pgs_compiler.compiler.graph.state import State
-from pgs_compiler.compiler.graph.trace import TraceEvent
-from pgs_compiler.compiler.graph.evidence import EventFamily
-from pgs_compiler.compiler.graph.hashing import compute_projection_hash
-from pgs_compiler.compiler.atoms.errors import CompilerError
-from pgs_compiler.compiler.atoms.error_codes import ErrorCode
-from pgs_compiler.compiler.atoms.sorting import ensure_deterministic_output
-from pgs_compiler.compiler.graph.graph import Graph
-from pgs_compiler.compiler.graph.types import NodeKind
-from pgs_compiler.compiler.projections import ProjectionClass, ProjectionType, Projection
+from compiler.graph.state import State
+from compiler.graph.trace import TraceEvent
+from compiler.graph.evidence import EventFamily
+from compiler.graph.hashing import compute_projection_hash
+from compiler.atoms.errors import CompilerError
+from compiler.atoms.error_codes import ErrorCode
+from compiler.atoms.sorting import ensure_deterministic_output
+from compiler.graph.graph import Graph
+from compiler.graph.types import NodeKind
+from compiler.projections import ProjectionClass, ProjectionType, Projection
 
 
 def s8_verify(state: State) -> State:
