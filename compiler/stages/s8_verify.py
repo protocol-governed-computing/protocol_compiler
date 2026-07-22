@@ -16,7 +16,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
+from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
 
 from compiler.graph.state import State
 from compiler.graph.trace import TraceEvent

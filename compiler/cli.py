@@ -419,7 +419,7 @@ def _resolve_evidence_graph_path(structure_code: str) -> "Path":
     """
     from pathlib import Path
     from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
-    from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
+    from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
     from compiler.projections import get_structure_scope
 
     try:

@@ -117,7 +117,7 @@ def _execute_assertions(
     errors: list[CompilerError] = []
     warnings: list[CompilerError] = []
 
-    from pgs_governance.implementation.assertions.handlers import HANDLER_REGISTRY
+    from compiler.governance_engine.assertions.handlers import HANDLER_REGISTRY
 
     invariant_nodes = [
         node for node in graph.nodes.values()

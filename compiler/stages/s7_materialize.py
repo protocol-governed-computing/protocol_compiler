@@ -19,8 +19,8 @@ from typing import Any
 
 import yaml
 
-from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
-from pgs_governance.implementation.structure.loading.protocol_loader import _get_artifact_type_dir_from_prefix
+from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
+from compiler.governance_engine.structure.loading.protocol_loader import _get_artifact_type_dir_from_prefix
 
 from compiler.graph.types import NodeKind
 from compiler.graph.graph import Graph

@@ -30,7 +30,7 @@ _HEADER_FIELD_RE = re.compile(r"^- \*\*(?P<label>[A-Za-z ]+):\*\*\s*(?P<value>.+
 
 # Artifact kind → PPS snapshot section.
 # Single source of truth: the ArtifactKindRegistry (replaces the legacy hardcoded map).
-from pgs_governance.implementation.artifact_kinds import REGISTRY as _KIND_REGISTRY
+from compiler.governance_engine.artifact_kinds import REGISTRY as _KIND_REGISTRY
 
 PPS_SECTION_BY_KIND = _KIND_REGISTRY.pps_sections()
 

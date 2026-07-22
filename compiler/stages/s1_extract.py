@@ -29,7 +29,7 @@ from compiler.structure_loader import (
     get_bootstrap_search_roots,
 )
 
-from pgs_governance.implementation.structure.resolution.layer_resolver import LayerResolver
+from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
 
 
 # Machine block pattern: ## Machine\n```yaml\n{yaml}\n```
@@ -45,7 +45,7 @@ def _type_to_kind(artifact_type: str) -> NodeKind | None:
     Replaces the legacy _TYPE_TO_KIND dict. The registry returns the NodeKind as a string (it is a
     governance-layer module and must not import this compiler enum); we map it to NodeKind here.
     """
-    from pgs_governance.implementation.artifact_kinds import REGISTRY
+    from compiler.governance_engine.artifact_kinds import REGISTRY
     nk = REGISTRY.node_kind(artifact_type)
     return NodeKind(nk) if nk is not None else None
 

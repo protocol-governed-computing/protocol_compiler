@@ -110,7 +110,7 @@ def _resolve_artifact_type(node: Node) -> str:
     Non-GOVERNANCE nodes: kind.value IS the prefix. GOVERNANCE nodes: keep the code's prefix when the
     descriptor says so, else collapse to "GOVERNANCE".
     """
-    from pgs_governance.implementation.artifact_kinds import REGISTRY
+    from compiler.governance_engine.artifact_kinds import REGISTRY
     return REGISTRY.canonical_type(node.kind.value, node.artifact_code)
 
 
