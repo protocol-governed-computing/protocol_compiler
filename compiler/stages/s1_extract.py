@@ -394,67 +394,6 @@ def _derive_fqdns(
         artifact["fqdn"] = f"{namespace}::{artifact['artifact_code']}"
 
 
-def _inject_import_surface(
-    builder: GraphBuilder,
-    build_config: dict[str, Any],
-    errors: list[CompilerError],
-) -> None:
-    """Inject a compiled platform surface as resolvable EXTERNAL nodes (import_surface).
-
-    A domain compiles AGAINST the already-compiled platform: references to platform artifacts
-    (governance, capabilities) resolve without re-discovering or re-emitting them. Imported nodes
-    are marked metadata.imported=True and are EXCLUDED from this domain's projections and
-    materialization (S6/S7) — they carry no output, only resolvability.
-
-    Source of truth = the compiled platform vocabulary (FQDN set), enforcing compile order:
-    the platform must be compiled before a domain can compile against it.
-    """
-    import json
-
-    imp = build_config.get("artifact_discovery", {}).get("import_surface", {})
-    domain = imp.get("domain")
-    if not domain:
-        return  # no import declared — nothing to inject
-
-    from compiler.governance_engine.platform_root import snapshot_root
-    vocab = snapshot_root() / "compiled" / "vocabulary" / domain / "reverse.json"
-    if not vocab.exists():
-        errors.append(CompilerError(
-            code=ErrorCode.E901_INTERNAL_ERROR,
-            message=(
-                f"import_surface: compiled surface for '{domain}' not found at {vocab}. "
-                f"Compile the '{domain}' structure before compiling this domain against it."
-            ),
-            phase="S1_EXTRACT",
-        ))
-        return
-
-    fqdn_to_hex = json.loads(vocab.read_text(encoding="utf-8"))
-    injected = 0
-    for fqdn in fqdn_to_hex:
-        if "::" not in fqdn or fqdn in builder._nodes:
-            continue  # the domain's own artifacts always win
-        namespace, artifact_code = fqdn.split("::", 1)
-        kind = _type_to_kind(artifact_code.split("_")[0])
-        if kind is None:
-            continue  # unmappable vocab entry (e.g. edge_kind) — not a referenceable artifact
-        m = re.search(r"_V(\d+)$", artifact_code)
-        version = f"V{m.group(1)}" if m else "V0"
-        builder.add_node(Node.create(
-            fqdn=fqdn,
-            kind=kind,
-            namespace=namespace,
-            artifact_code=artifact_code,
-            version=version,
-            layer_code="IMPORTED",
-            content_hash="",
-            frontmatter={},
-            domain_name=None,
-            metadata={"imported": True, "import_domain": domain},
-        ))
-        injected += 1
-
-
 def _parse_artifact_to_node(
     artifact: dict[str, Any],
     artifact_registry: dict[str, list[str]],

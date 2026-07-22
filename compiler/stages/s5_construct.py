@@ -54,8 +54,6 @@ def s5_construct(state: State) -> State:
     for fqdn, node in graph.nodes.items():
         if node.kind != NodeKind.CT:
             continue
-        if node.metadata.get("imported"):
-            continue  # imported surface: resolve-only, never constructed
 
         ct_ir, ct_errors = _build_ct_ir(node, ct_index)
         errors.extend(ct_errors)
@@ -74,8 +72,6 @@ def s5_construct(state: State) -> State:
     for fqdn, node in graph.nodes.items():
         if node.kind != NodeKind.CS:
             continue
-        if node.metadata.get("imported"):
-            continue  # imported surface: resolve-only, never constructed
 
         cs_ir, cs_errors = _build_cs_ir(node)
         errors.extend(cs_errors)
@@ -93,8 +89,6 @@ def s5_construct(state: State) -> State:
     for fqdn, node in graph.nodes.items():
         if node.kind != NodeKind.CC:
             continue
-        if node.metadata.get("imported"):
-            continue  # imported surface: resolve-only, never constructed
 
         cc_proj, cc_errors = _build_cc_projection(node, ct_index, cs_index)
         errors.extend(cc_errors)
@@ -113,8 +107,6 @@ def s5_construct(state: State) -> State:
     for fqdn, node in graph.nodes.items():
         if node.kind != NodeKind.WF:
             continue
-        if node.metadata.get("imported"):
-            continue  # imported surface: resolve-only, never constructed
 
         wf_errors = _enrich_wf_nodes(node, code_to_fqdn, builder)
         errors.extend(wf_errors)

@@ -67,20 +67,13 @@ def project_vocabulary(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     trace: list[TraceEvent] = []
 
     # Build forward table: int_address -> identity_string (hex keys, sorted by address)
-    # Imported-surface FQDNs (resolve-only externals) are excluded from this domain's vocabulary.
-    imported = {f for f, n in graph.nodes.items() if n.metadata.get("imported")}
-
     forward: dict[str, str] = {}
     for address, identity in sorted(graph.reverse_table.items()):
-        if identity in imported:
-            continue
         forward[f"0x{address:04X}"] = identity
 
     # Build reverse table: identity_string -> hex_address (sorted by identity)
     reverse: dict[str, str] = {}
     for identity, address in sorted(graph.address_table.items()):
-        if identity in imported:
-            continue
         reverse[identity] = f"0x{address:04X}"
 
     content = {"forward": forward, "reverse": reverse}
