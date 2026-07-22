@@ -101,7 +101,9 @@ def s8_verify(state: State) -> State:
 
     # --- Check 8: Canonical references referential closure ---
     if canonical is not None:
-        ref_errors = _verify_canonical_references(canonical, state.graph)
+        from compiler.stages.s2_canonicalize import _import_surface_fqdns
+        imported = _import_surface_fqdns(state.structure_config)
+        ref_errors = _verify_canonical_references(canonical, state.graph, imported)
         errors.extend(ref_errors)
 
     trace.append(TraceEvent.create(
@@ -498,15 +500,17 @@ def _verify_evidence_integrity(
 def _verify_canonical_references(
     canonical: Projection,
     graph: Graph,
+    imported: set[str] | None = None,
 ) -> list[CompilerError]:
     """
     Verify canonical projection referential closure.
 
-    Every FQDN listed in any artifact's `references` field must exist
-    as a node in the compiled graph. A dangling reference means a
-    cross-artifact dependency was declared but never resolved.
+    Every FQDN listed in any artifact's `references` field must exist as a node in the compiled
+    graph, OR in the imported platform surface (references resolved AGAINST an already-compiled
+    platform). A reference in neither is a genuine dangling dependency.
     """
     errors: list[CompilerError] = []
+    imported = imported or set()
 
     for fqdn, artifact in canonical.content.items():
         references = artifact.get("references", [])
@@ -515,7 +519,7 @@ def _verify_canonical_references(
         for ref_fqdn in references:
             if not isinstance(ref_fqdn, str):
                 continue
-            if ref_fqdn not in graph.nodes:
+            if ref_fqdn not in graph.nodes and ref_fqdn not in imported:
                 errors.append(CompilerError(
                     code=ErrorCode.E201_MISSING_REFERENCE,
                     message=(

@@ -65,11 +65,14 @@ def project_tokenized(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     """
     trace: list[TraceEvent] = []
 
+    # Imported-surface FQDNs (resolve-only externals) are excluded from this domain's topology.
+    imported = {f for f, n in graph.nodes.items() if n.metadata.get("imported")}
+
     # Nodes: sorted by address
     nodes: list[dict[str, int]] = []
     for fqdn in sorted(graph.nodes):
         node = graph.nodes[fqdn]
-        if node.address < 0:
+        if node.address < 0 or fqdn in imported:
             continue
         kind_key = f"node_kind::{node.kind.value}"
         nodes.append({
@@ -83,6 +86,8 @@ def project_tokenized(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     for edge in graph.edges:
         if edge.source_address < 0 or edge.target_address < 0:
             continue
+        if edge.source_fqdn in imported or edge.target_fqdn in imported:
+            continue
         edges.append({
             "from": edge.source_address,
             "to": edge.target_address,
@@ -94,7 +99,7 @@ def project_tokenized(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     adjacency: dict[str, list[int]] = {}
     for fqdn in sorted(graph.nodes):
         node = graph.nodes[fqdn]
-        if node.address < 0:
+        if node.address < 0 or fqdn in imported:
             continue
         outgoing = graph.get_outgoing(fqdn)
         targets = sorted({e.target_address for e in outgoing if e.target_address >= 0})

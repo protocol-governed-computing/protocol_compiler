@@ -48,20 +48,24 @@ def s2_canonicalize(state: State) -> State:
     trace: list[TraceEvent] = []
     graph = state.graph
 
+    # Import surface: FQDNs provided by an already-compiled platform, resolved AGAINST (not
+    # discovered/emitted here). A reference to one of these is not dangling — it is external.
+    imported = _import_surface_fqdns(state.structure_config)
+
     builder = GraphBuilder()
 
     # Copy all nodes unchanged
     for node in graph.nodes.values():
         builder.add_node(node)
 
-    # --- Step 1: Validate edge targets exist ---
+    # --- Step 1: Validate edge targets exist (or resolve against the imported surface) ---
     for edge in graph.edges:
-        if edge.target_fqdn not in graph.nodes:
+        if edge.target_fqdn not in graph.nodes and edge.target_fqdn not in imported:
             errors.append(CompilerError(
                 code=ErrorCode.E104_INVALID_FQDN,
                 message=(
                     f"Dangling reference: {edge.source_fqdn} → {edge.target_fqdn} "
-                    f"(target not found in graph)"
+                    f"(target not found in graph or imported surface)"
                 ),
                 phase="S2_CANONICALIZE",
                 fqdn_id=edge.source_fqdn,
@@ -72,6 +76,11 @@ def s2_canonicalize(state: State) -> State:
 
     # --- Step 2: Classify REFERENCES edges ---
     for edge in graph.edges:
+        # Edges to the imported surface are resolved externally — drop them (the target is not
+        # a node in this domain's graph; it carries no downstream topology here).
+        if edge.target_fqdn not in graph.nodes:
+            continue
+
         if edge.kind != EdgeKind.REFERENCES:
             # Already typed (shouldn't happen after S1, but defensive)
             builder.add_edge(edge)
@@ -134,6 +143,28 @@ def s2_canonicalize(state: State) -> State:
     state = state.with_metadata("edge_kind_counts", edge_kind_counts)
 
     return state
+
+
+def _import_surface_fqdns(structure_config) -> set[str]:
+    """FQDNs provided by an already-compiled platform surface (import_surface).
+
+    A domain compiles AGAINST the platform: references to these resolve externally and are neither
+    re-discovered nor re-emitted. Empty when no import_surface is declared (e.g. the platform build).
+    Reads the imported domain's compiled vocabulary — enforcing compile order (platform first).
+    """
+    import json
+    imp = (structure_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    domain = imp.get("domain")
+    if not domain:
+        return set()
+    from compiler.governance_engine.platform_root import platform_root
+    vocab = platform_root() / "snapshot" / "compiled" / "vocabulary" / domain / "reverse.json"
+    if not vocab.exists():
+        raise FileNotFoundError(
+            f"import_surface: compiled surface for '{domain}' not found at {vocab}. "
+            f"Compile the '{domain}' structure before compiling this domain against it."
+        )
+    return set(json.loads(vocab.read_text(encoding="utf-8")).keys())
 
 
 def _classify_edge(source: Node, target: Node) -> EdgeKind:

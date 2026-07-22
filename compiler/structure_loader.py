@@ -31,13 +31,24 @@ def get_bootstrap_search_roots() -> list[Path]:
     Resolves relative to the explicit PGC platform root, not cwd — so the compiler
     works from any directory and takes zero dependency on any pgs_* package.
     """
+    import os
     from compiler.governance_engine.platform_root import governance_registry_root
     registry = governance_registry_root()
-    return sorted(
+    roots = [
         fb_dir / "structures"
         for fb_dir in registry.iterdir()
         if fb_dir.is_dir() and fb_dir.name.startswith("FB_") and (fb_dir / "structures").exists()
-    )
+    ]
+    # Domain-extension: each PGC_DOMAIN_ROOTS entry contributes its own registry/structures, so a
+    # domain's build manifest is found WITHOUT editing the platform. Unset (platform build) → no-op.
+    for d in os.environ.get("PGC_DOMAIN_ROOTS", "").split(os.pathsep):
+        d = d.strip()
+        if not d:
+            continue
+        sdir = Path(d) / "registry" / "structures"
+        if sdir.is_dir():
+            roots.append(sdir)
+    return sorted(roots)
 
 
 # CRITICAL: Prevent usage of fragmented/deprecated STRUCTURE artifacts

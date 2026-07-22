@@ -21,6 +21,26 @@ from typing import Any
 
 
 # =============================================================================
+# Domain-extension layer registry
+# =============================================================================
+# Additive layer definitions registered per-compile from a domain's build manifest
+# (STRUCTURE_BUILD_<X>_CONFIG.layer_definitions). Merged with the IMMUTABLE platform
+# STRUCTURE_DISCOVERY_V0 layers — the platform surface is never edited to add a domain.
+_DOMAIN_LAYER_DEFS: dict[str, dict] = {}
+
+
+def register_domain_layers(defs: dict) -> None:
+    """Register a domain's additive layer definitions for the current compile."""
+    if defs:
+        _DOMAIN_LAYER_DEFS.update(defs)
+
+
+def clear_domain_layers() -> None:
+    """Clear registered domain layers (hygiene between compiles in one process)."""
+    _DOMAIN_LAYER_DEFS.clear()
+
+
+# =============================================================================
 # LayerResolver
 # =============================================================================
 
@@ -95,6 +115,30 @@ class LayerResolver:
             return None
         return platform_root().joinpath(*subpath)
 
+    def _layer_root_from_config(self, layer_config: dict) -> Path | None:
+        """
+        Resolve a layer's filesystem root under PGC_PLATFORM_ROOT — data-driven.
+
+        Preference (protocol-declared, zero compiler-side per-domain knowledge):
+          1. platform_subpath — the layer declares its own subdir of the platform repo.
+             This is the DOMAIN-EXTENSION path: a new domain/workload registers its source
+             purely in the protocol (STRUCTURE_DISCOVERY_V0), with NO compiler edits.
+          2. registry_module — RI-0 harvest package names, mapped via _PGC_MODULE_MAP
+             (the platform surface layers; kept for backward compatibility).
+        """
+        from compiler.governance_engine.platform_root import platform_root
+
+        subpath = layer_config.get("platform_subpath")
+        if subpath:
+            parts = str(subpath).strip("/").split("/")
+            return platform_root().joinpath(*parts)
+
+        registry_module = layer_config.get("registry_module")
+        if registry_module:
+            return self._resolve_module_to_path(registry_module)
+
+        return None
+
     def _load_layer_paths_from_discovery(self) -> None:
         """
         Load layer paths from STRUCTURE_DISCOVERY_V0.
@@ -121,10 +165,14 @@ class LayerResolver:
 
         for layer_code, layer_config in layers.items():
             self._layer_configs[layer_code] = layer_config or {}
-            registry_module = layer_config.get("registry_module")
-            if not registry_module:
-                continue
-            path = self._resolve_module_to_path(registry_module)
+            path = self._layer_root_from_config(layer_config or {})
+            if path is not None:
+                self._layer_paths[layer_code] = path
+
+        # Domain-extension layers (additive; the immutable platform discovery above is untouched).
+        for layer_code, layer_config in _DOMAIN_LAYER_DEFS.items():
+            self._layer_configs[layer_code] = layer_config or {}
+            path = self._layer_root_from_config(layer_config or {})
             if path is not None:
                 self._layer_paths[layer_code] = path
 

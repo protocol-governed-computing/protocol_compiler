@@ -69,6 +69,10 @@ def project_canonical(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         if node.kind == NodeKind.TEST_DATA:
             continue
 
+        # Skip imported surface — resolve-only externals, never re-emitted into this domain
+        if node.metadata.get("imported"):
+            continue
+
         artifact_dict = _project_node(node)
 
         if artifact_dict is not None:
