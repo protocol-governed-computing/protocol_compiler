@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pgs-compiler"
+version = "0.9.0"
+description = "Protocol-Governed Systems — compiler: topology-native governance compilation with multi-projection output"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+
+authors = [
+  { name = "Bhash Ganti aka Bachi" }
+]
+
+keywords = [
+  "protocol-governed-systems",
+  "pgs",
+  "topology-compiler",
+  "governance-compilation",
+  "semantic-addressing"
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development",
+  "Topic :: System :: Distributed Computing"
+]
+
+dependencies = [
+  "pgs-governance",
+  "click",
+  "pyyaml",
+  "jsonschema"
+]
+
+[project.scripts]
+pi = "pgs_compiler.inspection.cli:main"
+
+[project.urls]
+Repository = "https://github.com/bachipeachy/pgs_compiler"
+
+[tool.setuptools]
+include-package-data = true
+packages = [
+  "pgs_compiler",
+  "pgs_compiler.compiler",
+  "pgs_compiler.compiler.atoms",
+  "pgs_compiler.compiler.graph",
+  "pgs_compiler.compiler.stages",
+  "pgs_compiler.compiler.projections",
+  "pgs_compiler.compiler.governance",
+  "pgs_compiler.inspection",
+  "pgs_compiler.visualization",
+  "pgs_compiler.visualization.consumers",
+  "pgs_compiler.visualization.views",
+]
+
+[tool.setuptools.package-dir]
+"pgs_compiler" = "."
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.yaml", "*.json", "*.sh"]
