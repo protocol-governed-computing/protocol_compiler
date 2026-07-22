@@ -96,6 +96,10 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     wf_node_next_keys: dict[str, dict[str, dict[str, str]]] = {}
     # wf_start_keys[wf_addr] = start_node_key (from core.start_node)
     wf_start_keys: dict[int, str] = {}
+    # Authority: wf_actor[wf_addr] = actor_context FQDN bound at WF level (core.actor_context).
+    wf_actor: dict[int, str] = {}
+    # Observation: wf_emits[str(wf_addr)] = {exit_node_key: EV_FQDN} — domain events emitted on exit.
+    wf_emits: dict[str, dict[str, str]] = {}
 
     for _wf_fqdn, _wf_n in graph.nodes.items():
         if _wf_n.kind != NodeKind.WF or _wf_n.address < 0:
@@ -106,6 +110,9 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         _start_nk = _core.get("start_node", "")
         if _start_nk:
             wf_start_keys[_wf_n.address] = _start_nk
+        _actor = _core.get("actor_context")
+        if _actor:
+            wf_actor[_wf_n.address] = _actor
         _nodes_dict = _core.get("nodes", {})
         if not hasattr(_nodes_dict, "items"):
             continue
@@ -114,6 +121,9 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         for _nk, _nd in _nodes_dict.items():
             if not hasattr(_nd, "get"):
                 continue
+            # Observation: an EXIT node may emit a domain event when reached.
+            if _nd.get("type") == "EXIT" and _nd.get("emit"):
+                wf_emits.setdefault(_wf_s, {})[_nk] = _nd.get("emit")
             _fqdn_id = _nd.get("fqdn_id", "")
             if not _fqdn_id or _fqdn_id not in graph.nodes:
                 continue
@@ -129,6 +139,19 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             for _cond_str, _tgt_nk in _next_map.items():
                 _src_map[_src_s][_cond_str] = _tgt_nk
         wf_node_next_keys[_wf_s] = _src_map
+
+    # Observation: resolve exit-node emits to the (source_CC, outcome) transition that routes there,
+    # so the runtime emits the domain event when the CC produces that outcome (exits carry no address).
+    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = EV_FQDN
+    emit_map: dict[str, dict[str, dict[str, str]]] = {}
+    for _wf_s, _src_map in wf_node_next_keys.items():
+        _exits = wf_emits.get(_wf_s, {})
+        if not _exits:
+            continue
+        for _cc_s, _cond_map in _src_map.items():
+            for _cond_str, _tgt_nk in _cond_map.items():
+                if _tgt_nk in _exits:
+                    emit_map.setdefault(_wf_s, {}).setdefault(_cc_s, {})[_cond_str] = _exits[_tgt_nk]
 
     # --- Routing: WF_addr → {CC_addr → {condition_addr: {"addr": next_CC_addr, "key": next_node_key}}} ---
     # Source: NODE_NEXT edges (each carries wf_fqdn in metadata from S2).
@@ -302,6 +325,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             e["rb"] = wf_rb[wf_addr]
         if wf_addr in wf_in:
             e["in"] = wf_in[wf_addr]
+        if wf_addr in wf_actor:
+            e["actor"] = wf_actor[wf_addr]   # Authority: actor context (FQDN) — runtime attribution
         entry[str(wf_addr)] = e
 
     content = {
@@ -309,6 +334,7 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         "pipeline": pipeline,
         "entry":    entry,
         "bindings": bindings,
+        "emits":    emit_map,   # Observation: {wf_addr: {cc_addr: {outcome: EV_FQDN}}}
     }
 
     projection_hash = compute_projection_hash(content)

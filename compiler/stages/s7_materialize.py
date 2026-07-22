@@ -607,6 +607,7 @@ def _materialize_dispatch_and_handlers(
             "pipeline":  dict(dispatch.content.get("pipeline", {})),
             "entry":     dict(dispatch.content.get("entry", {})),
             "bindings":  dict(dispatch.content.get("bindings", {})),
+            "emits":     dict(dispatch.content.get("emits", {})),
         }
 
     if handlers is not None:
