@@ -23,17 +23,16 @@ def get_bootstrap_search_roots() -> list[Path]:
     """
     Return bootstrap search roots for STRUCTURE artifacts.
 
-    CONSTITUTIONAL: The only hardcoded element is pgs_governance package location.
-    All FB_*/structures/ paths are derived from registry/ under that package.
+    CONSTITUTIONAL: The only anchor is the PGC platform root (PGC_PLATFORM_ROOT).
+    All FB_*/structures/ paths are derived from registry/ under the platform repo.
     Used to load STRUCTURE_DISCOVERY_V0, STRUCTURE_IDENTITY_V0, and any build config.
     After bootstrap, all paths come from STRUCTURE.
 
-    Resolves relative to the installed pgs_governance package location,
-    not cwd — so the compiler works from any directory.
+    Resolves relative to the explicit PGC platform root, not cwd — so the compiler
+    works from any directory and takes zero dependency on any pgs_* package.
     """
-    import pgs_governance
-    governance_pkg = Path(pgs_governance.__file__).parent
-    registry = governance_pkg / "registry"
+    from compiler.governance_engine.platform_root import governance_registry_root
+    registry = governance_registry_root()
     return sorted(
         fb_dir / "structures"
         for fb_dir in registry.iterdir()

@@ -49,8 +49,8 @@ class LayerResolver:
                           pgs_governance package location — CWD-independent)
         """
         if project_root is None:
-            import pgs_governance as _pg
-            project_root = Path(_pg.__file__).parent.parent
+            from compiler.governance_engine.platform_root import platform_root
+            project_root = platform_root()
         self._environment = environment
         self._project_root = project_root
         self._layer_paths: dict[str, Path] = {}
@@ -69,42 +69,31 @@ class LayerResolver:
             raise ValueError("No YAML block found in artifact")
         return yaml.safe_load(match.group(1))
 
+    # PGC B2 topology map — RI-0 registry_module names → subdirs of the platform repo.
+    # STRUCTURE_DISCOVERY_V0 is kept verbatim (faithful harvest); this map overrides its
+    # importlib resolution so layers resolve inside `platform` with no pgs_* dependency.
+    # Layers absent here (domain/RI: blockchain, ai_governance, runtime, ingress, …) are
+    # not part of the platform surface and resolve to None by design.
+    _PGC_MODULE_MAP: dict[str, tuple[str, ...]] = {
+        "pgs_governance.registry": ("registry",),
+        "pgs_transforms.registry": ("capability_transforms", "registry"),
+        "pgs_side_effects.registry": ("capability_side_effects", "registry"),
+    }
+
     def _resolve_module_to_path(self, registry_module: str) -> Path | None:
         """
-        Resolve Python module name to filesystem path.
+        Resolve a STRUCTURE_DISCOVERY_V0 registry_module to a filesystem path (PGC B2).
 
-        Resolution strategy:
-          1. importlib.util.find_spec — works for installed (editable) packages
-          2. Sibling-repo fallback — project_root.parent / top_package[/sub/parts]
-             used when package is not installed (e.g. pgs_runtime in protocol build env)
-
-        Returns None only if sibling path derivation yields nothing (should not happen
-        with valid registry_module values from STRUCTURE_DISCOVERY_V0).
+        Maps the RI-0 package name to a subdir of PGC_PLATFORM_ROOT. Domain/RI layers not
+        present in the platform surface return None (they are absent from the platform
+        compile scope, by design — no importlib, no sibling-repo fallback, no pgs_* dep).
         """
-        import importlib.util
+        from compiler.governance_engine.platform_root import platform_root
 
-        try:
-            spec = importlib.util.find_spec(registry_module)
-        except (ModuleNotFoundError, ValueError):
-            spec = None
-        if spec is not None:
-            if spec.submodule_search_locations:
-                locations = list(spec.submodule_search_locations)
-                if locations:
-                    return Path(locations[0])
-            if spec.origin:
-                return Path(spec.origin).parent
-
-        # Sibling-repo fallback (development topology)
-        # e.g. "pgs_blockchain.registry" → project_root.parent / "pgs_blockchain" / "registry"
-        # e.g. "pgs_runtime" → project_root.parent / "pgs_runtime"
-        parts = registry_module.split(".")
-        top_package = parts[0]
-        sub_parts = parts[1:]
-        sibling_root = self._project_root.parent / top_package
-        if sub_parts:
-            return sibling_root / Path(*sub_parts)
-        return sibling_root
+        subpath = self._PGC_MODULE_MAP.get(registry_module)
+        if subpath is None:
+            return None
+        return platform_root().joinpath(*subpath)
 
     def _load_layer_paths_from_discovery(self) -> None:
         """
@@ -114,10 +103,9 @@ class LayerResolver:
         layer-to-module mappings. Located at:
             pgs_governance/registry/FB_CONSTITUTION/structures/
         """
-        import pgs_governance
-        gov_pkg = Path(pgs_governance.__file__).parent
+        from compiler.governance_engine.platform_root import governance_registry_root
         discovery_path = (
-            gov_pkg / "registry" /
+            governance_registry_root() /
             "FB_CONSTITUTION" / "structures" / "STRUCTURE_DISCOVERY_V0.md"
         )
 
@@ -152,10 +140,9 @@ class LayerResolver:
 
     def _load_module_data_roots(self) -> None:
         """Load STRUCTURE_MODULE_DATA_ROOTS_V0 artifact."""
-        import pgs_governance
-        gov_pkg = Path(pgs_governance.__file__).parent
+        from compiler.governance_engine.platform_root import governance_registry_root
         path = (
-            gov_pkg / "registry" /
+            governance_registry_root() /
             "FB_CONSTITUTION" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
         )
 
@@ -207,9 +194,8 @@ class LayerResolver:
         Returns:
             Federation config dict or {} if not found or not enabled
         """
-        import pgs_governance
-        gov_pkg = Path(pgs_governance.__file__).parent
-        federation_root = gov_pkg / "registry"
+        from compiler.governance_engine.platform_root import governance_registry_root
+        federation_root = governance_registry_root()
         config_artifact_code = f"STRUCTURE_BUILD_{layer}_CONFIG_V0"
 
         artifact_path = None
@@ -361,21 +347,10 @@ class LayerResolver:
                 f"STRUCTURE artifacts must not use '..' traversals."
             )
 
-        # Special case: PROTOCOL_BUILD_ROOT → project root itself
-        if target_layer == "PROTOCOL_BUILD_ROOT":
-            repo_root = self._project_root
-        else:
-            try:
-                module_root = self._resolve_layer_path(target_layer)
-            except ValueError as e:
-                raise RuntimeError(
-                    f"Unknown layer: {target_layer}. "
-                    f"Layer must be declared in STRUCTURE_DISCOVERY_V0. "
-                    f"Original error: {e}"
-                )
-            repo_root = module_root.parent
-
-        return repo_root / subpath
+        # PGC: consolidate every layer's output into one snapshot root — no RI-0 federated
+        # scatter. Output location is single; discovery/govern already validated layers.
+        from compiler.governance_engine.platform_root import snapshot_root
+        return snapshot_root() / subpath
 
     def resolve_artifact_output_path(
         self,
@@ -397,8 +372,9 @@ class LayerResolver:
         Returns:
             Absolute Path to output location
         """
-        module_root = self._resolve_layer_path(layer)
-        repo_root = module_root.parent
+        # PGC: single consolidated snapshot root (no federated scatter).
+        from compiler.governance_engine.platform_root import snapshot_root
+        repo_root = snapshot_root()
         compiled_root = self._get_layer_directory("compiled_root", "compiled")
 
         federation_config = self._get_domain_federation_config(layer)

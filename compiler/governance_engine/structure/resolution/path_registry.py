@@ -101,14 +101,14 @@ def bootstrap(root: Path | None = None, governance_layers_dir: Path | None = Non
         return _get_project_root()
 
     if root is None:
-        import pgs_governance as _pg
-        root = Path(_pg.__file__).parent.parent
+        from compiler.governance_engine.platform_root import platform_root
+        root = platform_root()
     _set_project_root(root)
 
-    # Resolve registry root (pgs_governance/registry/)
+    # Resolve registry root (<platform>/registry/)
     if governance_layers_dir is None:
-        import pgs_governance as _pg
-        governance_layers_dir = Path(_pg.__file__).parent / "registry" / "FB_CONSTITUTION" / "structures"
+        from compiler.governance_engine.platform_root import governance_registry_root
+        governance_layers_dir = governance_registry_root() / "FB_CONSTITUTION" / "structures"
 
     if not governance_layers_dir.exists():
         raise FileNotFoundError(
@@ -151,9 +151,11 @@ def bootstrap(root: Path | None = None, governance_layers_dir: Path | None = Non
 
     _BOOTSTRAPPED = True
 
-    # Validate schemas exist (STRUCTURE-driven path)
+    # Validate schemas exist (STRUCTURE-driven path).
+    # PGC: schemas live under the platform root directly (root/registry/...), not under a
+    # pgs_governance package subdir. schemas_subdir already includes the "registry/" prefix.
     schemas_subdir = _get_layer_directory("schemas_subdir", "registry/FB_CONSTITUTION/schemas")
-    schemas = root / "pgs_governance" / schemas_subdir
+    schemas = root / schemas_subdir
     if not schemas.exists():
         raise RuntimeError(
             f"Platform registry must define schemas at declared location.\n"

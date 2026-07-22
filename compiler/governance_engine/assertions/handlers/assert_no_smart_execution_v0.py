@@ -32,9 +32,14 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     # PROTOCOL: Use LayerResolver for layer path discovery
     bootstrap()
     resolver = LayerResolver()
-    exec_layer_path = resolver.resolve_layer_root("EXECUTION")
+    # PGC: the EXECUTION (runtime) layer is not part of the normative platform snapshot.
+    # When it is absent/unmapped, there is no execution code to scan → N/A (PASSED).
+    try:
+        exec_layer_path = resolver.resolve_layer_root("EXECUTION")
+    except ValueError:
+        exec_layer_path = None
 
-    if not exec_layer_path.exists():
+    if exec_layer_path is None or not exec_layer_path.exists():
         return {
             "assert_count": 0,
             "violations": [],

@@ -594,10 +594,10 @@ def _analyze_cs_implementation(fqdn: str, node) -> dict:
 
 def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
     """Pre-compute JSON schema validation for all nodes with declared schemas."""
-    import pgs_governance
     from jsonschema import Draft202012Validator
+    from compiler.governance_engine.platform_root import governance_registry_root
 
-    schema_dir = Path(pgs_governance.__file__).parent / "registry" / "FB_CONSTITUTION" / "schemas"
+    schema_dir = governance_registry_root() / "FB_CONSTITUTION" / "schemas"
 
     schema_file_map = {
         NodeKind.CT: "SCHEMA_CAPABILITY_TRANSFORM_V0.json",

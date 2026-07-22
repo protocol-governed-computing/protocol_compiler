@@ -181,30 +181,10 @@ def _check_runtime_exists(ct_code: str, layer_resolver) -> tuple[bool, Path]:
         (exists: bool, expected_path: Path)
     """
     try:
-        # Resolve REUSABLE_TRANSFORMS layer root
-        # This returns the module root: /Users/bp/pgs_capabilities/pgs_transforms/implementation/transforms/
-        layer_root = layer_resolver.resolve_layer_root("REUSABLE_TRANSFORMS")
-
-        # Convert CT_CODE to lowercase for filename
-        ct_code_lower = ct_code.lower()
-
-        if not layer_root.exists():
-            return False, layer_root / "atoms" / f"{ct_code_lower}.py"
-
-        # Search in category subdirectories (atoms, molecules)
-        for category_dir in layer_root.iterdir():
-            if not category_dir.is_dir():
-                continue
-
-            # Check for flat .py file (not directory structure)
-            runtime_path = category_dir / f"{ct_code_lower}.py"
-
-            if runtime_path.exists():
-                return True, runtime_path
-
-        # Not found - return expected path in atoms/ by default
-        expected = layer_root / "atoms" / f"{ct_code_lower}.py"
-        return False, expected
+        # PGC flat layout: capability_transforms/implementation/ct_x.py
+        from compiler.governance_engine.platform_root import ct_implementation_root
+        runtime_path = ct_implementation_root() / f"{ct_code.lower()}.py"
+        return runtime_path.exists(), runtime_path
 
     except Exception as e:
         # If layer resolution fails, assume missing

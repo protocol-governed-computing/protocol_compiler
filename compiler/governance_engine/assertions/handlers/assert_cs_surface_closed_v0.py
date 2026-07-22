@@ -231,17 +231,6 @@ def _extract_rb_bindings(artifacts: list[dict]) -> set[str]:
     return rb_bound_cs
 
 
-def _find_project_root() -> Path:
-    """
-    Find project root by locating the installed pgs_governance package.
-
-    Returns:
-        Project root path (parent of the pgs_governance package directory)
-    """
-    import pgs_governance as _pg
-    return Path(_pg.__file__).parent.parent
-
-
 def _get_side_effects_implementation_root() -> Path:
     """
     Get side effects implementation root using LayerResolver (STRUCTURE_DISCOVERY_V0).
@@ -249,12 +238,8 @@ def _get_side_effects_implementation_root() -> Path:
     REUSABLE_SIDE_EFFECTS registry_module resolves to pgs_side_effects/registry/.
     Implementation lives at the sibling path: pgs_side_effects/implementation/side_effects/.
     """
-    from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
-    resolver = LayerResolver()
-    registry_root = resolver.resolve_layer_root("REUSABLE_SIDE_EFFECTS")
-    # registry_root = .../pgs_side_effects/registry/
-    # implementation root = .../pgs_side_effects/implementation/side_effects/
-    return registry_root.parent / "implementation" / "side_effects"
+    from compiler.governance_engine.platform_root import cs_implementation_root
+    return cs_implementation_root()
 
 
 def _check_runtime_exists(cs_code: str) -> tuple[bool, Path]:
@@ -267,18 +252,6 @@ def _check_runtime_exists(cs_code: str) -> tuple[bool, Path]:
     Returns:
         (exists: bool, expected_path: Path)
     """
-    runtime_root = _get_side_effects_implementation_root()
-
-    if not runtime_root.exists():
-        return False, runtime_root / "persistent" / cs_code / "runtime.py"
-
-    # Search in category subdirectories (persistent, internal, external)
-    for category_dir in runtime_root.iterdir():
-        if not category_dir.is_dir():
-            continue
-        runtime_path = category_dir / cs_code / "runtime.py"
-        if runtime_path.exists():
-            return True, runtime_path
-
-    expected = runtime_root / "persistent" / cs_code / "runtime.py"
-    return False, expected
+    # PGC flat layout: capability_side_effects/implementation/CS_X/runtime.py
+    runtime_path = _get_side_effects_implementation_root() / cs_code / "runtime.py"
+    return runtime_path.exists(), runtime_path

@@ -132,25 +132,10 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
 
 def _find_ct_implementation(artifact_code: str) -> Path | None:
-    """Find CT implementation file in transforms layer."""
-    # PROTOCOL: Use LayerResolver for layer path discovery
-    bootstrap()
-    resolver = LayerResolver()
-    transforms_root = resolver.resolve_layer_root("REUSABLE_TRANSFORMS")
-
-    # Try atoms directory first
-    impl_path = transforms_root / "atoms" / f"{artifact_code.lower()}.py"
-
-    if impl_path.exists():
-        return impl_path
-
-    # Try molecules directory
-    impl_path = transforms_root / "molecules" / f"{artifact_code.lower()}.py"
-
-    if impl_path.exists():
-        return impl_path
-
-    return None
+    """Find CT implementation file (flat PGC layout: capability_transforms/implementation/ct_x.py)."""
+    from compiler.governance_engine.platform_root import ct_implementation_root
+    impl_path = ct_implementation_root() / f"{artifact_code.lower()}.py"
+    return impl_path if impl_path.exists() else None
 
 
 def _extract_return_keys(impl_path: Path) -> set[str] | None:
