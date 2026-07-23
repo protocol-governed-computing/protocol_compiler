@@ -184,6 +184,7 @@ def s1_extract(state: State) -> State:
         if ns not in artifact_registry[code]:
             artifact_registry[code].append(ns)
 
+    all_refs: set[str] = set()
     for artifact in discovered:
         node, refs, parse_errors, parse_warnings = _parse_artifact_to_node(
             artifact, artifact_registry
@@ -193,6 +194,7 @@ def s1_extract(state: State) -> State:
 
         if node is not None:
             builder.add_node(node)
+            all_refs.update(refs)
             trace.append(TraceEvent.create(
                 stage="S1_EXTRACT",
                 operation="node_created",
@@ -209,6 +211,11 @@ def s1_extract(state: State) -> State:
                     kind=EdgeKind.REFERENCES,
                 )
                 builder.add_edge(edge)
+
+    # Carry imported platform CAPABILITIES (CS/CT consumed by this domain) into the graph so they are
+    # addressed, wired into CC pipelines, and emitted into this domain's handlers/dispatch (Option A
+    # "static link"). Governance imports stay resolve-only (tolerated + dropped in S2).
+    _inject_imported_capabilities(builder, all_refs, build_config, errors)
 
     graph = builder.build()
     state = state.with_graph(graph)
@@ -392,6 +399,71 @@ def _derive_fqdns(
 
         artifact["namespace"] = namespace
         artifact["fqdn"] = f"{namespace}::{artifact['artifact_code']}"
+
+
+def _inject_imported_capabilities(
+    builder: GraphBuilder,
+    all_refs: set[str],
+    build_config: dict[str, Any],
+    errors: list[CompilerError],
+) -> None:
+    """Lift imported platform capabilities (CS/CT) that this domain CONSUMES into the graph.
+
+    Governance imports (constitutions, execution structure) are resolve-only — S2 tolerates and drops
+    them. But a capability the domain *invokes* in a CC pipeline must be executable here: its compiled
+    node is loaded from the imported domain's canonical snapshot (bringing its machine.implementation),
+    added to this graph, and then addressed + wired + emitted like a native node. The capability's
+    governance/authoring stays platform-owned; the consumer carries only its execution binding.
+    """
+    import json
+
+    imp = (build_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    domain = imp.get("domain")
+    if not domain:
+        return
+
+    from compiler.governance_engine.platform_root import platform_root
+    canon_root = platform_root() / "snapshot" / "compiled" / "canonical"
+    if not canon_root.is_dir():
+        return
+
+    # Carried capabilities emit under THIS domain's own layer (they become part of its runtime
+    # substrate) — whatever that layer is; no domain is named here. metadata.imported marks origin.
+    search_layers = (build_config.get("artifact_discovery", {}) or {}).get("search_layers", [])
+    if not search_layers:
+        return
+    domain_layer = search_layers[0]
+
+    for fqdn in sorted(all_refs):
+        if "::" not in fqdn or fqdn in builder._nodes:
+            continue
+        namespace, artifact_code = fqdn.split("::", 1)
+        if artifact_code.split("_")[0] not in ("CS", "CT"):
+            continue  # only capabilities are carried; governance stays resolve-only (S2)
+        matches = list(canon_root.rglob(fqdn.replace("::", "__") + ".json"))
+        if not matches:
+            continue  # not a compiled imported capability — leave to S2 tolerance
+        raw = json.loads(matches[0].read_text(encoding="utf-8"))
+        kind = _type_to_kind(raw.get("artifact_type"))
+        if kind is None:
+            continue
+        m = re.search(r"_V(\d+)$", artifact_code)
+        builder.add_node(Node.create(
+            fqdn=fqdn,
+            kind=kind,
+            namespace=namespace,
+            artifact_code=artifact_code,
+            version=f"V{m.group(1)}" if m else "V0",
+            layer_code=domain_layer,
+            content_hash=raw.get("content_hash", ""),
+            frontmatter=raw.get("frontmatter", {}),   # carries machine.implementation → cs_ir/ct_ir in S5
+            domain_name=None,
+            metadata={
+                "imported": True,
+                "import_domain": domain,
+                "module_path": raw.get("module_path", ""),
+            },
+        ))
 
 
 def _parse_artifact_to_node(
