@@ -2,7 +2,8 @@
 CLI entry point for PGS compiler.
 
 Subcommands:
-  build             — compile one or more STRUCTURE artifacts (S1–S9 pipeline)
+  compile           — compile one or more STRUCTURE artifacts (S1–S9 pipeline)
+  build-pps         — build the PPS cross-reference index for a compiled workspace
   inspect           — query evidence_graph.json for a compiled structure
 
 Pipeline: S1 EXTRACT → S2 CANONICALIZE → S3 SEMANTIC_ADDRESSING →
@@ -53,36 +54,6 @@ def assert_structure_integrity(structure_code: str) -> None:
 def cli() -> None:
     """PGS compiler — topology-native governance compilation."""
     pass
-
-
-@cli.command()
-@click.option(
-    "--workspace",
-    required=True,
-    help="Absolute path to pgs_workspace root",
-)
-def build(workspace: str) -> None:
-    """
-    Full build: artifact sync, conformance tests, snapshot validation.
-
-    Delegates to scripts/pgs_build.py:
-      1. sync_protocol_snapshot.sh   (file movement)
-      2. CT conformance tests        (correctness gate)
-      3. snapshot_status.json        (written only on full pass)
-    """
-    import subprocess
-    from pathlib import Path
-
-    script = Path(__file__).resolve().parent / "scripts" / "pgs_build.py"
-    if not script.exists():
-        click.echo(f"Error: pgs_build.py not found at {script}", err=True)
-        sys.exit(1)
-
-    result = subprocess.run(
-        [sys.executable, str(script), "--workspace", workspace],
-        check=False,
-    )
-    sys.exit(result.returncode)
 
 
 @cli.command()
@@ -140,7 +111,7 @@ def compile(
                     "the Phase B aggregation compile path is retired. Per-domain "
                     "vocabulary is materialized in Phase A (S7); cross-structure "
                     "query metadata (protocol_snapshot/artifact_index/) is emitted "
-                    "by `compiler.cli build`. Aggregation STRUCTUREs are not "
+                    "by the compile pipeline (S7 MATERIALIZE). Aggregation STRUCTUREs are not "
                     "compilable."
                 )
             _run_compile(struct_code, verbose=verbose)
