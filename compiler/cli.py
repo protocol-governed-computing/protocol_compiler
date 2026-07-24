@@ -359,7 +359,30 @@ def _run_compile(structure: str, verbose: bool) -> None:
     click.echo(f"   Attested: {attested}")
     click.echo()
     click.echo(f"PGS build complete for {structure}!")
+
+    _machine_block_health(state, structure, verbose)
+
     click.echo(f"\n{60*'='}\n")
+
+
+def _machine_block_health(state: Any, structure: str, verbose: bool) -> None:
+    """Post-successful-build diagnostic: do artifacts declare machine-block keys the compiler
+    consumes? Heuristic, warning-only, scoped to kinds not already closed by schema conformance.
+    Never affects build success. See compiler.diagnostics.machine_block_health.
+    """
+    try:
+        from pathlib import Path
+        from compiler.diagnostics import machine_block_health as mbh
+        from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
+        dispatch = load_structure_artifact("STRUCTURE_SCHEMA_DISPATCH_V0", get_bootstrap_search_roots())
+        closed = set((dispatch.get("core", {}) or {}).get("schema_dispatch", {}) or {})
+        compiler_src = Path(mbh.__file__).resolve().parent.parent  # compiler/ package root
+        report = mbh.check(state.graph.nodes.values(), closed, compiler_src)
+        for line in mbh.format_report(report, verbose):
+            click.echo(line)
+    except Exception as e:  # diagnostics must never break a successful build
+        if verbose:
+            click.echo(f"   (machine-block health diagnostic skipped: {e})")
 
 
 def _get_aggregation_type(structure_code: str) -> str | None:
