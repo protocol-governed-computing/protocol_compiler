@@ -37,17 +37,28 @@ def s4_govern(state: State) -> State:
     graph = state.graph
 
     # --- Execute constitutional assertions ---
-    errors, warnings = _execute_assertions(graph, state)
+    errors, warnings, coverage = _execute_assertions(graph, state)
 
+    executed = len(coverage)
+    passed = sum(1 for c in coverage if c["status"] == "PASSED")
+    imported = sum(1 for c in coverage if c.get("imported"))
     trace = [TraceEvent.create(
         stage="S4_GOVERN",
         operation="governance_complete",
         detail={
             "errors": len(errors),
             "warnings": len(warnings),
+            "assertions_executed": executed,
+            "assertions_passed": passed,
+            "assertions_imported": imported,
         },
         family=EventFamily.GOVERNANCE.value,
     )]
+
+    # Assertion coverage is recorded as build metadata so it reaches the evidence projection:
+    # artifact-identity hashes prove WHAT was compiled, never WHICH invariants checked it.
+    state = state.with_metadata("assertion_coverage", coverage)
+    state = state.with_metadata("assertions_executed", executed)
 
     if errors:
         state = state.with_errors(*errors)
@@ -55,7 +66,33 @@ def s4_govern(state: State) -> State:
         state = state.with_warnings(*warnings)
     state = state.with_trace_events(*trace)
 
+    # Imported governance has now done its only job — asserting this build. It is dropped before any
+    # downstream projection so it never enters the domain's identity or emitted surface: it is
+    # platform-owned checking state, not a domain artifact. (Without this it would collide with the
+    # platform's ownership of the same FQDN at assembly.)
+    if not errors:
+        state = _strip_imported_governance(state)
+
     return state
+
+
+def _strip_imported_governance(state: State) -> State:
+    """Rebuild the graph without import_role=="governance" nodes (and their edges)."""
+    from compiler.graph.graph import GraphBuilder
+
+    graph = state.graph
+    drop = {fq for fq, n in graph.nodes.items()
+            if (n.metadata or {}).get("import_role") == "governance"}
+    if not drop:
+        return state
+
+    builder = GraphBuilder.from_graph(graph)
+    builder._nodes = {fq: n for fq, n in graph.nodes.items() if fq not in drop}
+    builder._edges = [e for e in graph.edges
+                      if e.source_fqdn not in drop and e.target_fqdn not in drop]
+    builder._address_table = {fq: a for fq, a in graph.address_table.items() if fq not in drop}
+    builder._reverse_table = {a: fq for fq, a in builder._address_table.items()}
+    return state.with_graph(builder.build())
 
 
 # ASSERT is the compiler-derived executable projection of an INVARIANT.
@@ -90,6 +127,8 @@ def _derive_assert(inv_node) -> dict[str, Any] | None:
         "artifact_type": "ASSERT",
         "governed_by": [f"{inv_node.namespace}::{inv_code}"],
         "implementation": {"module": module, "callable": "execute"},
+        # Provenance for coverage evidence: was the enforcing invariant native or imported?
+        "_import_role": (inv_node.metadata or {}).get("import_role", "native"),
     }
     for k, v in proj.items():
         if k != "handler":
@@ -105,7 +144,7 @@ def _derive_assert(inv_node) -> dict[str, Any] | None:
 
 def _execute_assertions(
     graph: Graph, state: State,
-) -> tuple[list[CompilerError], list[CompilerError]]:
+) -> tuple[list[CompilerError], list[CompilerError], list[dict[str, Any]]]:
     """
     Execute constitutional assertions via handler registry.
 
@@ -113,25 +152,34 @@ def _execute_assertions(
     of its INVARIANT (`_derive_assert`). We iterate INVARIANT nodes and synthesize the
     assert descriptor; handlers are unchanged — they read the synthesized
     `current_assert_artifact` exactly as before.
+
+    Returns (errors, warnings, coverage). `coverage` is the per-assertion record of what
+    actually executed and its outcome — the auditable answer to "which invariants checked
+    this build", which artifact-identity hashes do not capture.
     """
     errors: list[CompilerError] = []
     warnings: list[CompilerError] = []
+    coverage: list[dict[str, Any]] = []
 
     from compiler.governance_engine.assertions.handlers import HANDLER_REGISTRY
 
+    # ASSERTERS: native invariants plus imported platform governance. Imported governance is the
+    # whole point of a domain build being checked — it asserts the domain graph (design §2).
     invariant_nodes = [
         node for node in graph.nodes.values()
         if node.frontmatter.get("artifact_kind") == "INVARIANT"
-        # STAGE 2 GATE: imported governance is injected and survives to here, but is not yet
-        # executed against the domain graph. Stage 3 removes this clause so imported invariants
-        # run. Kept separate so stage 2 is a proven no-op for the domain outcome.
-        and (node.metadata or {}).get("import_role") != "governance"
     ]
     if not invariant_nodes:
         return errors, warnings
 
-    # Project nodes into handler-expected dict shape
-    artifacts_for_handlers = _project_nodes_for_handlers(graph)
+    # SUBJECTS: what handlers check. Imported governance is an asserter, never a subject
+    # (self-application boundary, design §3) — it is excluded here while remaining above as an
+    # asserter. Without this, an imported invariant would be validated and cross-checked as
+    # though the domain had authored it.
+    artifacts_for_handlers = [
+        a for a in _project_nodes_for_handlers(graph)
+        if a.get("metadata", {}).get("import_role") != "governance"
+    ]
     structure_config = dict(state.structure_config)
 
     # Pre-compute structural analysis from graph topology
@@ -140,12 +188,23 @@ def _execute_assertions(
     # Build layer category map from STRUCTURE config
     layer_category_map = _build_layer_category_map(structure_config)
 
+    # A domain build is one that imports a platform surface. (The legacy check for "DOMAINS" in
+    # search_layers missed domains that declare their own layer, e.g. WORKLOAD.)
+    disc = structure_config.get("artifact_discovery", {}) or {}
+    is_domain_build = bool((disc.get("import_surface", {}) or {}).get("domain"))
+
+    # References from domain artifacts into the imported platform surface resolve externally, not in
+    # this graph. Reference-closure handlers count them as resolved via this set (design §3).
+    from compiler.stages.s2_canonicalize import _import_surface_fqdns
+    imported_surface_fqdns = _import_surface_fqdns(structure_config)
+
     compilation_context = {
         "artifacts_by_fqdn": {a["fqdn_id"]: a for a in artifacts_for_handlers},
         "structure_config": structure_config,
         "artifacts": artifacts_for_handlers,
         "layer_category_map": layer_category_map,
-        "is_domain_build": "DOMAINS" in structure_config.get("artifact_discovery", {}).get("search_layers", []),
+        "is_domain_build": is_domain_build,
+        "imported_surface_fqdns": imported_surface_fqdns,
         **structural_ctx,
     }
 
@@ -159,6 +218,7 @@ def _execute_assertions(
         assert_code = d["artifact_code"]
         module_path = d["frontmatter"]["implementation"]["module"]
         handler_callable = HANDLER_REGISTRY.get(module_path)
+        imported = (d.get("frontmatter", {}) or {}).get("_import_role") == "governance"
         if not handler_callable:
             errors.append(CompilerError(
                 code=ErrorCode.E702_UNKNOWN_ASSERT,
@@ -166,6 +226,8 @@ def _execute_assertions(
                 phase="S4_GOVERN",
                 fqdn_id=d["fqdn_id"],
             ))
+            coverage.append({"assert_code": assert_code, "fqdn_id": d["fqdn_id"],
+                             "status": "NO_HANDLER", "violations": 0, "imported": imported})
             continue
 
         # Build per-assertion context (synthesized assert artifact)
@@ -181,6 +243,8 @@ def _execute_assertions(
                 phase="S4_GOVERN",
                 fqdn_id=d["fqdn_id"],
             ))
+            coverage.append({"assert_code": assert_code, "fqdn_id": d["fqdn_id"],
+                             "status": "HANDLER_ERROR", "violations": 0, "imported": imported})
             continue
 
         violations = result.get("violations", [])
@@ -201,7 +265,15 @@ def _execute_assertions(
                 fqdn_id=d["fqdn_id"],
             ))
 
-    return errors, warnings
+        coverage.append({
+            "assert_code": assert_code,
+            "fqdn_id": d["fqdn_id"],
+            "status": "FAILED" if violations else "PASSED",
+            "violations": len(violations),
+            "imported": imported,
+        })
+
+    return errors, warnings, coverage
 
 
 def _project_nodes_for_handlers(graph: Graph) -> list[dict[str, Any]]:
@@ -626,6 +698,10 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
 
     results: dict[str, dict] = {}
     for fqdn, node in graph.nodes.items():
+        # Imported governance is asserter state, not a subject: it was schema-validated at platform
+        # compile and must not be re-validated (or counted) in the domain context (design §3).
+        if (node.metadata or {}).get("import_role") == "governance":
+            continue
         schema = loaded_schemas.get(node.artifact_code.split("_")[0])
         if schema is None:
             continue

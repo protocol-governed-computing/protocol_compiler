@@ -68,11 +68,8 @@ def project_canonical(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         # Skip TEST_DATA — used only for conformance, not materialized
         if node.kind == NodeKind.TEST_DATA:
             continue
-
-        # Skip imported governance — it asserts this domain's graph but is platform-owned and
-        # unemitted (design §1). import_role="execution" (capabilities) is materialized normally.
-        if (node.metadata or {}).get("import_role") == "governance":
-            continue
+        # Imported governance is dropped from the graph after S4 (_strip_imported_governance), so it
+        # never reaches any projection — no per-projection filter is needed here.
 
 
         artifact_dict = _project_node(node)

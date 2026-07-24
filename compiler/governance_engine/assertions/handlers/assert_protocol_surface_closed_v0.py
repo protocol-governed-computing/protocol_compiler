@@ -26,8 +26,12 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     violations = []
     artifacts_by_fqdn = compilation_context["artifacts_by_fqdn"]
 
-    # Extract all FQDNs in compiled graph
-    available_fqdns = set(artifacts_by_fqdn.keys())
+    # A reference resolves if it points to an artifact in this graph OR into the imported platform
+    # surface (which a domain build compiles against, resolved externally — design §3). Empty for a
+    # platform build, so behaviour there is unchanged.
+    available_fqdns = set(artifacts_by_fqdn.keys()) | set(
+        compilation_context.get("imported_surface_fqdns", set())
+    )
 
     for artifact in artifacts:
         fqdn = artifact["fqdn_id"]

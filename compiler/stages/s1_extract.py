@@ -515,9 +515,14 @@ def _inject_imported_governance(
     for path in sorted(inv_root.glob("*.json")):
         raw = json.loads(path.read_text(encoding="utf-8"))
         fm = raw.get("frontmatter", {}) or {}
-        scope = ((fm.get("assert_projection", {}) or {}).get("scope", {}) or {}).get("applies_to", []) or []
-        if not (set(scope) & _DOMAIN_INSTANTIATED):
+        proj = fm.get("assert_projection", {}) or {}
+        kinds = proj.get("applies_to_kinds", []) or []
+        if not (set(kinds) & _DOMAIN_INSTANTIATED):
             continue  # platform-only invariant — no domain subject
+        # A layer/surface-scoped invariant governs a specific surface (its allowed-list is that
+        # surface's); domains declare their own surface-closure, so it is not generically imported.
+        if (proj.get("scope", {}) or {}).get("applies_to"):
+            continue
         fqdn = raw.get("fqdn_id")
         if not fqdn or fqdn in builder._nodes:
             continue

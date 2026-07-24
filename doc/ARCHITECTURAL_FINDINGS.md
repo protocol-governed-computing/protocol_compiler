@@ -4,7 +4,9 @@ Surfaced by the machine-block closure work. Each is independent of that closure 
 
 ---
 
-## 1. Domain builds bypass governance assertions entirely
+## 1. Domain builds bypass governance assertions entirely — RESOLVED
+
+**Status: resolved** by the domain governance import (`DOMAIN_GOVERNANCE_IMPORT_DESIGN.md`). A domain build now imports the domain-applicable platform invariants as checked protocol state, runs them against its own artifacts, and drops them before materialize. Collatz is governed by 63 invariants (62 imported + 1 native surface-closure it declares for its own CTs); its assertion coverage is recorded in evidence. The original finding is retained below for provenance.
 
 **Severity: blocking.** A domain build performs no assertion checking.
 
@@ -81,3 +83,17 @@ Two artifacts cannot satisfy a closed schema without authoring transport governa
 - `SURFACE_CONTRACT_TRANSPORT_SEND_V0` declares `governs: []` with no `capability_id_prefix`, making it reachable by neither exact nor prefix lookup. It canonicalizes a `SEND` op for a transport capability that does not yet exist.
 
 Both are premature placeholders for frozen work. The consistent disposition is the one applied to `CONSTITUTION_ENTITY_V0`: exclude from the normative surface until the owning phase is authorized, and record the exclusion in the harvest ledger. Supplying the missing fields instead would mean authoring transport design decisions inside a closure exercise.
+
+---
+
+## 5. Artifact-identity hashes do not prove assertion equivalence
+
+**Severity: methodology.** Throughout this effort the `graph_topology_hash` / `graph_address_hash` no-op proof was used to show a change was semantically neutral. It is sound for what it measures — the *compiled artifacts* — but it has a blind spot that stage 3 exposed concretely.
+
+Assertions do not write to the graph. They read it and either pass or raise. So a change that alters *what an assertion checks* — even one that silently disables it — leaves every compiled artifact, and therefore every hash, bit-identical. The stage-1 scope overload made the platform CT/CS surface-closure checks vacuous; the platform build stayed green with an identical hash, and the no-op proof did not flag it. The check had stopped checking, and nothing in the artifact identity could show it.
+
+**The rule:** artifact-identity equivalence proves *what was compiled*, never *which invariants verified it*. The two must be evidenced separately.
+
+**Mitigation in place.** S4 now records per-assertion coverage — which derived ASSERTs executed, their pass/fail, violation counts, and whether the enforcing invariant was native or imported — into build metadata and the evidence projection (`assertions_executed`, `assertions_passed`, `assertions_imported`). A build that stops running an assertion now shows a drop in coverage even when its artifact hashes are unchanged.
+
+**Still open.** Coverage records *that* an assertion ran, not *that it would have caught a violation* — a handler can execute and be vacuous (empty subject set). A stronger guarantee is mutation-style assertion testing (perturb an artifact, confirm the expected assertion fires), which the `machine_key_mutation.py` approach could be extended to cover. Recommended before the domain governance model is relied on as a conformance gate.

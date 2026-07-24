@@ -30,13 +30,25 @@ Platform-only invariants (`COMPILER_NO_EXECUTION`, `HANDLER_REGISTRY_CLOSED`, `S
 
 Today that split is a **heuristic** — the handler string-matches `is_domain_build and "PLATFORM" in scope`, and only 2 invariants declare `assert_projection.scope.applies_to` at all. Inference is the defect we spent this whole effort removing. The split must be **declared**.
 
-**The mechanism reuses one existing field rather than inventing an axis.** `assert_projection.scope.applies_to` becomes required on every invariant and becomes the single source of truth. Applicability is *derived* from set intersection, not separately declared:
+> **Correction (stage 3 finding).** The original design proposed reusing `scope.applies_to` as the applicability field. That was wrong: `scope.applies_to` already carried a distinct meaning — the **layer/surface** an assertion governs (`PLATFORM`, a domain layer), read by the surface-closure handlers. Overloading it silently made platform surface-closure vacuous. The two axes are now separate fields, one meaning each:
+>
+> - **`assert_projection.applies_to_kinds`** — the artifact **kinds** an invariant governs. Authoritative for the import filter. Required on every invariant.
+> - **`assert_projection.scope.applies_to`** — the **layer/surface** an invariant governs. Optional; present only where a surface-scoped handler needs it. A layer-scoped invariant is surface-specific and is *not* generically imported — each surface declares its own (see §2b).
+
+**Applicability is *derived* from set intersection on `applies_to_kinds`, not separately declared:**
 
 ```
 domain-instantiated kinds = {WF, CC, CS, CT, RB, AC, IN, EV, TI, TE}
 
-invariant is domain-applicable  ⟺  scope.applies_to ∩ domain-instantiated ≠ ∅
+invariant is domain-applicable  ⟺  applies_to_kinds ∩ domain-instantiated ≠ ∅
+                                AND no layer/surface scope.applies_to (§2b)
 ```
+
+### 2b. Surface-owned invariants — not blanket-imported
+
+A surface-closure invariant (`CT_SURFACE_CLOSED`, `CS_SURFACE_CLOSED`) declares an *allowed set* that is a property of one surface. Importing the platform's into a domain would check domain CTs against the *platform's* allowed list — meaningless. Per rule-ownership doctrine, a domain reuses the generic closure *handler* but supplies its own *allowed list* via its own native invariant.
+
+The declared signal is the layer scope: an invariant with `scope.applies_to` is surface-specific and excluded from the generic import. The domain authors its own (e.g. collatz's `INVARIANT_CT_SURFACE_CLOSED_WORKLOAD_V0`, `scope.applies_to: [WORKLOAD]`, allowed = its own CTs) — a native domain invariant that runs against the domain's surface. Reference-closure invariants (`PROTOCOL_SURFACE_CLOSED`, `BINDING_SURFACE_CLOSED`) carry no layer scope and *are* imported: they check that references resolve, which is surface-independent.
 
 **The scope vocabulary is closed and every token is concrete — there is no "all" token.** This is the patch: a token that reads as "all" but means "all platform-produced" is exactly the ambiguity class this effort removes, so it does not exist. The vocabulary is:
 
