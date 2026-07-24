@@ -31,6 +31,8 @@ CANONICAL_ROOTS = [
 ]
 REGISTRY_GLOBS = [
     str(WORKSPACE / "platform" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "platform" / "capability_transforms" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "platform" / "capability_side_effects" / "registry" / "**" / "*.md"),
     str(WORKSPACE / "platform" / "reference_workloads" / "collatz" / "registry" / "**" / "*.md"),
 ]
 
@@ -62,9 +64,6 @@ def main() -> int:
         for path_str in sorted(glob.glob(pattern, recursive=True)):
             path = Path(path_str)
             code = path.stem
-            fqdn = m.get(code)
-            if fqdn is None:
-                raise SystemExit(f"no compiled FQDN for {code} — recompile first")
             text = path.read_text(encoding="utf-8")
             mm = MACHINE.search(text)
             if not mm:
@@ -72,9 +71,16 @@ def main() -> int:
             data = yaml.safe_load(mm.group("y").rstrip())
             if not isinstance(data, dict):
                 continue
-            if data.get("fqdn") == fqdn and list(data)[0] == "fqdn":
+            # An artifact that already declares a well-formed fqdn as its first key is authoritative
+            # (e.g. a newly authored artifact); leave it. Only fall back to the compiled canonical map
+            # for artifacts still lacking a declaration.
+            existing = data.get("fqdn")
+            if isinstance(existing, str) and "::" in existing and list(data)[0] == "fqdn":
                 skipped += 1
                 continue
+            fqdn = m.get(code) or existing
+            if not (isinstance(fqdn, str) and "::" in fqdn):
+                raise SystemExit(f"no FQDN for {code} — not in canonical map and none declared")
             # fqdn first, then existing keys (minus any stale fqdn)
             rest = {k: v for k, v in data.items() if k != "fqdn"}
             ordered = {"fqdn": fqdn, **rest}

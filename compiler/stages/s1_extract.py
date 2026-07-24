@@ -142,6 +142,13 @@ def s1_extract(state: State) -> State:
     discovery_layers = {**discovery_layers, **domain_layers}    # _discover_artifacts layer-config lookup
     identity_rules = list(build_config.get("identity_rules", []) or []) + list(identity_rules)
 
+    # Authorized namespace allowlist: every namespace an identity rule can produce. A declared FQDN
+    # whose namespace is outside this set is unauthorized (INVARIANT_FQDN_NAMESPACE_AUTHORIZED_V0).
+    # This is the identity rules repurposed from derivation to authorization.
+    authorized_namespaces = sorted({
+        r.get("namespace") for r in identity_rules if r.get("namespace")
+    })
+
     # --- Step 3: Discover artifact files ---
     discovered = _discover_artifacts(
         search_layers, discovery_layers, discovery_rules,
@@ -240,6 +247,7 @@ def s1_extract(state: State) -> State:
     # Record extraction metadata
     state = state.with_metadata("node_count", len(graph.nodes))
     state = state.with_metadata("edge_count", len(graph.edges))
+    state = state.with_metadata("authorized_namespaces", authorized_namespaces)
     if governance_closure is not None:
         state = state.with_metadata("governance_closure", governance_closure)
 
@@ -400,50 +408,75 @@ def _scan_layer(
         artifacts.append(entry)
 
 
+def _read_declared_fqdn(source_path: str) -> str | None:
+    """Extract the authoritative `fqdn` declared in an artifact's Machine block.
+
+    Identity is declared by the artifact, not derived from its folder. Returns None if the
+    file has no Machine block or no `fqdn` field (a hard error upstream).
+    """
+    try:
+        content = Path(source_path).read_text(encoding="utf-8")
+    except Exception:
+        return None
+    m = _MACHINE_BLOCK_PATTERN.search(content)
+    if not m:
+        return None
+    try:
+        block = yaml.safe_load(m.group("machine_yaml").rstrip())
+    except yaml.YAMLError:
+        return None
+    if isinstance(block, dict):
+        fq = block.get("fqdn")
+        return fq if isinstance(fq, str) and "::" in fq else None
+    return None
+
+
 def _derive_fqdns(
     discovered: list[dict[str, Any]],
     identity_rules: list[dict[str, Any]],
     errors: list[CompilerError],
 ) -> None:
-    """Derive namespace and FQDN for each discovered artifact."""
+    """Resolve each artifact's identity from its DECLARED `fqdn`.
+
+    The filesystem location has no semantic authority over identity (design: semantic alignment).
+    The path-derived value is still computed and retained as `derived_fqdn` — a discovery default
+    and the subject of the migration cross-check (INVARIANT_IDENTITY_MIGRATION_CROSSCHECK_V0) —
+    but the authoritative `namespace`/`fqdn` come from the artifact's own declaration.
+    """
     for artifact in discovered:
         module_path = artifact.get("module_path", "")
         layer_code = artifact.get("layer_code")
         domain_name = artifact.get("domain_name")
 
+        # --- path-derived value (discovery default + cross-check target) ---
         if layer_code == "DOMAINS":
-            if not domain_name:
-                errors.append(CompilerError(
-                    code=ErrorCode.E901_INTERNAL_ERROR,
-                    message=f"DOMAINS artifact missing domain_name: {artifact['artifact_code']}",
-                    phase="S1_EXTRACT",
-                ))
-                continue
-            namespace = f"domains.{domain_name}"
+            derived_ns = f"domains.{domain_name}" if domain_name else None
         else:
-            namespace = None
+            derived_ns = None
             for rule in identity_rules:
                 if rule.get("match", "") in module_path:
                     template = rule.get("namespace_template")
-                    if template:
-                        namespace = template.format(module_path=module_path)
-                    else:
-                        namespace = rule.get("namespace", "")
+                    derived_ns = template.format(module_path=module_path) if template else rule.get("namespace", "")
                     break
+        derived_fqdn = f"{derived_ns}::{artifact['artifact_code']}" if derived_ns else None
+        artifact["derived_namespace"] = derived_ns
+        artifact["derived_fqdn"] = derived_fqdn
 
-            if not namespace:
-                errors.append(CompilerError(
-                    code=ErrorCode.E901_INTERNAL_ERROR,
-                    message=(
-                        f"No namespace rule matched module_path='{module_path}' "
-                        f"(artifact_code={artifact['artifact_code']})"
-                    ),
-                    phase="S1_EXTRACT",
-                ))
-                continue
+        # --- authoritative identity: the artifact's declared fqdn ---
+        declared = _read_declared_fqdn(artifact.get("source_path", ""))
+        if not declared:
+            errors.append(CompilerError(
+                code=ErrorCode.E104_INVALID_FQDN,
+                message=(
+                    f"Artifact declares no authoritative `fqdn` in its Machine block "
+                    f"(artifact_code={artifact['artifact_code']}). Identity must be declared."
+                ),
+                phase="S1_EXTRACT",
+            ))
+            continue
 
-        artifact["namespace"] = namespace
-        artifact["fqdn"] = f"{namespace}::{artifact['artifact_code']}"
+        artifact["namespace"] = declared.split("::", 1)[0]
+        artifact["fqdn"] = declared
 
 
 def _inject_imported_capabilities(
@@ -703,6 +736,7 @@ def _parse_artifact_to_node(
             "module_path": artifact.get("module_path", ""),
             "content": content_raw,
             "references": sorted(references),
+            "derived_fqdn": artifact.get("derived_fqdn", ""),
         },
     )
 

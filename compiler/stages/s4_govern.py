@@ -205,6 +205,7 @@ def _execute_assertions(
         "layer_category_map": layer_category_map,
         "is_domain_build": is_domain_build,
         "imported_surface_fqdns": imported_surface_fqdns,
+        "authorized_namespaces": list(dict(state.stage_metadata).get("authorized_namespaces", []) or []),
         **structural_ctx,
     }
 
