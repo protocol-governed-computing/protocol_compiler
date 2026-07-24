@@ -599,24 +599,30 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
 
     schema_dir = governance_registry_root() / "FB_CONSTITUTION" / "schemas"
 
-    schema_file_map = {
-        NodeKind.CT: "SCHEMA_CAPABILITY_TRANSFORM_V0.json",
-        NodeKind.CS: "SCHEMA_CAPABILITY_SIDE_EFFECT_V0.json",
-        NodeKind.CC: "SCHEMA_CAPABILITY_CONTRACT_V0.json",
-        NodeKind.WF: "SCHEMA_WORKFLOW_V0.json",
-        NodeKind.RB: "SCHEMA_RUNTIME_BINDING_V0.json",
-    }
+    # Which artifact kinds are schema-governed is declared by the protocol, not by the compiler:
+    # STRUCTURE_SCHEMA_DISPATCH_V0 maps artifact-code type prefix -> schema filename. The key is
+    # the prefix rather than NodeKind because INVARIANT, CONSTITUTION, STRUCTURE and SURFACE all
+    # collapse to NodeKind.GOVERNANCE, so a NodeKind key could never select between them.
+    from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
 
-    loaded_schemas: dict[NodeKind, Any] = {}
-    for kind, schema_file in schema_file_map.items():
+    dispatch = load_structure_artifact("STRUCTURE_SCHEMA_DISPATCH_V0", get_bootstrap_search_roots())
+    schema_file_map = (dispatch.get("core", {}) or {}).get("schema_dispatch", {})
+    if not schema_file_map:
+        raise ValueError(
+            "STRUCTURE_SCHEMA_DISPATCH_V0 declares no core.schema_dispatch — "
+            "no artifact kind would be schema-governed"
+        )
+
+    loaded_schemas: dict[str, Any] = {}
+    for prefix, schema_file in schema_file_map.items():
         schema_path = schema_dir / schema_file
         if schema_path.exists():
             with open(schema_path) as f:
-                loaded_schemas[kind] = json.load(f)
+                loaded_schemas[prefix] = json.load(f)
 
     results: dict[str, dict] = {}
     for fqdn, node in graph.nodes.items():
-        schema = loaded_schemas.get(node.kind)
+        schema = loaded_schemas.get(node.artifact_code.split("_")[0])
         if schema is None:
             continue
 

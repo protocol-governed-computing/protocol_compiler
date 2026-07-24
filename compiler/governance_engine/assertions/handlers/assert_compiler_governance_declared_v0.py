@@ -46,20 +46,10 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 "governed boundary so CONSTITUTION_COMPILER_V0 is discovered and compiled"
             ),
         })
-    else:
-        frontmatter = constitution.get("frontmatter", {})
-        rules = frontmatter.get("rules", [])
-
-        if not rules:
-            violations.append({
-                "fqdn": _COMPILER_CONSTITUTION_FQDN,
-                "rule": "fb.constitution::INVARIANT_COMPILER_GOVERNANCE_DECLARED_V0",
-                "message": (
-                    f"{_COMPILER_CONSTITUTION_FQDN} machine block has no declared rules — "
-                    "governance declaration surface is empty"
-                ),
-                "fix": "Restore the rules list in CONSTITUTION_COMPILER_V0 machine block",
-            })
+    # The emptiness check that stood here is retired: SCHEMA_CONSTITUTION_V0 requires a
+    # non-empty rules list on every constitution, and ASSERT_GOVERNANCE_DECLARATION_RESOLVES_V0
+    # requires each rule to name a real enforcing invariant. Presence of the compiler
+    # constitution in the compiled set is the only claim left for this handler to make.
 
     if violations:
         return {

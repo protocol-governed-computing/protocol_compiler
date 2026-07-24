@@ -16,6 +16,7 @@ from typing import Any
 from compiler.graph.types import NodeKind
 from compiler.graph.node import Node
 from compiler.graph.graph import Graph, GraphBuilder
+from compiler.graph.hashing import compute_topology_hash
 from compiler.graph.state import State
 from compiler.graph.trace import TraceEvent
 from compiler.graph.evidence import EventFamily
@@ -114,11 +115,16 @@ def s5_construct(state: State) -> State:
     if errors:
         state = state.with_errors(*errors)
 
-    new_graph = builder.build()
+    # Topology hash is computed here, where the graph is final: S5 is the last stage that
+    # adds nodes or edges, and the hash covers node identity + typed edges (not addresses,
+    # which are already sealed by S3's address_hash).
+    builder.set_topology_hash(compute_topology_hash(builder.build()))
+    new_graph = builder.build()  # rebuilt so the graph carries the hash just set
     state = state.with_graph(new_graph)
 
     ir_count = sum(1 for n in new_graph.nodes.values() if n.ir is not None)
     state = state.with_metadata("ir_count", ir_count)
+    state = state.with_metadata("topology_hash", new_graph.topology_hash)
 
     trace.append(TraceEvent.create(
         stage="S5_CONSTRUCT",
