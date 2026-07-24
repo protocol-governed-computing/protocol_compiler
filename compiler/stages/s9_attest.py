@@ -135,6 +135,14 @@ def s9_attest(state: State) -> State:
         "signed_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    # Provenance binding (design §6): record the governance closure this build was checked against.
+    # Present only for a domain build (a platform build imports no governance). Lets assembly and
+    # runtime verify a domain was compiled against exactly this platform governance, not silently
+    # re-paired with a different version.
+    governance_closure = dict(state.stage_metadata).get("governance_closure")
+    if governance_closure:
+        attestation["imported_governance"] = governance_closure
+
     output_path = structure_dir / "structure_attestation.json"
     try:
         json_content = json.dumps(attestation, indent=2, sort_keys=True)

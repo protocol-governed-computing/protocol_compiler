@@ -222,6 +222,11 @@ def s1_extract(state: State) -> State:
     # filtered out by declared scope. No-op for the platform build (no import_surface).
     _inject_imported_governance(builder, build_config, errors)
 
+    # Provenance (design §6): bind the exact governance closure this build was checked against, so a
+    # domain can never be re-verified — or paired at runtime — under different governance than it
+    # compiled under. Empty on the platform build (nothing imported).
+    governance_closure = _compute_governance_closure(builder, build_config)
+
     graph = builder.build()
     state = state.with_graph(graph)
 
@@ -235,8 +240,43 @@ def s1_extract(state: State) -> State:
     # Record extraction metadata
     state = state.with_metadata("node_count", len(graph.nodes))
     state = state.with_metadata("edge_count", len(graph.edges))
+    if governance_closure is not None:
+        state = state.with_metadata("governance_closure", governance_closure)
 
     return state
+
+
+def _compute_governance_closure(
+    builder: GraphBuilder,
+    build_config: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Deterministic digest over the exact imported governance set (design §6).
+
+    The hash covers each imported invariant's FQDN + content_hash, sorted — so it changes only
+    when the governance that checked this build changes, not when unrelated platform capabilities
+    do. Returns None for the platform build (no import_surface, nothing imported).
+    """
+    imp = (build_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    domain = imp.get("domain")
+    if not domain:
+        return None
+
+    members = sorted(
+        (n.fqdn, n.content_hash)
+        for n in builder._nodes.values()
+        if (n.metadata or {}).get("import_role") == "governance"
+    )
+    h = hashlib.sha256()
+    for fqdn, content_hash in members:
+        h.update(fqdn.encode("utf-8"))
+        h.update(b"\x00")
+        h.update((content_hash or "").encode("utf-8"))
+        h.update(b"\x00")
+    return {
+        "import_domain": domain,
+        "governance_closure_hash": h.hexdigest(),
+        "invariant_count": len(members),
+    }
 
 
 def _discover_artifacts(
