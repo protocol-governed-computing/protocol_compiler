@@ -217,6 +217,11 @@ def s1_extract(state: State) -> State:
     # "static link"). Governance imports stay resolve-only (tolerated + dropped in S2).
     _inject_imported_capabilities(builder, all_refs, build_config, errors)
 
+    # Import platform governance as checked protocol state (design §2). Domain-applicable invariants
+    # enter the graph so S4 can assert them against domain artifacts; platform-only invariants are
+    # filtered out by declared scope. No-op for the platform build (no import_surface).
+    _inject_imported_governance(builder, build_config, errors)
+
     graph = builder.build()
     state = state.with_graph(graph)
 
@@ -460,6 +465,80 @@ def _inject_imported_capabilities(
             domain_name=None,
             metadata={
                 "imported": True,
+                "import_role": "execution",   # linked into the domain runtime AND emitted
+                "import_domain": domain,
+                "module_path": raw.get("module_path", ""),
+            },
+        ))
+
+
+# Artifact kinds a domain build instantiates. An imported invariant is domain-applicable
+# iff its declared scope.applies_to intersects this set (design §2). The set is the single
+# derivation point for domain-vs-platform applicability — never a declared build token.
+_DOMAIN_INSTANTIATED = frozenset({"WF", "CC", "CS", "CT", "RB", "AC", "IN", "EV", "TI", "TE"})
+
+
+def _inject_imported_governance(
+    builder: GraphBuilder,
+    build_config: dict[str, Any],
+    errors: list[CompilerError],
+) -> None:
+    """Import platform governance as checked protocol state.
+
+    Domain-applicable INVARIANT nodes are lifted from the imported platform snapshot into this
+    domain's graph so S4 can assert them against the domain's own artifacts. Unlike capabilities
+    (import_role="execution", linked + emitted), governance is import_role="governance": it acts on
+    the domain graph and is dropped before materialize (canonical projection skips it) — it is the
+    asserter, never a subject, and never part of the domain's artifact set.
+
+    Applicability is derived, not declared: an invariant is imported iff its scope.applies_to
+    intersects the domain-instantiated kinds. Platform-only invariants (COMPILER/INVARIANT/
+    CONSTITUTION/SNAPSHOT/... scopes) have no domain subject and are never imported.
+    """
+    import json
+
+    imp = (build_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    domain = imp.get("domain")
+    if not domain:
+        return  # platform build: no import_surface, no injection — must stay a no-op
+
+    from compiler.governance_engine.platform_root import platform_root
+    inv_root = platform_root() / "snapshot" / "compiled" / "canonical" / "invariants"
+    if not inv_root.is_dir():
+        return
+
+    search_layers = (build_config.get("artifact_discovery", {}) or {}).get("search_layers", [])
+    if not search_layers:
+        return
+    domain_layer = search_layers[0]
+
+    for path in sorted(inv_root.glob("*.json")):
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        fm = raw.get("frontmatter", {}) or {}
+        scope = ((fm.get("assert_projection", {}) or {}).get("scope", {}) or {}).get("applies_to", []) or []
+        if not (set(scope) & _DOMAIN_INSTANTIATED):
+            continue  # platform-only invariant — no domain subject
+        fqdn = raw.get("fqdn_id")
+        if not fqdn or fqdn in builder._nodes:
+            continue
+        namespace, artifact_code = fqdn.split("::", 1)
+        kind = _type_to_kind(raw.get("artifact_type"))
+        if kind is None:
+            continue
+        m = re.search(r"_V(\d+)$", artifact_code)
+        builder.add_node(Node.create(
+            fqdn=fqdn,
+            kind=kind,
+            namespace=namespace,
+            artifact_code=artifact_code,
+            version=f"V{m.group(1)}" if m else "V0",
+            layer_code=domain_layer,
+            content_hash=raw.get("content_hash", ""),
+            frontmatter=fm,                      # carries scope + assert_projection → derived ASSERT in S4
+            domain_name=None,
+            metadata={
+                "imported": True,
+                "import_role": "governance",     # asserts the domain graph; NOT emitted
                 "import_domain": domain,
                 "module_path": raw.get("module_path", ""),
             },

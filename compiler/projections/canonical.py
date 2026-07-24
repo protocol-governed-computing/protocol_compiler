@@ -69,6 +69,11 @@ def project_canonical(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         if node.kind == NodeKind.TEST_DATA:
             continue
 
+        # Skip imported governance — it asserts this domain's graph but is platform-owned and
+        # unemitted (design §1). import_role="execution" (capabilities) is materialized normally.
+        if (node.metadata or {}).get("import_role") == "governance":
+            continue
+
 
         artifact_dict = _project_node(node)
 

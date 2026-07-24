@@ -122,6 +122,10 @@ def _execute_assertions(
     invariant_nodes = [
         node for node in graph.nodes.values()
         if node.frontmatter.get("artifact_kind") == "INVARIANT"
+        # STAGE 2 GATE: imported governance is injected and survives to here, but is not yet
+        # executed against the domain graph. Stage 3 removes this clause so imported invariants
+        # run. Kept separate so stage 2 is a proven no-op for the domain outcome.
+        and (node.metadata or {}).get("import_role") != "governance"
     ]
     if not invariant_nodes:
         return errors, warnings
