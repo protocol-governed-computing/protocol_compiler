@@ -150,7 +150,7 @@ class LayerResolver:
         from compiler.governance_engine.platform_root import governance_registry_root
         discovery_path = (
             governance_registry_root() /
-            "FB_CONSTITUTION" / "structures" / "STRUCTURE_DISCOVERY_V0.md"
+            "declaration" / "structure" / "structures" / "STRUCTURE_DISCOVERY_V0.md"
         )
 
         if not discovery_path.exists():
@@ -191,7 +191,7 @@ class LayerResolver:
         from compiler.governance_engine.platform_root import governance_registry_root
         path = (
             governance_registry_root() /
-            "FB_CONSTITUTION" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
+            "declaration" / "structure" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
         )
 
         if not path.exists():

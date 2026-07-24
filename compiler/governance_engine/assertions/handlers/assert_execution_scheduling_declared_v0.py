@@ -33,7 +33,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             "fqdn": "fb.execution_scheduling::ASSERT_EXECUTION_SCHEDULING_DECLARED_V0",
             "rule": "fb.execution_scheduling::INVARIANT_EXECUTION_SCHEDULING_DECLARED_V0",
             "message": "No active scheduling contract found in FB_EXECUTION_SCHEDULING",
-            "fix": "Add a scheduling contract with status: active to FB_EXECUTION_SCHEDULING/scheduling_contracts/",
+            "fix": "Add a scheduling contract with status: active to execution/envelope/scheduling/",
         })
     else:
         active_codes = [a.get("artifact_code") for a in active]

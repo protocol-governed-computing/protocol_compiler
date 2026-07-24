@@ -33,7 +33,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             "fqdn": "fb.security_domain::ASSERT_SECURITY_DOMAIN_DECLARED_V0",
             "rule": "fb.security_domain::INVARIANT_SECURITY_DOMAIN_DECLARED_V0",
             "message": "No active security domain contract found in FB_SECURITY_DOMAIN",
-            "fix": "Add a security domain contract with status: active to FB_SECURITY_DOMAIN/security_domain_contracts/",
+            "fix": "Add a security domain contract with status: active to execution/envelope/security_domain/",
         })
     else:
         active_codes = [a.get("artifact_code") for a in active]

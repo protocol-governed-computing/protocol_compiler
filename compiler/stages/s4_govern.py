@@ -674,7 +674,7 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
     from jsonschema import Draft202012Validator
     from compiler.governance_engine.platform_root import governance_registry_root
 
-    schema_dir = governance_registry_root() / "FB_CONSTITUTION" / "schemas"
+    schema_dir = governance_registry_root() / "declaration" / "schema"
 
     # Which artifact kinds are schema-governed is declared by the protocol, not by the compiler:
     # STRUCTURE_SCHEMA_DISPATCH_V0 maps artifact-code type prefix -> schema filename. The key is

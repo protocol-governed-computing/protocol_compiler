@@ -33,7 +33,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             "fqdn": "fb.cryptographic_trust::ASSERT_CRYPTOGRAPHIC_TRUST_DECLARED_V0",
             "rule": "fb.cryptographic_trust::INVARIANT_CRYPTOGRAPHIC_TRUST_DECLARED_V0",
             "message": "No active trust contract found in FB_CRYPTOGRAPHIC_TRUST",
-            "fix": "Add a trust contract with status: active to FB_CRYPTOGRAPHIC_TRUST/trust_contracts/",
+            "fix": "Add a trust contract with status: active to execution/envelope/cryptographic_trust/",
         })
     else:
         active_codes = [a.get("artifact_code") for a in active]

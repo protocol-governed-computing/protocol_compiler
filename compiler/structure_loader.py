@@ -34,11 +34,10 @@ def get_bootstrap_search_roots() -> list[Path]:
     import os
     from compiler.governance_engine.platform_root import governance_registry_root
     registry = governance_registry_root()
-    roots = [
-        fb_dir / "structures"
-        for fb_dir in registry.iterdir()
-        if fb_dir.is_dir() and fb_dir.name.startswith("FB_") and (fb_dir / "structures").exists()
-    ]
+    # Any `structures/` directory anywhere under registry/ is a bootstrap root. This is
+    # subfolder-agnostic: it does not depend on the FB_* layout (identity is declared, not
+    # folder-derived), so the registry can be organized semantically without breaking bootstrap.
+    roots = [d for d in registry.rglob("structures") if d.is_dir()]
     # Domain-extension: each PGC_DOMAIN_ROOTS entry contributes its own registry/structures, so a
     # domain's build manifest is found WITHOUT editing the platform. Unset (platform build) → no-op.
     for d in os.environ.get("PGC_DOMAIN_ROOTS", "").split(os.pathsep):
