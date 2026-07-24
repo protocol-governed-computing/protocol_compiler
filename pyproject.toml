@@ -35,17 +35,16 @@ classifiers = [
 ]
 
 dependencies = [
-  "pgs-governance",
   "click",
   "pyyaml",
   "jsonschema"
 ]
 
 [project.scripts]
-pi = "pgs_compiler.inspection.cli:main"
+pgc_compile = "compiler.cli:cli"
 
 [project.urls]
-Repository = "https://github.com/bachipeachy/pgs_compiler"
+Repository = "https://github.com/protocol-governed-computing/protocol_compiler"
 
 [tool.setuptools]
 include-package-data = true
