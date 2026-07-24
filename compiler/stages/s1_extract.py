@@ -438,31 +438,12 @@ def _derive_fqdns(
 ) -> None:
     """Resolve each artifact's identity from its DECLARED `fqdn`.
 
-    The filesystem location has no semantic authority over identity (design: semantic alignment).
-    The path-derived value is still computed and retained as `derived_fqdn` — a discovery default
-    and the subject of the migration cross-check (INVARIANT_IDENTITY_MIGRATION_CROSSCHECK_V0) —
-    but the authoritative `namespace`/`fqdn` come from the artifact's own declaration.
+    The filesystem location has no semantic authority over identity (semantic alignment). Path
+    derivation is fully retired: identity is the artifact's own declaration, and the namespace is
+    checked against the authorized set by INVARIANT_FQDN_NAMESPACE_AUTHORIZED_V0. `identity_rules`
+    is unused here — it supplies only the authorized-namespace allowlist, built in s1_extract.
     """
     for artifact in discovered:
-        module_path = artifact.get("module_path", "")
-        layer_code = artifact.get("layer_code")
-        domain_name = artifact.get("domain_name")
-
-        # --- path-derived value (discovery default + cross-check target) ---
-        if layer_code == "DOMAINS":
-            derived_ns = f"domains.{domain_name}" if domain_name else None
-        else:
-            derived_ns = None
-            for rule in identity_rules:
-                if rule.get("match", "") in module_path:
-                    template = rule.get("namespace_template")
-                    derived_ns = template.format(module_path=module_path) if template else rule.get("namespace", "")
-                    break
-        derived_fqdn = f"{derived_ns}::{artifact['artifact_code']}" if derived_ns else None
-        artifact["derived_namespace"] = derived_ns
-        artifact["derived_fqdn"] = derived_fqdn
-
-        # --- authoritative identity: the artifact's declared fqdn ---
         declared = _read_declared_fqdn(artifact.get("source_path", ""))
         if not declared:
             errors.append(CompilerError(
@@ -736,7 +717,6 @@ def _parse_artifact_to_node(
             "module_path": artifact.get("module_path", ""),
             "content": content_raw,
             "references": sorted(references),
-            "derived_fqdn": artifact.get("derived_fqdn", ""),
         },
     )
 
