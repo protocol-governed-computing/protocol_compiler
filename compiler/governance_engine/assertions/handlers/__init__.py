@@ -23,7 +23,6 @@ from compiler.governance_engine.assertions.handlers.assert_cs_surface_closed_v0 
 from compiler.governance_engine.assertions.handlers.assert_ct_output_contract_match_v0 import execute as assert_ct_output_contract_match_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_closed_v0 import execute as assert_ct_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_fqdn_only_references_v0 import execute as assert_fqdn_only_references_v0
-from compiler.governance_engine.assertions.handlers.assert_identity_migration_crosscheck_v0 import execute as assert_identity_migration_crosscheck_v0
 from compiler.governance_engine.assertions.handlers.assert_fqdn_namespace_authorized_v0 import execute as assert_fqdn_namespace_authorized_v0
 from compiler.governance_engine.assertions.handlers.assert_structure_paths_well_formed_v0 import execute as assert_structure_paths_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_ac_declaration_well_formed_v0 import execute as assert_ac_declaration_well_formed_v0
@@ -154,7 +153,6 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_security_domain_declared_v0": assert_security_domain_declared_v0,
     "pgs_governance.registry.handlers.assert_cryptographic_trust_declared_v0": assert_cryptographic_trust_declared_v0,
     "pgs_governance.registry.handlers.assert_handler_registry_closed_v0": assert_handler_registry_closed_v0,
-    "pgs_governance.registry.handlers.assert_identity_migration_crosscheck_v0": assert_identity_migration_crosscheck_v0,
     "pgs_governance.registry.handlers.assert_fqdn_namespace_authorized_v0": assert_fqdn_namespace_authorized_v0,
     "pgs_governance.registry.handlers.assert_structure_paths_well_formed_v0": assert_structure_paths_well_formed_v0,
     "pgs_governance.registry.handlers.assert_ac_declaration_well_formed_v0": assert_ac_declaration_well_formed_v0,
