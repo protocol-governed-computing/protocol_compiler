@@ -7,12 +7,14 @@
 # its build manifest declares its own layer + namespace rule, so NO compiler edit is needed.
 #
 # Usage:
-#   ./compile_domain.sh <domain_root> [STRUCTURE_CODE]
+#   ./compile_domain.sh <domain_root> [STRUCTURE_CODE] [flags]
 #     <domain_root> — dir containing registry/structures/STRUCTURE_BUILD_<X>_CONFIG_V0.md
 #     STRUCTURE_CODE — optional; auto-discovered from the domain's registry/structures if omitted
+#     flags — anything starting with '-' (e.g. -v/--verbose) is forwarded to the compiler
 #
 # Example:
 #   ./compile_domain.sh ../platform/reference_workloads/collatz
+#   ./compile_domain.sh ../platform/reference_workloads/collatz -v
 #
 # Env overrides: PGC_PLATFORM_ROOT (default sibling ../platform), PYTHON (default python).
 #
@@ -23,9 +25,19 @@ UMBRELLA="$(cd "$SCRIPT_DIR/.." && pwd)"                       # protocol-govern
 PYTHON="${PYTHON:-python}"
 PGC_PLATFORM_ROOT="${PGC_PLATFORM_ROOT:-$UMBRELLA/platform}"
 
-DOMAIN_ROOT="${1:?usage: compile_domain.sh <domain_root> [STRUCTURE_CODE]}"
+DOMAIN_ROOT="${1:?usage: compile_domain.sh <domain_root> [STRUCTURE_CODE] [flags]}"
 DOMAIN_ROOT="$(cd "$DOMAIN_ROOT" && pwd)"
-STRUCTURE="${2:-}"
+shift
+
+# Separate the optional STRUCTURE positional from pass-through flags (e.g. -v).
+STRUCTURE=""
+FLAGS=()
+for arg in "$@"; do
+  case "$arg" in
+    -*) FLAGS+=("$arg") ;;
+    *)  if [[ -z "$STRUCTURE" ]]; then STRUCTURE="$arg"; else FLAGS+=("$arg"); fi ;;
+  esac
+done
 
 if [[ -z "$STRUCTURE" ]]; then
   manifest="$(ls "$DOMAIN_ROOT"/registry/structures/STRUCTURE_BUILD_*_CONFIG_V*.md 2>/dev/null | head -1 || true)"
@@ -45,4 +57,4 @@ echo "  platform : $PGC_PLATFORM_ROOT (import surface)"
 echo "  out      : $PGC_SNAPSHOT_ROOT"
 echo
 
-exec "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE"
+exec "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}

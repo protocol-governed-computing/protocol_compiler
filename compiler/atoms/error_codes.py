@@ -46,6 +46,10 @@ class ErrorCode(Enum):
     E005_DEPRECATED_ARTIFACT = "E005_DEPRECATED_ARTIFACT"
     """Artifact marked status=deprecated; skipped during extraction."""
 
+    E006_TRANSPORT_KIND_DEFERRED = "E006_TRANSPORT_KIND_DEFERRED"
+    """Transport (TI/TE) artifact carries no canonical artifact_kind; its kind is resolved from
+    the reserved transport prefix pending the Transport specification. Warning only."""
+
     # ==================
     # Parse (E1xx)
     # ==================

@@ -43,14 +43,15 @@ class ArtifactKindDescriptor:
     materialization_directory: str | None = None   # output dir under artifacts/, or None if not materialized here
     pps_section: str | None = None      # PPS authoring-surface section, or None if not source-inspectable
     canonical_keeps_prefix: bool = True # in canonical projection: keep this prefix vs collapse to node_kind
+    artifact_kind: str | None = None    # canonical in-block discriminator (Kind Vocabulary); None = not yet authorized
 
     @property
     def inspectable_source(self) -> bool:
         return self.pps_section is not None
 
 
-def _d(prefix, node_kind, disposition, directory=None, pps=None, keeps_prefix=True):
-    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, pps, keeps_prefix)
+def _d(prefix, node_kind, disposition, directory=None, pps=None, keeps_prefix=True, ak=None):
+    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, pps, keeps_prefix, ak)
 
 
 # The complete built-in table. Values are the EXACT union of the five legacy maps, so the registry is
@@ -59,27 +60,27 @@ def _d(prefix, node_kind, disposition, directory=None, pps=None, keeps_prefix=Tr
 # else they collapse to "GOVERNANCE".
 _DESCRIPTORS: tuple[ArtifactKindDescriptor, ...] = (
     # EXECUTABLE — execution topology
-    _d("WF", "WF", EXECUTABLE, "workflows", "workflows"),
-    _d("CC", "CC", EXECUTABLE, "capability_contracts", "capability_contracts"),
-    _d("CT", "CT", EXECUTABLE, "capability_transforms", "capability_transforms"),
-    _d("CS", "CS", EXECUTABLE, "capability_side_effects", "capability_side_effects"),
-    _d("IN", "IN", EXECUTABLE, "intents", "intents"),
-    _d("TI", "TI", EXECUTABLE, "ingress_intents"),
-    _d("TE", "TE", EXECUTABLE, "transport/egress"),
-    _d("RB", "RB", EXECUTABLE, "runtime_bindings", "runtime_bindings"),
-    _d("EV", "EV", EXECUTABLE, "events"),
-    _d("AC", "AC", EXECUTABLE, "actors"),
+    _d("WF", "WF", EXECUTABLE, "workflows", "workflows", ak="WORKFLOW"),
+    _d("CC", "CC", EXECUTABLE, "capability_contracts", "capability_contracts", ak="CAPABILITY_CONTRACT"),
+    _d("CT", "CT", EXECUTABLE, "capability_transforms", "capability_transforms", ak="CAPABILITY_TRANSFORM"),
+    _d("CS", "CS", EXECUTABLE, "capability_side_effects", "capability_side_effects", ak="CAPABILITY_SIDE_EFFECT"),
+    _d("IN", "IN", EXECUTABLE, "intents", "intents", ak="INTENT"),
+    _d("TI", "TI", EXECUTABLE, "ingress_intents"),   # transport: canonical kind deferred to Transport spec
+    _d("TE", "TE", EXECUTABLE, "transport/egress"),  # transport: canonical kind deferred to Transport spec
+    _d("RB", "RB", EXECUTABLE, "runtime_bindings", "runtime_bindings", ak="RUNTIME_BINDING"),
+    _d("EV", "EV", EXECUTABLE, "events", ak="EVENT"),
+    _d("AC", "AC", EXECUTABLE, "actors", ak="ACTOR"),
     # DECLARATIVE — own NodeKind
-    _d("ASSERT", "ASSERT", DECLARATIVE, "assertions"),
+    _d("ASSERT", "ASSERT", DECLARATIVE, "assertions", ak="ASSERT"),
     _d("TEST_DATA", "TEST_DATA", DECLARATIVE),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, keep their prefix (old _GOVERNANCE_PREFIXES)
-    _d("INVARIANT", "GOVERNANCE", DECLARATIVE, "invariants"),
-    _d("VOCAB", "GOVERNANCE", DECLARATIVE, "vocabulary"),
-    _d("CONSTITUTION", "GOVERNANCE", DECLARATIVE, "concerns"),
+    _d("INVARIANT", "GOVERNANCE", DECLARATIVE, "invariants", ak="INVARIANT"),
+    _d("VOCAB", "GOVERNANCE", DECLARATIVE, "vocabulary", ak="VOCABULARY"),
+    _d("CONSTITUTION", "GOVERNANCE", DECLARATIVE, "concerns", ak="CONSTITUTION"),
     _d("SCHEMA", "GOVERNANCE", DECLARATIVE, "schemas"),
-    _d("STRUCTURE", "GOVERNANCE", DECLARATIVE, "structures"),
-    _d("SURFACE", "GOVERNANCE", DECLARATIVE, "surface_contracts"),
-    _d("ENTITY", "GOVERNANCE", DECLARATIVE, "entities", "entities"),
+    _d("STRUCTURE", "GOVERNANCE", DECLARATIVE, "structures", ak="STRUCTURE"),
+    _d("SURFACE", "GOVERNANCE", DECLARATIVE, "surface_contracts", ak="SURFACE_CONTRACT"),
+    _d("ENTITY", "GOVERNANCE", DECLARATIVE, "entities", "entities", ak="ENTITY"),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, collapse to "GOVERNANCE" in canonical (not in old prefixes)
     _d("LAYER", "GOVERNANCE", DECLARATIVE, keeps_prefix=False),
     _d("GOVERNANCE", "GOVERNANCE", DECLARATIVE, keeps_prefix=False),
@@ -91,9 +92,26 @@ class BuiltInArtifactRegistry:
 
     def __init__(self, descriptors: tuple[ArtifactKindDescriptor, ...] = _DESCRIPTORS):
         self._by_prefix = {d.prefix: d for d in descriptors}
+        # Authoritative index: canonical artifact_kind -> descriptor (Machine Block §6).
+        self._by_kind = {d.artifact_kind: d for d in descriptors if d.artifact_kind}
 
     def descriptor(self, prefix: str) -> ArtifactKindDescriptor | None:
         return self._by_prefix.get(prefix)
+
+    def descriptor_for_kind(self, artifact_kind: str) -> ArtifactKindDescriptor | None:
+        """Resolve a descriptor by its canonical `artifact_kind` — the authoritative discriminator."""
+        return self._by_kind.get(artifact_kind)
+
+    def node_kind_for_kind(self, artifact_kind: str) -> str | None:
+        """NodeKind (string) for a canonical `artifact_kind`; None if the kind is unknown."""
+        d = self._by_kind.get(artifact_kind)
+        return d.node_kind if d else None
+
+    def artifact_kind_for_prefix(self, prefix: str) -> str | None:
+        """LEGACY ADAPTER (temporary): canonical `artifact_kind` for a code prefix, for the
+        migration bridge only. The authoritative path is `node_kind_for_kind`."""
+        d = self._by_prefix.get(prefix)
+        return d.artifact_kind if d else None
 
     def known(self, prefix: str) -> bool:
         return prefix in self._by_prefix

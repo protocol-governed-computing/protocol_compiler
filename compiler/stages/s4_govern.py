@@ -677,9 +677,8 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
     schema_dir = governance_registry_root() / "declaration" / "schema"
 
     # Which artifact kinds are schema-governed is declared by the protocol, not by the compiler:
-    # STRUCTURE_SCHEMA_DISPATCH_V0 maps artifact-code type prefix -> schema filename. The key is
-    # the prefix rather than NodeKind because INVARIANT, CONSTITUTION, STRUCTURE and SURFACE all
-    # collapse to NodeKind.GOVERNANCE, so a NodeKind key could never select between them.
+    # STRUCTURE_SCHEMA_DISPATCH_V0 maps canonical `artifact_kind` -> schema filename. The key is the
+    # in-block discriminator (Machine Block §6/§8), the sole authority for schema selection.
     from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
 
     dispatch = load_structure_artifact("STRUCTURE_SCHEMA_DISPATCH_V0", get_bootstrap_search_roots())
@@ -691,11 +690,11 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
         )
 
     loaded_schemas: dict[str, Any] = {}
-    for prefix, schema_file in schema_file_map.items():
+    for artifact_kind, schema_file in schema_file_map.items():
         schema_path = schema_dir / schema_file
         if schema_path.exists():
             with open(schema_path) as f:
-                loaded_schemas[prefix] = json.load(f)
+                loaded_schemas[artifact_kind] = json.load(f)
 
     results: dict[str, dict] = {}
     for fqdn, node in graph.nodes.items():
@@ -703,7 +702,7 @@ def _analyze_schema_conformance(graph: Graph) -> dict[str, dict]:
         # compile and must not be re-validated (or counted) in the domain context (design §3).
         if (node.metadata or {}).get("import_role") == "governance":
             continue
-        schema = loaded_schemas.get(node.artifact_code.split("_")[0])
+        schema = loaded_schemas.get(node.frontmatter.get("artifact_kind"))
         if schema is None:
             continue
 

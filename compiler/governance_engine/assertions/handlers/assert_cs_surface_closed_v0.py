@@ -71,17 +71,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     for artifact in artifacts:
         frontmatter = artifact.get("frontmatter", {})
 
-        # Check multiple patterns for CS identification:
-        # 1. artifact_kind == "capability_side_effect"
-        # 2. artifact_kind == "CS"
-        # 3. Has cs_code field (CS artifact identifier)
-        artifact_kind = frontmatter.get("artifact_kind")
-        cs_code = frontmatter.get("cs_code")
-
-        is_cs = (
-            artifact_kind in ("capability_side_effect", "CS") or
-            cs_code is not None
-        )
+        # CS identification by canonical artifact_kind (Kind Vocabulary) — the sole discriminator.
+        is_cs = frontmatter.get("artifact_kind") == "CAPABILITY_SIDE_EFFECT"
 
         if is_cs:
             fqdn = artifact["fqdn_id"]
@@ -131,16 +122,9 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not _in_scope(artifact):
             continue
         fqdn = artifact["fqdn_id"]
-        cs_code = artifact.get("frontmatter", {}).get("cs_code")
-
-        if not cs_code:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CS_SURFACE_CLOSED_V0",
-                "message": "CS artifact missing cs_code field in frontmatter",
-                "fix": f"Add cs_code field to {fqdn} artifact"
-            })
-            continue
+        # The CS code (identity) is carried by the artifact, not by a legacy cs_code machine-block
+        # field; it equals the artifact_code. Used only for RB-binding / runtime resolution below.
+        cs_code = artifact.get("artifact_code")
 
         # Check if CS is bound in an RB artifact (domain CS pattern)
         if cs_code in rb_bound_cs:

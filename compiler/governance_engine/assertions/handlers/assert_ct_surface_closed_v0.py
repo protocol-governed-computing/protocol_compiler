@@ -78,16 +78,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     for artifact in artifacts:
         frontmatter = artifact.get("frontmatter", {})
 
-        # Check multiple patterns for CT identification:
-        # 1. artifact_kind == "atom" or "molecule"
-        # 2. Has ct_code field (CT artifact identifier)
-        artifact_kind = frontmatter.get("artifact_kind")
-        ct_code = frontmatter.get("ct_code")
-
-        is_ct = (
-            artifact_kind in ("atom", "molecule", "capability_transform") or
-            ct_code is not None
-        )
+        # CT identification by canonical artifact_kind (Kind Vocabulary) — the sole discriminator.
+        is_ct = frontmatter.get("artifact_kind") == "CAPABILITY_TRANSFORM"
 
         if is_ct:
             fqdn = artifact["fqdn_id"]
@@ -133,18 +125,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     # No need to check for runtime.py files
     # (CT are resolved via direct code import, not RB bindings)
 
-    # Validate ct_code field presence
-    for artifact in ct_artifacts:
-        fqdn = artifact["fqdn_id"]
-        ct_code = artifact.get("frontmatter", {}).get("ct_code")
-
-        if not ct_code:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_SURFACE_CLOSED_V0",
-                "message": "CT artifact missing ct_code field in frontmatter",
-                "fix": f"Add ct_code field to {fqdn} artifact"
-            })
+    # (Legacy ct_code presence validation retired: identity is carried by fqdn and the kind by
+    # artifact_kind (Kind Vocabulary); ct_code is no longer a machine-block field.)
 
     # Return result
     if violations:

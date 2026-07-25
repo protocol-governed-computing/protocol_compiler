@@ -10,10 +10,16 @@ whose machine-block consumption is NOT already closed by `additionalProperties: 
 conformance. For schema-closed kinds an unconsumed key cannot silently survive, so a census
 adds only noise.
 
-Severity: WARNING only. It never fails the build, changes runtime behavior, or asserts a
-conformance rule. The authoritative rule is the compiler's actual behavior (and, where it
-applies, schema closure). A candidate means exactly: "this machine-block key has no detected
-compiler consumer" — the source-inspection method cannot prove a key is truly unused.
+Disposition (Machine Block §11): a top-level field with no detected compiler consumer is split
+by its kind's disposition. On a DECLARATIVE kind (STRUCTURE, VOCAB, … — inert definitions the
+topology references), such a field is *preserved* declared policy carried into the snapshot for
+downstream/runtime reference; that is a legitimate disposition, not a defect. Only a field on an
+EXECUTABLE kind with no consumer is a genuine *candidate unconsumed*.
+
+Severity: WARNING only, and only for genuine candidates. It never fails the build, changes
+runtime behavior, or asserts a conformance rule. The authoritative rule is the compiler's actual
+behavior (and, where it applies, schema closure). A candidate means exactly: "this machine-block
+key has no detected compiler consumer" — the source-inspection method cannot prove a key unused.
 """
 
 from __future__ import annotations
@@ -25,6 +31,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
+from compiler.governance_engine.artifact_kinds import REGISTRY, DECLARATIVE
+
 _LITERAL = re.compile(r"""['"]([A-Za-z_][A-Za-z0-9_]*)['"]""")
 
 
@@ -32,6 +40,7 @@ _LITERAL = re.compile(r"""['"]([A-Za-z_][A-Za-z0-9_]*)['"]""")
 class KindReport:
     consumed: set[str] = field(default_factory=set)
     unconsumed: set[str] = field(default_factory=set)
+    preserved: set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -40,11 +49,16 @@ class HealthReport:
 
     @property
     def examined(self) -> int:
-        return sum(len(k.consumed) + len(k.unconsumed) for k in self.by_kind.values())
+        return sum(len(k.consumed) + len(k.unconsumed) + len(k.preserved)
+                   for k in self.by_kind.values())
 
     @property
     def candidate_unconsumed(self) -> int:
         return sum(len(k.unconsumed) for k in self.by_kind.values())
+
+    @property
+    def preserved_total(self) -> int:
+        return sum(len(k.preserved) for k in self.by_kind.values())
 
     @property
     def has_candidates(self) -> bool:
@@ -95,9 +109,18 @@ def check(nodes: Iterable[Any], schema_closed_prefixes: set[str], compiler_src: 
         # imported artifacts were authored elsewhere — not this build's declaration surface
         if (getattr(node, "metadata", None) or {}).get("imported"):
             continue
+        descriptor = REGISTRY.descriptor(prefix)
+        is_declarative = descriptor is not None and descriptor.disposition == DECLARATIVE
         fm = getattr(node, "frontmatter", None) or {}
         for leaf in set(_declared_fields(fm)):
-            (by_kind[prefix].consumed if leaf in literals else by_kind[prefix].unconsumed).add(leaf)
+            if leaf in literals:
+                by_kind[prefix].consumed.add(leaf)
+            elif is_declarative:
+                # Machine Block §11: declared policy/reference data on a declarative kind, carried
+                # into the snapshot but not compiler-consumed — a legitimate *preserved* disposition.
+                by_kind[prefix].preserved.add(leaf)
+            else:
+                by_kind[prefix].unconsumed.add(leaf)
     return HealthReport(by_kind=dict(by_kind))
 
 
@@ -120,17 +143,21 @@ def format_report(report: HealthReport, verbose: bool) -> list[str]:
         lines.append(f"Kind: {kind}")
         for k in sorted(r.consumed):
             lines.append(f"  ✓ {k}")
+        for k in sorted(r.preserved):
+            lines.append(f"  ○ {k}  (preserved — declarative policy, no compiler consumer)")
         for k in sorted(r.unconsumed):
             lines.append(f"  ⚠ {k}  (no detected compiler consumer)")
     lines += [
         "",
         "Summary:",
         f"  machine-block keys examined:  {report.examined}",
-        f"  candidate consumed:           {consumed_total}",
+        f"  consumed:                     {consumed_total}",
+        f"  preserved (declarative):      {report.preserved_total}",
         f"  candidate unconsumed:         {report.candidate_unconsumed}",
         "",
         "NOTE: census results are heuristic diagnostics. They do not affect compilation",
-        "      success, runtime behavior, or conformance. A candidate means only that a",
-        "      key has no detected compiler consumer — not that it is unused.",
+        "      success, runtime behavior, or conformance. 'Preserved' fields are declared",
+        "      policy on declarative kinds (Machine Block §11); a 'candidate' is only a key on",
+        "      an executable kind with no detected compiler consumer — not proof of disuse.",
     ]
     return lines

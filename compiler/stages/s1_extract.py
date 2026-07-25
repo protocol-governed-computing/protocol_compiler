@@ -682,13 +682,50 @@ def _parse_artifact_to_node(
     # Compute content hash
     content_hash = hashlib.sha256(content_raw.encode("utf-8")).hexdigest()
 
-    # Determine node kind
-    artifact_type = artifact["artifact_type"]
-    kind = _type_to_kind(artifact_type)
-    if kind is None:
+    # Determine node kind. `artifact_kind` declared in the Machine block is the SOLE authoritative
+    # discriminator (Machine Block §6). The filename prefix is a naming convention only, used by the
+    # temporary migration adapter when a legacy artifact declares no artifact_kind.
+    from compiler.governance_engine.artifact_kinds import REGISTRY
+    artifact_type = artifact["artifact_type"]   # filename prefix — naming convention, not authority
+    declared_kind = frontmatter.get("artifact_kind")
+    if declared_kind:
+        nk = REGISTRY.node_kind_for_kind(declared_kind)
+        if nk is None:
+            errors.append(CompilerError(
+                code=ErrorCode.E103_TYPE_MISMATCH,
+                message=f"Unknown artifact_kind: {declared_kind!r}. Not in the Kind Vocabulary.",
+                phase="S1_EXTRACT",
+                fqdn_id=fqdn,
+                artifact_code=artifact_code,
+            ))
+            return None, [], errors, warnings
+        kind = NodeKind(nk)
+    elif artifact_type in ("TI", "TE"):
+        # Sanctioned exception: transport ingress/egress carry no canonical artifact_kind — it is
+        # deferred to the Transport specification (Kind Vocabulary §4). Until incorporated, their
+        # kind resolves from the reserved transport prefix. This is the ONLY prefix-derived path.
+        kind = _type_to_kind(artifact_type)
+        if kind is None:
+            errors.append(CompilerError(
+                code=ErrorCode.E103_TYPE_MISMATCH,
+                message=f"Unknown transport prefix: {artifact_type}",
+                phase="S1_EXTRACT",
+                fqdn_id=fqdn,
+                artifact_code=artifact_code,
+            ))
+            return None, [], errors, warnings
+        warnings.append(CompilerError(
+            code=ErrorCode.E006_TRANSPORT_KIND_DEFERRED,
+            message=(f"Transport artifact_kind deferred to the Transport spec; kind resolved "
+                     f"from prefix '{artifact_type}'."),
+            phase="S1_EXTRACT",
+            fqdn_id=fqdn,
+            artifact_code=artifact_code,
+        ))
+    else:
         errors.append(CompilerError(
-            code=ErrorCode.E901_INTERNAL_ERROR,
-            message=f"Unknown artifact type: {artifact_type}",
+            code=ErrorCode.E102_MISSING_FIELD,
+            message="Machine block declares no artifact_kind (the required discriminator).",
             phase="S1_EXTRACT",
             fqdn_id=fqdn,
             artifact_code=artifact_code,
