@@ -65,8 +65,8 @@ _DESCRIPTORS: tuple[ArtifactKindDescriptor, ...] = (
     _d("CT", "CT", EXECUTABLE, "capability_transforms", "capability_transforms", ak="CAPABILITY_TRANSFORM"),
     _d("CS", "CS", EXECUTABLE, "capability_side_effects", "capability_side_effects", ak="CAPABILITY_SIDE_EFFECT"),
     _d("IN", "IN", EXECUTABLE, "intents", "intents", ak="INTENT"),
-    _d("TI", "TI", EXECUTABLE, "ingress_intents"),   # transport: canonical kind deferred to Transport spec
-    _d("TE", "TE", EXECUTABLE, "transport/egress"),  # transport: canonical kind deferred to Transport spec
+    _d("TI", "TI", EXECUTABLE, "ingress_intents", ak="TRANSPORT_INGRESS"),
+    _d("TE", "TE", EXECUTABLE, "transport/egress", ak="TRANSPORT_EGRESS"),
     _d("RB", "RB", EXECUTABLE, "runtime_bindings", "runtime_bindings", ak="RUNTIME_BINDING"),
     _d("EV", "EV", EXECUTABLE, "events", ak="EVENT"),
     _d("AC", "AC", EXECUTABLE, "actors", ak="ACTOR"),

@@ -48,15 +48,17 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         ti_code = artifact.get("artifact_code", "UNKNOWN")
         ti_count += 1
-        core = artifact.get("frontmatter", {}).get("core", {})
-        wf_ref = core.get("workflow")
+        # Accepted Transport-Standard shape: the invocation binding is `handler.workflow`
+        # (a governed executable target; a WF in the current RI).
+        handler = artifact.get("frontmatter", {}).get("handler", {}) or {}
+        wf_ref = handler.get("workflow")
 
         if not wf_ref:
             violations.append({
                 "assert": "ASSERT_TRANSPORT_TARGET_EXISTS_V0",
                 "artifact": ti_code,
-                "violation": "TI artifact must declare core.workflow binding",
-                "fix": "Add core.workflow: <WF FQDN> to declare explicit target workflow",
+                "violation": "TI artifact must declare a handler.workflow invocation target",
+                "fix": "Add handler.workflow: <WF FQDN> to declare the explicit governed target",
             })
             continue
 

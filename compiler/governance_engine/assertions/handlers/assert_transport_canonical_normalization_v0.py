@@ -41,48 +41,42 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         artifact_code = artifact.get("artifact_code", "UNKNOWN")
         transport_count += 1
-        core = artifact.get("frontmatter", {}).get("core", {})
+        # Accepted Transport-Standard block shape (flat): TI declares `input_contract` (by
+        # reference); TE declares `output_contract` (the projection). Legacy `core.*` names retained.
+        fm = artifact.get("frontmatter", {})
 
         if artifact_type == "TI":
             # Check for forbidden passthrough
-            if core.get("passthrough") is True:
+            if fm.get("passthrough") is True:
                 violations.append({
                     "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",
                     "artifact": artifact_code,
-                    "field": "core.passthrough",
-                    "violation": "TI artifact uses passthrough mode — raw payload forwarding is forbidden; admission_schema must be declared",
-                    "fix": "Remove passthrough: true and declare an explicit core.admission_schema",
+                    "field": "passthrough",
+                    "violation": "TI artifact uses passthrough mode — raw payload forwarding is forbidden; an input_contract must be declared",
+                    "fix": "Remove passthrough: true and declare an explicit input_contract",
                 })
 
-            # Check for admission_schema
-            admission_schema = core.get("admission_schema")
-            if not admission_schema:
+            # Ingress normalization is the declared input contract (by reference).
+            input_contract = fm.get("input_contract")
+            if not input_contract or (isinstance(input_contract, dict) and len(input_contract) == 0):
                 violations.append({
                     "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",
                     "artifact": artifact_code,
-                    "field": "core.admission_schema",
-                    "violation": "TI artifact must declare core.admission_schema — no passthrough payloads permitted",
-                    "fix": "Add core.admission_schema with at least one field declaration",
-                })
-            elif not isinstance(admission_schema, dict) or len(admission_schema) == 0:
-                violations.append({
-                    "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",
-                    "artifact": artifact_code,
-                    "field": "core.admission_schema",
-                    "violation": "TI core.admission_schema must contain at least one field declaration",
-                    "fix": "Declare at least one field in core.admission_schema",
+                    "field": "input_contract",
+                    "violation": "TI artifact must declare a non-empty input_contract — no passthrough payloads permitted",
+                    "fix": "Add an input_contract with at least one field declaration",
                 })
 
         elif artifact_type == "TE":
-            # Check for any projection declaration
-            has_projection = any(core.get(k) for k in _TE_PROJECTION_KEYS)
+            # Egress normalization is the declared output_contract (projection).
+            has_projection = bool(fm.get("output_contract")) or any(fm.get(k) for k in _TE_PROJECTION_KEYS)
             if not has_projection:
                 violations.append({
                     "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",
                     "artifact": artifact_code,
-                    "field": "core",
-                    "violation": "TE artifact must declare a projection schema (response_schema, projection_schema, or projection) — raw execution result passthrough is forbidden",
-                    "fix": "Add core.response_schema with at least status and body field declarations",
+                    "field": "output_contract",
+                    "violation": "TE artifact must declare a projection (output_contract) — raw execution result passthrough is forbidden",
+                    "fix": "Add an output_contract projecting the exposed result fields",
                 })
 
     return {

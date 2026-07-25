@@ -700,28 +700,6 @@ def _parse_artifact_to_node(
             ))
             return None, [], errors, warnings
         kind = NodeKind(nk)
-    elif artifact_type in ("TI", "TE"):
-        # Sanctioned exception: transport ingress/egress carry no canonical artifact_kind — it is
-        # deferred to the Transport specification (Kind Vocabulary §4). Until incorporated, their
-        # kind resolves from the reserved transport prefix. This is the ONLY prefix-derived path.
-        kind = _type_to_kind(artifact_type)
-        if kind is None:
-            errors.append(CompilerError(
-                code=ErrorCode.E103_TYPE_MISMATCH,
-                message=f"Unknown transport prefix: {artifact_type}",
-                phase="S1_EXTRACT",
-                fqdn_id=fqdn,
-                artifact_code=artifact_code,
-            ))
-            return None, [], errors, warnings
-        warnings.append(CompilerError(
-            code=ErrorCode.E006_TRANSPORT_KIND_DEFERRED,
-            message=(f"Transport artifact_kind deferred to the Transport spec; kind resolved "
-                     f"from prefix '{artifact_type}'."),
-            phase="S1_EXTRACT",
-            fqdn_id=fqdn,
-            artifact_code=artifact_code,
-        ))
     else:
         errors.append(CompilerError(
             code=ErrorCode.E102_MISSING_FIELD,
