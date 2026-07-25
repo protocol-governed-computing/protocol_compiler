@@ -683,8 +683,7 @@ def _parse_artifact_to_node(
     content_hash = hashlib.sha256(content_raw.encode("utf-8")).hexdigest()
 
     # Determine node kind. `artifact_kind` declared in the Machine block is the SOLE authoritative
-    # discriminator (Machine Block §6). The filename prefix is a naming convention only, used by the
-    # temporary migration adapter when a legacy artifact declares no artifact_kind.
+    # discriminator (Machine Block §6). The filename prefix is a naming convention only.
     from compiler.governance_engine.artifact_kinds import REGISTRY
     artifact_type = artifact["artifact_type"]   # filename prefix — naming convention, not authority
     declared_kind = frontmatter.get("artifact_kind")

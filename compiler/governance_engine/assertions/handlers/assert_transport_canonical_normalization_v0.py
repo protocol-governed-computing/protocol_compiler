@@ -2,18 +2,11 @@
 ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0 Handler
 
 Validates that:
-- Every TI_ artifact declares an explicit admission_schema with at least one field
-- No TI_ artifact uses passthrough mode
-- Every TE_ artifact declares an explicit response_schema or projection declaration
+- Every TI_ artifact declares a non-empty input_contract (no passthrough)
+- Every TE_ artifact declares an output_contract projection (no raw result passthrough)
 
 CONSTITUTIONAL: Pure rule checker — reads artifact set from context.
 """
-
-# Keys that indicate TE_ has a projection declaration
-_TE_PROJECTION_KEYS = {"response_schema", "projection_schema", "projection"}
-
-# Keys that indicate TI_ passthrough (forbidden)
-_PASSTHROUGH_KEYS = {"passthrough"}
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -41,8 +34,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         artifact_code = artifact.get("artifact_code", "UNKNOWN")
         transport_count += 1
-        # Accepted Transport-Standard block shape (flat): TI declares `input_contract` (by
-        # reference); TE declares `output_contract` (the projection). Legacy `core.*` names retained.
+        # Transport-Standard block shape (flat): TI declares `input_contract` (by reference);
+        # TE declares `output_contract` (the projection).
         fm = artifact.get("frontmatter", {})
 
         if artifact_type == "TI":
@@ -69,7 +62,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         elif artifact_type == "TE":
             # Egress normalization is the declared output_contract (projection).
-            has_projection = bool(fm.get("output_contract")) or any(fm.get(k) for k in _TE_PROJECTION_KEYS)
+            has_projection = bool(fm.get("output_contract"))
             if not has_projection:
                 violations.append({
                     "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",

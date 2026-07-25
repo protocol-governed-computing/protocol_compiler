@@ -107,12 +107,6 @@ class BuiltInArtifactRegistry:
         d = self._by_kind.get(artifact_kind)
         return d.node_kind if d else None
 
-    def artifact_kind_for_prefix(self, prefix: str) -> str | None:
-        """LEGACY ADAPTER (temporary): canonical `artifact_kind` for a code prefix, for the
-        migration bridge only. The authoritative path is `node_kind_for_kind`."""
-        d = self._by_prefix.get(prefix)
-        return d.artifact_kind if d else None
-
     def known(self, prefix: str) -> bool:
         return prefix in self._by_prefix
 
