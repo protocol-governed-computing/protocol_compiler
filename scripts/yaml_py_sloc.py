@@ -14,7 +14,7 @@ REPO_PATHS = {
     "pgs_transport": "pgs_transport",
     "pgs_capabilities": "pgs_capabilities",
     "pgs_blockchain": "pgs_blockchain",
-    "pgs_ai_governance": "pgs_ai_governance",
+    "ai_governance": "ai_governance",
 }
 
 # 🔥 GROUP CLASSIFICATION (THIS IS THE KEY UPGRADE)
@@ -29,7 +29,7 @@ GROUPS = {
     ],
     "DOMAINS": [
         "pgs_blockchain",
-        "pgs_ai_governance"
+        "ai_governance"
     ]
 }
 
