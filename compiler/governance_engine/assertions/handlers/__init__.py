@@ -1,0 +1,182 @@
+"""
+ASSERT Handler Registry - Static, Explicit, Compile-Time Validated
+
+ARCHITECTURAL INVARIANT:
+- ALL handlers MUST be explicitly imported
+- NO dynamic discovery via importlib
+- NO runtime module resolution
+- Handler existence validated at compile time
+
+This registry is the single source of truth for ASSERT handler resolution.
+Any handler not in this registry MUST cause compile failure.
+"""
+
+# Explicit static imports (no dynamic discovery)
+from compiler.governance_engine.assertions.handlers.assert_assert_parity_v0 import execute as assert_assert_parity_v0
+from compiler.governance_engine.assertions.handlers.assert_atom_output_purity_v0 import execute as assert_atom_output_purity_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_capability_binding_valid_v0 import execute as assert_cc_capability_binding_valid_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_inputs_satisfied_v0 import execute as assert_cc_inputs_satisfied_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_no_implicit_chaining_v0 import execute as assert_cc_no_implicit_chaining_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_no_missing_dependencies_v0 import execute as assert_cc_no_missing_dependencies_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_no_unused_outputs_v0 import execute as assert_cc_no_unused_outputs_v0
+from compiler.governance_engine.assertions.handlers.assert_cs_surface_closed_v0 import execute as assert_cs_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_ct_output_contract_match_v0 import execute as assert_ct_output_contract_match_v0
+from compiler.governance_engine.assertions.handlers.assert_ct_surface_closed_v0 import execute as assert_ct_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_fqdn_only_references_v0 import execute as assert_fqdn_only_references_v0
+from compiler.governance_engine.assertions.handlers.assert_fqdn_namespace_authorized_v0 import execute as assert_fqdn_namespace_authorized_v0
+from compiler.governance_engine.assertions.handlers.assert_structure_paths_well_formed_v0 import execute as assert_structure_paths_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_ac_declaration_well_formed_v0 import execute as assert_ac_declaration_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_vocabulary_symbols_well_formed_v0 import execute as assert_vocabulary_symbols_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_assert_not_runtime_referenced_v0 import execute as assert_assert_not_runtime_referenced_v0
+from compiler.governance_engine.assertions.handlers.assert_governance_declaration_resolves_v0 import execute as assert_governance_declaration_resolves_v0
+from compiler.governance_engine.assertions.handlers.assert_identity_fqdn_consistency import execute as assert_identity_fqdn_consistency
+from compiler.governance_engine.assertions.handlers.assert_no_smart_execution_v0 import execute as assert_no_smart_execution_v0
+from compiler.governance_engine.assertions.handlers.assert_no_undeclared_behavior_surface_v0 import execute as assert_no_undeclared_behavior_surface_v0
+from compiler.governance_engine.assertions.handlers.assert_protocol_surface_closed_v0 import execute as assert_protocol_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_test_data_match_ct_output_v0 import execute as assert_test_data_match_ct_output_v0
+from compiler.governance_engine.assertions.handlers.assert_unique_artifact_id_v0 import execute as assert_unique_artifact_id_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_execution_path_valid_v0 import execute as assert_wf_execution_path_valid_v0
+from compiler.governance_engine.assertions.handlers.assert_binding_surface_closed_v0 import execute as assert_binding_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_cc_only_nodes_v0 import execute as assert_wf_cc_only_nodes_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_entry_intent_v0 import execute as assert_wf_entry_intent_v0
+from compiler.governance_engine.assertions.handlers.assert_in_schema_required_v0 import execute as assert_in_schema_required_v0
+from compiler.governance_engine.assertions.handlers.assert_in_workflow_binding_v0 import execute as assert_in_workflow_binding_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_no_logic_v0 import execute as assert_rb_no_logic_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_target_exists_v0 import execute as assert_transport_target_exists_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_no_dynamic_routing_v0 import execute as assert_transport_no_dynamic_routing_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_no_workflow_semantics_v0 import execute as assert_transport_no_workflow_semantics_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_canonical_normalization_v0 import execute as assert_transport_canonical_normalization_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_operation_identity_independence_v0 import execute as assert_transport_operation_identity_independence_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_result_class_protocol_independence_v0 import execute as assert_transport_result_class_protocol_independence_v0
+from compiler.governance_engine.assertions.handlers.assert_transport_response_projection_external_v0 import execute as assert_transport_response_projection_external_v0
+from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v0 import execute as assert_conformance_assertion_mode_valid_v0
+from compiler.governance_engine.assertions.handlers.assert_ev_schema_required_v0 import execute as assert_ev_schema_required_v0
+from compiler.governance_engine.assertions.handlers.assert_ev_append_only_v0 import execute as assert_ev_append_only_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_cs_only_v0 import execute as assert_rb_cs_only_v0
+from compiler.governance_engine.assertions.handlers.assert_cs_traceable_v0 import execute as assert_cs_traceable_v0
+from compiler.governance_engine.assertions.handlers.assert_cs_isolated_execution_v0 import execute as assert_cs_isolated_execution_v0
+from compiler.governance_engine.assertions.handlers.assert_in_no_execution_logic_v0 import execute as assert_in_no_execution_logic_v0
+from compiler.governance_engine.assertions.handlers.assert_authority_required_for_execution_v0 import execute as assert_authority_required_for_execution_v0
+from compiler.governance_engine.assertions.handlers.assert_no_workflow_authorization_logic_v0 import execute as assert_no_workflow_authorization_logic_v0
+from compiler.governance_engine.assertions.handlers.assert_authority_state_well_formed_v0 import execute as assert_authority_state_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_no_ambient_authority_v0 import execute as assert_no_ambient_authority_v0
+from compiler.governance_engine.assertions.handlers.assert_actor_authority_separation_v0 import execute as assert_actor_authority_separation_v0
+from compiler.governance_engine.assertions.handlers.assert_no_runtime_authorization_v0 import execute as assert_no_runtime_authorization_v0
+from compiler.governance_engine.assertions.handlers.assert_trace_authority_binding_required_v0 import execute as assert_trace_authority_binding_required_v0
+from compiler.governance_engine.assertions.handlers.assert_identity_authority_separation_v0 import execute as assert_identity_authority_separation_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_step_declared_v0 import execute as assert_topology_step_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_capability_reference_unique_v0 import execute as assert_topology_capability_reference_unique_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_input_reference_declared_v0 import execute as assert_topology_input_reference_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import execute as assert_topology_routing_complete_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_immutable_after_compilation_v0 import execute as assert_topology_immutable_after_compilation_v0
+from compiler.governance_engine.assertions.handlers.assert_no_runtime_topology_synthesis_v0 import execute as assert_no_runtime_topology_synthesis_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_step_id_unique_v0 import execute as assert_topology_step_id_unique_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_authority_orthogonal_v0 import execute as assert_topology_authority_orthogonal_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_transport_orthogonal_v0 import execute as assert_topology_transport_orthogonal_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v0 import execute as assert_topology_contract_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_surface_canonical_v0 import execute as assert_topology_surface_canonical_v0
+from compiler.governance_engine.assertions.handlers.assert_execution_placement_declared_v0 import execute as assert_execution_placement_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_execution_scheduling_declared_v0 import execute as assert_execution_scheduling_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_security_domain_declared_v0 import execute as assert_security_domain_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_cryptographic_trust_declared_v0 import execute as assert_cryptographic_trust_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_handler_registry_closed_v0 import execute as assert_handler_registry_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_compiler_governance_declared_v0 import execute as assert_compiler_governance_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_compiler_no_execution_v0 import execute as assert_compiler_no_execution_v0
+from compiler.governance_engine.assertions.handlers.assert_artifact_content_hash_declared_v0 import execute as assert_artifact_content_hash_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_acyclic_v0 import execute as assert_topology_acyclic_v0
+from compiler.governance_engine.assertions.handlers.assert_binding_integrity_v0 import execute as assert_binding_integrity_v0
+from compiler.governance_engine.assertions.handlers.assert_implementation_admissible_v0 import execute as assert_implementation_admissible_v0
+from compiler.governance_engine.assertions.handlers.assert_schema_conformance_v0 import execute as assert_schema_conformance_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_binding_policy_conformance_v0 import execute as assert_rb_binding_policy_conformance_v0
+from compiler.governance_engine.assertions.handlers.assert_cc_storage_op_conformance_v0 import execute as assert_cc_storage_op_conformance_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_node_key_binding_unique_v0 import execute as assert_wf_node_key_binding_unique_v0
+from compiler.governance_engine.assertions.handlers.assert_ct_test_data_outcome_declared_v0 import execute as assert_ct_test_data_outcome_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_runtime_invariant_wired_v0 import execute as assert_runtime_invariant_wired_v0
+
+# Static handler registry (FQDN → callable)
+# This is the ONLY allowed way to resolve handlers
+# Any handler not in this dict MUST cause compile failure
+HANDLER_REGISTRY = {
+    "pgs_governance.registry.handlers.assert_assert_parity_v0": assert_assert_parity_v0,
+    "pgs_governance.registry.handlers.assert_atom_output_purity_v0": assert_atom_output_purity_v0,
+    "pgs_governance.registry.handlers.assert_cc_capability_binding_valid_v0": assert_cc_capability_binding_valid_v0,
+    "pgs_governance.registry.handlers.assert_cc_inputs_satisfied_v0": assert_cc_inputs_satisfied_v0,
+    "pgs_governance.registry.handlers.assert_cc_no_implicit_chaining_v0": assert_cc_no_implicit_chaining_v0,
+    "pgs_governance.registry.handlers.assert_cc_no_missing_dependencies_v0": assert_cc_no_missing_dependencies_v0,
+    "pgs_governance.registry.handlers.assert_cc_no_unused_outputs_v0": assert_cc_no_unused_outputs_v0,
+    "pgs_governance.registry.handlers.assert_cs_surface_closed_v0": assert_cs_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_ct_output_contract_match_v0": assert_ct_output_contract_match_v0,
+    "pgs_governance.registry.handlers.assert_ct_surface_closed_v0": assert_ct_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_fqdn_only_references_v0": assert_fqdn_only_references_v0,
+    "pgs_governance.registry.handlers.assert_identity_fqdn_consistency": assert_identity_fqdn_consistency,
+    "pgs_governance.registry.handlers.assert_no_smart_execution_v0": assert_no_smart_execution_v0,
+    "pgs_governance.registry.handlers.assert_no_undeclared_behavior_surface_v0": assert_no_undeclared_behavior_surface_v0,
+    "pgs_governance.registry.handlers.assert_protocol_surface_closed_v0": assert_protocol_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_test_data_match_ct_output_v0": assert_test_data_match_ct_output_v0,
+    "pgs_governance.registry.handlers.assert_unique_artifact_id_v0": assert_unique_artifact_id_v0,
+    "pgs_governance.registry.handlers.assert_wf_execution_path_valid_v0": assert_wf_execution_path_valid_v0,
+    "pgs_governance.registry.handlers.assert_binding_surface_closed_v0": assert_binding_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_wf_cc_only_nodes_v0": assert_wf_cc_only_nodes_v0,
+    "pgs_governance.registry.handlers.assert_wf_entry_intent_v0": assert_wf_entry_intent_v0,
+    "pgs_governance.registry.handlers.assert_in_schema_required_v0": assert_in_schema_required_v0,
+    "pgs_governance.registry.handlers.assert_in_workflow_binding_v0": assert_in_workflow_binding_v0,
+    "pgs_governance.registry.handlers.assert_rb_no_logic_v0": assert_rb_no_logic_v0,
+    "pgs_governance.registry.handlers.assert_transport_target_exists_v0": assert_transport_target_exists_v0,
+    "pgs_governance.registry.handlers.assert_transport_no_dynamic_routing_v0": assert_transport_no_dynamic_routing_v0,
+    "pgs_governance.registry.handlers.assert_transport_no_workflow_semantics_v0": assert_transport_no_workflow_semantics_v0,
+    "pgs_governance.registry.handlers.assert_transport_canonical_normalization_v0": assert_transport_canonical_normalization_v0,
+    "pgs_governance.registry.handlers.assert_transport_operation_identity_independence_v0": assert_transport_operation_identity_independence_v0,
+    "pgs_governance.registry.handlers.assert_transport_result_class_protocol_independence_v0": assert_transport_result_class_protocol_independence_v0,
+    "pgs_governance.registry.handlers.assert_transport_response_projection_external_v0": assert_transport_response_projection_external_v0,
+    "pgs_governance.registry.handlers.assert_conformance_assertion_mode_valid_v0": assert_conformance_assertion_mode_valid_v0,
+    "pgs_governance.registry.handlers.assert_ev_schema_required_v0": assert_ev_schema_required_v0,
+    "pgs_governance.registry.handlers.assert_ev_append_only_v0": assert_ev_append_only_v0,
+    "pgs_governance.registry.handlers.assert_rb_cs_only_v0": assert_rb_cs_only_v0,
+    "pgs_governance.registry.handlers.assert_cs_traceable_v0": assert_cs_traceable_v0,
+    "pgs_governance.registry.handlers.assert_cs_isolated_execution_v0": assert_cs_isolated_execution_v0,
+    "pgs_governance.registry.handlers.assert_in_no_execution_logic_v0": assert_in_no_execution_logic_v0,
+    "pgs_governance.registry.handlers.assert_authority_required_for_execution_v0": assert_authority_required_for_execution_v0,
+    "pgs_governance.registry.handlers.assert_no_workflow_authorization_logic_v0": assert_no_workflow_authorization_logic_v0,
+    "pgs_governance.registry.handlers.assert_authority_state_well_formed_v0": assert_authority_state_well_formed_v0,
+    "pgs_governance.registry.handlers.assert_no_ambient_authority_v0": assert_no_ambient_authority_v0,
+    "pgs_governance.registry.handlers.assert_actor_authority_separation_v0": assert_actor_authority_separation_v0,
+    "pgs_governance.registry.handlers.assert_no_runtime_authorization_v0": assert_no_runtime_authorization_v0,
+    "pgs_governance.registry.handlers.assert_trace_authority_binding_required_v0": assert_trace_authority_binding_required_v0,
+    "pgs_governance.registry.handlers.assert_identity_authority_separation_v0": assert_identity_authority_separation_v0,
+    "pgs_governance.registry.handlers.assert_topology_step_declared_v0": assert_topology_step_declared_v0,
+    "pgs_governance.registry.handlers.assert_topology_capability_reference_unique_v0": assert_topology_capability_reference_unique_v0,
+    "pgs_governance.registry.handlers.assert_topology_input_reference_declared_v0": assert_topology_input_reference_declared_v0,
+    "pgs_governance.registry.handlers.assert_topology_routing_complete_v0": assert_topology_routing_complete_v0,
+    "pgs_governance.registry.handlers.assert_topology_immutable_after_compilation_v0": assert_topology_immutable_after_compilation_v0,
+    "pgs_governance.registry.handlers.assert_no_runtime_topology_synthesis_v0": assert_no_runtime_topology_synthesis_v0,
+    "pgs_governance.registry.handlers.assert_topology_step_id_unique_v0": assert_topology_step_id_unique_v0,
+    "pgs_governance.registry.handlers.assert_topology_authority_orthogonal_v0": assert_topology_authority_orthogonal_v0,
+    "pgs_governance.registry.handlers.assert_topology_transport_orthogonal_v0": assert_topology_transport_orthogonal_v0,
+    "pgs_governance.registry.handlers.assert_topology_contract_closed_v0": assert_topology_contract_closed_v0,
+    "pgs_governance.registry.handlers.assert_topology_surface_canonical_v0": assert_topology_surface_canonical_v0,
+    "pgs_governance.registry.handlers.assert_execution_placement_declared_v0": assert_execution_placement_declared_v0,
+    "pgs_governance.registry.handlers.assert_execution_scheduling_declared_v0": assert_execution_scheduling_declared_v0,
+    "pgs_governance.registry.handlers.assert_security_domain_declared_v0": assert_security_domain_declared_v0,
+    "pgs_governance.registry.handlers.assert_cryptographic_trust_declared_v0": assert_cryptographic_trust_declared_v0,
+    "pgs_governance.registry.handlers.assert_handler_registry_closed_v0": assert_handler_registry_closed_v0,
+    "pgs_governance.registry.handlers.assert_fqdn_namespace_authorized_v0": assert_fqdn_namespace_authorized_v0,
+    "pgs_governance.registry.handlers.assert_structure_paths_well_formed_v0": assert_structure_paths_well_formed_v0,
+    "pgs_governance.registry.handlers.assert_ac_declaration_well_formed_v0": assert_ac_declaration_well_formed_v0,
+    "pgs_governance.registry.handlers.assert_vocabulary_symbols_well_formed_v0": assert_vocabulary_symbols_well_formed_v0,
+    "pgs_governance.registry.handlers.assert_assert_not_runtime_referenced_v0": assert_assert_not_runtime_referenced_v0,
+    "pgs_governance.registry.handlers.assert_governance_declaration_resolves_v0": assert_governance_declaration_resolves_v0,
+    "pgs_governance.registry.handlers.assert_compiler_governance_declared_v0": assert_compiler_governance_declared_v0,
+    "pgs_governance.registry.handlers.assert_compiler_no_execution_v0": assert_compiler_no_execution_v0,
+    "pgs_governance.registry.handlers.assert_artifact_content_hash_declared_v0": assert_artifact_content_hash_declared_v0,
+    "pgs_governance.registry.handlers.assert_topology_acyclic_v0": assert_topology_acyclic_v0,
+    "pgs_governance.registry.handlers.assert_binding_integrity_v0": assert_binding_integrity_v0,
+    "pgs_governance.registry.handlers.assert_implementation_admissible_v0": assert_implementation_admissible_v0,
+    "pgs_governance.registry.handlers.assert_schema_conformance_v0": assert_schema_conformance_v0,
+    "pgs_governance.registry.handlers.assert_rb_binding_policy_conformance_v0": assert_rb_binding_policy_conformance_v0,
+    "pgs_governance.registry.handlers.assert_cc_storage_op_conformance_v0": assert_cc_storage_op_conformance_v0,
+    "pgs_governance.registry.handlers.assert_wf_node_key_binding_unique_v0": assert_wf_node_key_binding_unique_v0,
+    "pgs_governance.registry.handlers.assert_ct_test_data_outcome_declared_v0": assert_ct_test_data_outcome_declared_v0,
+    "pgs_governance.registry.handlers.assert_runtime_invariant_wired_v0": assert_runtime_invariant_wired_v0,
+}
+
+__all__ = ["HANDLER_REGISTRY"]
