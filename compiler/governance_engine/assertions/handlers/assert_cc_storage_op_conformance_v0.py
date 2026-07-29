@@ -55,7 +55,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in conformance_result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.topology::INVARIANT_CC_STORAGE_OP_CONFORMANCE_V0",
+                    "rule": "fb.capability_contracts::INVARIANT_CC_STORAGE_OP_CONFORMANCE_V0",
                     "message": structural_violation.get("violation", "Unknown op conformance violation"),
                     "fix": structural_violation.get("fix", "Correct op to match CS declared operations"),
                 })

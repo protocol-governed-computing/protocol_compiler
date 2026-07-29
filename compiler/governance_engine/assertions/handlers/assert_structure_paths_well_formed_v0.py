@@ -15,7 +15,7 @@ handler rather than a per-artifact schema constraint.
 
 from typing import Any
 
-RULE = "fb.topology::INVARIANT_STRUCTURE_PATHS_WELL_FORMED_V0"
+RULE = "fb.structure::INVARIANT_STRUCTURE_PATHS_WELL_FORMED_V0"
 
 # Keys whose value is a path in its own right (as opposed to a value that merely
 # contains a slash, e.g. a description).

@@ -25,7 +25,7 @@ These constrain the compiler's or a handler's *implementation*, or a promotion p
 | rule | bound to |
 |---|---|
 | `ASSERT_BINDS_ONE_INVARIANT` | `fb.conformance::INVARIANT_ASSERT_PARITY_V0` |
-| `INVARIANT_DECLARATIVE_ONLY` | `fb.topology::INVARIANT_SCHEMA_CONFORMANCE_V0` |
+| `INVARIANT_DECLARATIVE_ONLY` | `fb.artifact::INVARIANT_SCHEMA_CONFORMANCE_V0` |
 
 `INVARIANT_DECLARATIVE_ONLY` became enforceable only in Phase 1: with `SCHEMA_INVARIANT_V0` closed, an invariant cannot carry executable logic because it cannot carry anything undeclared.
 

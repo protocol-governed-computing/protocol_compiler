@@ -22,17 +22,18 @@ from compiler.inspection.errors import (
 _SUPPORTED_INDEX_SCHEMA_VERSIONS = frozenset({"v0"})
 _SUPPORTED_EVIDENCE_PROJECTION_SCHEMA_VERSIONS = frozenset({"v0"})
 
-# Behavior Logic tree (legacy plan name: visualization/).
-_BEHAVIOR_LOGIC_ROOT = "protocol_snapshot/behavior_logic"
+# Behavior Logic tree. In an assembled snapshot this is domain-scoped:
+#   behavior_logic/<domain>/<wf_code>/<wf_code>.{graph.json,projection.png}
+_BEHAVIOR_LOGIC_ROOT = "behavior_logic"
 
 # Declared MD header fields (mandated header format in every authoring doc).
 _HEADER_FIELD_RE = re.compile(r"^- \*\*(?P<label>[A-Za-z ]+):\*\*\s*(?P<value>.+?)\s*$", re.MULTILINE)
 
-# Artifact kind → PPS snapshot section.
+# Artifact kind → kind_index section.
 # Single source of truth: the ArtifactKindRegistry (replaces the legacy hardcoded map).
 from compiler.governance_engine.artifact_kinds import REGISTRY as _KIND_REGISTRY
 
-PPS_SECTION_BY_KIND = _KIND_REGISTRY.pps_sections()
+INDEX_SECTION_BY_KIND = _KIND_REGISTRY.index_sections()
 
 
 class Workspace:
@@ -94,7 +95,7 @@ class Workspace:
     @property
     def artifact_index(self) -> dict[str, Any]:
         index = self._load_json(
-            "protocol_snapshot/artifact_index/index.json",
+            "artifact_index/index.json",
             hint="artifact index not materialized — rebuild with compiler.cli build",
         )
         version = index.get("schema_version")
@@ -142,23 +143,23 @@ class Workspace:
         )
 
     @property
-    def pps(self) -> dict[str, Any]:
+    def kind_index(self) -> dict[str, Any]:
         return self._load_json(
-            "pps_snapshot/index.json",
-            hint="PPS snapshot not materialized — run compiler.cli build-pps",
+            "kind_index/index.json",
+            hint="kind index not materialized — rebuild the snapshot with the assembler",
         )
 
-    def pps_entry(self, fqdn: str, kind: str) -> dict[str, Any]:
-        """PPS entry for an FQDN, located via its declared kind."""
-        section = PPS_SECTION_BY_KIND.get(kind)
+    def kind_index_entry(self, fqdn: str, kind: str) -> dict[str, Any]:
+        """Snapshot-index entry for an FQDN, located via its declared kind."""
+        section = INDEX_SECTION_BY_KIND.get(kind)
         if section is None:
             raise ProjectionMissing(
-                f"artifact kind '{kind}' has no PPS surface "
-                f"(covered kinds: {sorted(PPS_SECTION_BY_KIND)})"
+                f"artifact kind '{kind}' has no authoring surface "
+                f"(covered kinds: {sorted(INDEX_SECTION_BY_KIND)})"
             )
-        entry = self.pps.get(section, {}).get(fqdn)
+        entry = self.kind_index.get(section, {}).get(fqdn)
         if entry is None:
-            raise ProjectionMissing(f"'{fqdn}' not present in PPS section '{section}'")
+            raise ProjectionMissing(f"'{fqdn}' not present in index section '{section}'")
         return entry
 
     def canonical_artifact(self, index_entry: dict[str, Any]) -> dict[str, Any]:
@@ -171,7 +172,7 @@ class Workspace:
     @property
     def store_index(self) -> dict[str, Any]:
         index = self._load_json(
-            "protocol_snapshot/artifact_index/stores.json",
+            "artifact_index/stores.json",
             hint="store index not materialized — rebuild with compiler.cli build",
         )
         version = index.get("schema_version")
@@ -192,20 +193,45 @@ class Workspace:
     # ── Behavior Logic ───────────────────────────────────────────
 
     def behavior_logic_codes(self) -> list[str]:
-        """Workflow codes with a materialized behavior logic projection."""
+        """Workflow codes with a materialized behavior logic projection, across all domains."""
         root = self.root / _BEHAVIOR_LOGIC_ROOT
         if not root.is_dir():
             raise ProjectionMissing(f"behavior logic tree not found: {root}")
-        return sorted(d.name for d in root.iterdir() if d.is_dir())
+        return sorted(
+            wf.name
+            for domain in root.iterdir() if domain.is_dir()
+            for wf in domain.iterdir() if wf.is_dir()
+        )
+
+    def _behavior_logic_dir(self, wf_code: str) -> Path:
+        """Locate a workflow's behavior-logic directory under its owning domain.
+
+        The projection is domain-scoped, but the query surface is keyed by wf_code alone.
+        A code present in two domains is ambiguous and fails hard rather than resolving
+        to an arbitrary one.
+        """
+        root = self.root / _BEHAVIOR_LOGIC_ROOT
+        if not root.is_dir():
+            raise ProjectionMissing(f"behavior logic tree not found: {root}")
+        found = sorted(d / wf_code for d in root.iterdir() if (d / wf_code).is_dir())
+        if not found:
+            raise ProjectionMissing(f"behavior logic not materialized for '{wf_code}'")
+        if len(found) > 1:
+            domains = ", ".join(p.parent.name for p in found)
+            raise ProjectionMissing(
+                f"'{wf_code}' is ambiguous — present in domains: {domains}"
+            )
+        return found[0]
 
     def behavior_logic_graph(self, wf_code: str) -> dict[str, Any]:
+        path = self._behavior_logic_dir(wf_code) / f"{wf_code}.graph.json"
         return self._load_json(
-            f"{_BEHAVIOR_LOGIC_ROOT}/{wf_code}/{wf_code}.graph.json",
+            str(path.relative_to(self.root)),
             hint=f"behavior logic graph not materialized for '{wf_code}'",
         )
 
     def behavior_logic_png_path(self, wf_code: str) -> Path:
-        path = self.root / _BEHAVIOR_LOGIC_ROOT / wf_code / f"{wf_code}.projection.png"
+        path = self._behavior_logic_dir(wf_code) / f"{wf_code}.projection.png"
         if not path.is_file():
             raise ProjectionMissing(f"behavior logic PNG not materialized: {path}")
         return path

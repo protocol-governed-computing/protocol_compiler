@@ -2,7 +2,7 @@
 """
 Inspection library testbed — store join, lifecycle, behavior logic, traces, CI gates.
 
-Self-contained: fixtures are built in temp directories; pi itself stays
+Self-contained: fixtures are built in temp directories; si itself stays
 write-free (only the fixtures write, and only under tmp).
 
 Run: python scripts/testbed/test_inspection.py
@@ -17,7 +17,7 @@ from click.testing import CliRunner
 
 from compiler.projections.store_index import build_store_index
 from compiler.inspection import behavior_logic
-from compiler.inspection.cli import pi
+from compiler.inspection.cli import si
 from compiler.inspection.loader import classify_lifecycle, parse_header_fields
 from compiler.inspection.traces import list_traces, resolve_trace_jsonl
 
@@ -163,9 +163,9 @@ def test_strict_exit_codes() -> None:
             ],
         })
         runner = CliRunner()
-        plain = runner.invoke(pi, ["--workspace", str(ws), "snapshot", "violations"])
-        strict = runner.invoke(pi, ["--workspace", str(ws), "snapshot", "violations", "--strict"])
-        gate = runner.invoke(pi, ["--workspace", str(ws), "validate", "--strict"])
+        plain = runner.invoke(si, ["--workspace", str(ws), "snapshot", "violations"])
+        strict = runner.invoke(si, ["--workspace", str(ws), "snapshot", "violations", "--strict"])
+        gate = runner.invoke(si, ["--workspace", str(ws), "validate", "--strict"])
         check("violations_plain_exit0", plain.exit_code == 0, f"got {plain.exit_code}")
         check("violations_strict_exit1", strict.exit_code == 1, f"got {strict.exit_code}")
         check("validate_strict_exit1", gate.exit_code == 1, f"got {gate.exit_code}")
@@ -176,7 +176,7 @@ def test_strict_exit_codes() -> None:
             "all_passed": True,
             "cases": [{"fqdn": "d::CT_OK_V0", "passed": True, "error": None}],
         })
-        green = runner.invoke(pi, ["--workspace", str(ws), "validate", "--strict"])
+        green = runner.invoke(si, ["--workspace", str(ws), "validate", "--strict"])
         check("validate_strict_green_exit0", green.exit_code == 0, f"got {green.exit_code}")
 
 

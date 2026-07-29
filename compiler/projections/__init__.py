@@ -170,7 +170,7 @@ def make_metadata(
 COMPILER_VERSION = "1.0.0"
 PROJECTION_SCHEMA_VERSION = "v0"
 
-# Declared schema contracts for projections consumed by external tooling (pi).
+# Declared schema contracts for projections consumed by external tooling (si).
 # Immutable-versioning discipline: a shape change requires a new version value.
 EVIDENCE_GRAPH_SCHEMA_VERSION = "v0"
 ARTIFACT_INDEX_SCHEMA_VERSION = "v0"

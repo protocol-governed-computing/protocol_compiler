@@ -1,12 +1,12 @@
 """
-pi shell — readline wrapper over the one-shot command layer.
+si shell — readline wrapper over the one-shot command layer.
 
 No additional semantics live here: every shell line is the one-shot
 command verbatim, dispatched through the same click group with the
 session (and its loaded indices) held warm across queries.
 
 Scoping: `use <domain>` declares the session scope; the prompt becomes
-`pi:<domain>>`. Bare artifact codes (FOO_BAR_V0) are expanded to
+`si:<domain>>`. Bare artifact codes (FOO_BAR_V0) are expanded to
 <scope>::FOO_BAR_V0 — resolution within a declared, visible scope,
 not inference. Outside a declared scope, full FQDNs are required.
 """
@@ -23,8 +23,8 @@ _CODE_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*_V\d+$")
 
 
 def run_shell(session) -> None:
-    """Run the interactive pi shell over an open session."""
-    from compiler.inspection.cli import pi  # late import — avoids cycle
+    """Run the interactive si shell over an open session."""
+    from compiler.inspection.cli import si  # late import — avoids cycle
 
     # Open the workspace now — fail hard before the first prompt.
     _ = session.workspace
@@ -33,13 +33,13 @@ def run_shell(session) -> None:
 
     scope: str | None = None
 
-    _install_completer(pi, fqdns, domains, lambda: scope)
+    _install_completer(si, fqdns, domains, lambda: scope)
 
-    click.echo("pi shell — protocol inspection (read-only). "
+    click.echo("si shell — snapshot inspection (read-only). "
                "'use <domain>' to scope, 'exit' to leave.")
 
     while True:
-        prompt = f"pi:{scope}> " if scope else "pi> "
+        prompt = f"si:{scope}> " if scope else "si> "
         try:
             line = input(prompt)
         except (EOFError, KeyboardInterrupt):
@@ -80,7 +80,7 @@ def run_shell(session) -> None:
             ]
 
         try:
-            pi.main(args=args, prog_name="pi", standalone_mode=False, obj=session)
+            si.main(args=args, prog_name="si", standalone_mode=False, obj=session)
         except InspectionError as exc:
             click.echo(f"Error: {exc}", err=True)
         except click.ClickException as exc:

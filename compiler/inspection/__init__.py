@@ -1,11 +1,11 @@
 """
-compiler.inspection — Protocol Inspection library (the pi core).
+compiler.inspection — Snapshot Inspection library (the si core).
 
-One verified model, three surfaces: this library is the core; the pi
+One verified model, three surfaces: this library is the core; the si
 CLI/shell and the --json output are its projections. All surfaces are
 read-only, fail-hard, zero-inference, query-only (V0 Principle):
 
-    pi answers questions. The compiler performs changes.
+    si answers questions. The compiler performs changes.
     The runtime performs execution.
 
 Library usage (in-ecosystem tooling):

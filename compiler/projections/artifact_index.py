@@ -2,7 +2,7 @@
 Artifact index projection — federated query metadata.
 
 Materializes the cross-structure FQDN index consumed by the protocol
-inspection surface (pi). Maps every compiled artifact FQDN to its
+inspection surface (si). Maps every compiled artifact FQDN to its
 domain, owning STRUCTURE(s), artifact kind, canonical path, evidence
 path, and per-structure vocabulary address.
 
@@ -57,7 +57,7 @@ def discover_scope_structures() -> dict[str, str]:
 
     Fully data-driven: each build-config declares its own `scope` field. Replaces
     the former hardcoded scope map — a new domain becomes indexable (and visible to
-    pi) by authoring a build-config, with zero compiler edits. Build-configs without
+    si) by authoring a build-config, with zero compiler edits. Build-configs without
     a declared `scope` (e.g. aggregation structures) are skipped.
     """
     roots = get_bootstrap_search_roots()
@@ -231,14 +231,17 @@ def _index_entry(
 def _owner_subdomain(module_path: str | None) -> str | None:
     """The owning subdomain declared by an artifact's module path, read with zero inference.
 
-    A subdomain-owned artifact is organized as `pgs_<pkg>.registry.<subdomain>.<kind>` — the subdomain
-    sits *before* a kind directory (4+ segments). Returns None (not subdomain-owned) for:
-      * domain-level shared artifacts — `pgs_<pkg>.registry.<kind>` (3 segments, e.g. capability_transforms,
-        capability_side_effects, entities): a pure transform belongs to the domain, not a subdomain;
-      * federation-level artifacts — `…registry.FB_<...>.…` (constitution, topology, assertions)."""
+    A subdomain-owned artifact is organized as `<pkg>.registry.<subdomain>.<kind>` — the subdomain
+    sits *before* a kind directory (4+ segments). Since the governance registry is organized one
+    directory per namespace, the subdomain of a governance artifact *is* its namespace
+    (`software_governance.registry.execution_topology.invariants` → `execution_topology`).
+
+    Returns None (not subdomain-owned) for domain-level shared artifacts organized as
+    `<pkg>.registry.<kind>` (3 segments, e.g. capability_transforms, capability_side_effects):
+    a pure transform belongs to the domain, not a subdomain."""
     if not module_path:
         return None
     parts = module_path.split(".")
-    if len(parts) >= 4 and parts[1] == "registry" and not parts[2].startswith("FB_"):
+    if len(parts) >= 4 and parts[1] == "registry":
         return parts[2]
     return None

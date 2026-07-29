@@ -3,8 +3,8 @@ Behavior Logic — projections of <WF>.graph.json.
 
 All rendering reads the graph JSON (the behavior logic source of truth), never the
 PNGs. Output forms: execution-tree model (terminal render), Mermaid, DOT.
-Text generation only — pi writes nothing; the materialized PNG is opened
-via `pi behavior_logic open`.
+Text generation only — si writes nothing; the materialized PNG is opened
+via `si behavior_logic open`.
 """
 
 from typing import Any

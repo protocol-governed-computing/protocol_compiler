@@ -24,8 +24,8 @@ Capture these BEFORE any change and prove them AFTER B. They are the definition 
 
 | invariant | current value | how to check |
 |---|---|---|
-| platform `graph_address_hash` | `c00003ce35547b187901c7e6d12a3fe280c07a76eaf08d4deca078b5cc4ecfea` | `canonical/metadata.json` |
-| collatz `graph_address_hash` | `7be6d6d3fc7cc22ee1ecacdba0eb09b503b2c55e385eeb8df4e6569cb0a1843e` | domain `canonical/metadata.json` |
+| platform `graph_address_hash` | `8af862217353047f2395ec2a4e26706b98155fa2dd3ffce2b9777e79a56a3e0c` | `canonical/metadata.json` |
+| collatz `graph_address_hash` | `8607ac139f8db3881accfa6cd4a5622118bd9644413d0e44b7ba0aa99f19a073` | domain `canonical/metadata.json` |
 | platform FQDN identity map | 178 entries | `vocabulary/platform/reverse.json` byte-identical |
 | collatz FQDN identity map | — | `vocabulary/workload/reverse.json` byte-identical |
 
@@ -55,7 +55,7 @@ python -c "import json;print('collatz ',json.load(open('../conformance_workloads
 
 **Content — for every FB and every constitution/invariant, a coordinate tuple:**
 ```yaml
-- artifact: fb.topology::INVARIANT_TOPOLOGY_ACYCLIC_V0
+- artifact: fb.execution_topology::INVARIANT_TOPOLOGY_ACYCLIC_V0
   semantic:
     domain: protocol_composition        # top-level concern family (§7 target map)
     concern: topology
@@ -120,7 +120,7 @@ Keep the change minimal and behavior-preserving: with B1 populated, declared == 
 cd protocol_compiler && ./compile.sh && ./compile_domain.sh ../conformance_workloads/workloads/collatz
 diff <(python -m json.tool ../software_governance/snapshot/compiled/vocabulary/platform/reverse.json) <(python -m json.tool /tmp/base_platform_reverse.json) && echo "PLATFORM IDENTITY PRESERVED"
 diff <(python -m json.tool ../conformance_workloads/workloads/collatz/snapshot/compiled/vocabulary/workload/reverse.json) <(python -m json.tool /tmp/base_workload_reverse.json) && echo "COLLATZ IDENTITY PRESERVED"
-python -c "import json;assert json.load(open('../software_governance/snapshot/compiled/canonical/metadata.json'))['graph_address_hash']=='c00003ce35547b187901c7e6d12a3fe280c07a76eaf08d4deca078b5cc4ecfea', 'ADDRESS HASH DRIFT'; print('platform address hash preserved')"
+python -c "import json;assert json.load(open('../software_governance/snapshot/compiled/canonical/metadata.json'))['graph_address_hash']=='8af862217353047f2395ec2a4e26706b98155fa2dd3ffce2b9777e79a56a3e0c', 'ADDRESS HASH DRIFT'; print('platform address hash preserved')"
 ```
 Both `reverse.json` diffs empty and both address hashes identical ⇒ identity provably unchanged. Also confirm the migration cross-check invariant PASSES (declared == derived everywhere) and both builds are green/Verified/Attested. `graph_topology_hash` WILL differ (files edited) — expected, not a failure.
 
@@ -142,7 +142,7 @@ Once B4 passes:
 ## 4. What NOT to do
 
 - **Do not reorganize or rename any folder.** That is Phase C (later, deliberate, post-blockchain). B keeps every file exactly where it is.
-- **Do not change any FQDN value.** B preserves identity; it only changes where identity comes from. `fb.topology::X` stays `fb.topology::X`.
+- **Do not change any FQDN value.** B preserves identity; it only changes where identity comes from. `fb.execution_topology::X` stays `fb.execution_topology::X`.
 - **Do not use `graph_topology_hash` as the B proof** (see §1). Use `graph_address_hash` + `reverse.json` byte-identity.
 - **Do not make the migration cross-check permanent** (§B6).
 - **Do not touch `protocol_runtime` or `snapshot_assembler`.** If either needs a change, the no-op has failed — stop and diagnose.

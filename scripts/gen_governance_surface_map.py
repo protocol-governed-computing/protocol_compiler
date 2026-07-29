@@ -47,7 +47,7 @@ def load():
         d = yaml.safe_load(m.group("y").rstrip())
         if isinstance(d, dict):
             yield md, d
-    for js in sorted((REGISTRY / "declaration" / "schema").glob("*.json")):
+    for js in sorted((REGISTRY / "schema").glob("*.json")):
         if js.name != "schema_index.json":
             yield js, {"artifact_kind": "SCHEMA"}
 
@@ -130,7 +130,7 @@ def main():
             "transport": {"status": "intentionally_deferred", "reason": "transport phase frozen; TI/TE governance not yet authorized"},
             "state_entity_platform": {"status": "not_applicable", "reason": "ENTITY/state is domain-owned; not a platform concern"},
             "schema": {"status": "declaration_substrate", "reason": "formal shape/type system of the declaration language, not an independent policy concern"},
-            "trace_observability": {"status": "implemented", "note": "governed by CONSTITUTION_TRACE_EXECUTION under execution/semantics/trace"},
+            "trace_observability": {"status": "implemented", "note": "governed by CONSTITUTION_TRACE_EXECUTION under trace/"},
         },
         "artifacts": coords,
     }}

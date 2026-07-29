@@ -7,7 +7,7 @@ and declares a non-empty rules list — enforcing COMPILER_SELF_APPLICABLE.
 
 from typing import Any
 
-_COMPILER_CONSTITUTION_FQDN = "fb.constitution::CONSTITUTION_COMPILER_V0"
+_COMPILER_CONSTITUTION_FQDN = "fb.compiler::CONSTITUTION_COMPILER_V0"
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -36,13 +36,13 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     if constitution is None:
         violations.append({
             "fqdn": _COMPILER_CONSTITUTION_FQDN,
-            "rule": "fb.constitution::INVARIANT_COMPILER_GOVERNANCE_DECLARED_V0",
+            "rule": "fb.compiler::INVARIANT_COMPILER_GOVERNANCE_DECLARED_V0",
             "message": (
                 f"COMPILER_SELF_APPLICABLE violated: {_COMPILER_CONSTITUTION_FQDN} "
                 "is absent from the compiled artifact set"
             ),
             "fix": (
-                "Ensure the STRUCTURE declaration includes fb.constitution as a "
+                "Ensure the STRUCTURE declaration includes fb.compiler as a "
                 "governed boundary so CONSTITUTION_COMPILER_V0 is discovered and compiled"
             ),
         })

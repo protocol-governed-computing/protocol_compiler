@@ -29,7 +29,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.topology::ASSERT_SCHEMA_CONFORMANCE_V0",
+                "fqdn": "fb.artifact::ASSERT_SCHEMA_CONFORMANCE_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing schema_conformance",
                 "fix": "Compiler must pre-compute schema validation before assert phase"
@@ -52,7 +52,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for schema_error in result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.topology::INVARIANT_SCHEMA_CONFORMANCE_V0",
+                    "rule": "fb.artifact::INVARIANT_SCHEMA_CONFORMANCE_V0",
                     "message": schema_error.get("violation", "Unknown schema violation"),
                     "fix": schema_error.get("fix", "Fix frontmatter to conform to schema")
                 })

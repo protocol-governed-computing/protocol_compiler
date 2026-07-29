@@ -29,7 +29,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.topology::ASSERT_BINDING_INTEGRITY_V0",
+                "fqdn": "fb.runtime_binding::ASSERT_BINDING_INTEGRITY_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing rb_binding_integrity",
                 "fix": "Compiler must pre-compute RB binding analysis before assert phase"
@@ -52,7 +52,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.topology::INVARIANT_BINDING_INTEGRITY_V0",
+                    "rule": "fb.runtime_binding::INVARIANT_BINDING_INTEGRITY_V0",
                     "message": structural_violation.get("violation", "Unknown RB binding violation"),
                     "fix": structural_violation.get("fix", "Fix RB binding reference")
                 })

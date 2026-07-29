@@ -89,24 +89,24 @@ class LayerResolver:
             raise ValueError("No YAML block found in artifact")
         return yaml.safe_load(match.group(1))
 
-    # PGC B2 topology map — RI-0 registry_module names → subdirs of the platform repo.
-    # STRUCTURE_DISCOVERY_V0 is kept verbatim (faithful harvest); this map overrides its
-    # importlib resolution so layers resolve inside `platform` with no pgs_* dependency.
-    # Layers absent here (domain/RI: blockchain, ai_governance, runtime, ingress, …) are
-    # not part of the platform surface and resolve to None by design.
+    # PGC topology map — STRUCTURE_DISCOVERY_V0 registry_module names → subdirs of the
+    # governance-surface repo. This map overrides importlib resolution so layers resolve
+    # inside the platform root by declaration, never by package import.
+    # Layers absent here (business_domains, protocol_runtime, protocol_transport, …) are
+    # not part of the platform compile surface and resolve to None by design.
     _PGC_MODULE_MAP: dict[str, tuple[str, ...]] = {
-        "pgs_governance.registry": ("registry",),
-        "pgs_transforms.registry": ("capability_transforms", "registry"),
-        "pgs_side_effects.registry": ("capability_side_effects", "registry"),
+        "software_governance.registry": ("registry",),
+        "capability_transforms.registry": ("capability_transforms", "registry"),
+        "capability_side_effects.registry": ("capability_side_effects", "registry"),
     }
 
     def _resolve_module_to_path(self, registry_module: str) -> Path | None:
         """
-        Resolve a STRUCTURE_DISCOVERY_V0 registry_module to a filesystem path (PGC B2).
+        Resolve a STRUCTURE_DISCOVERY_V0 registry_module to a filesystem path.
 
-        Maps the RI-0 package name to a subdir of PGC_PLATFORM_ROOT. Domain/RI layers not
-        present in the platform surface return None (they are absent from the platform
-        compile scope, by design — no importlib, no sibling-repo fallback, no pgs_* dep).
+        Maps the declared module name to a subdir of PGC_PLATFORM_ROOT. Layers not present
+        in the platform surface return None (they are absent from the platform compile
+        scope, by design — no importlib, no sibling-repo fallback, no pgs_* dep).
         """
         from compiler.governance_engine.platform_root import platform_root
 
@@ -153,12 +153,12 @@ class LayerResolver:
 
         CONSTITUTIONAL: STRUCTURE_DISCOVERY_V0 is the single source of truth for
         layer-to-module mappings. Located at:
-            pgs_governance/registry/FB_CONSTITUTION/structures/
+            <governance registry>/structure/structures/
         """
         from compiler.governance_engine.platform_root import governance_registry_root
         discovery_path = (
             governance_registry_root() /
-            "declaration" / "structure" / "structures" / "STRUCTURE_DISCOVERY_V0.md"
+            "structure" / "structures" / "STRUCTURE_DISCOVERY_V0.md"
         )
 
         if not discovery_path.exists():
@@ -199,7 +199,7 @@ class LayerResolver:
         from compiler.governance_engine.platform_root import governance_registry_root
         path = (
             governance_registry_root() /
-            "declaration" / "structure" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
+            "structure" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
         )
 
         if not path.exists():

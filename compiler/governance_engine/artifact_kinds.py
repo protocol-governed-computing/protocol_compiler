@@ -2,7 +2,7 @@
 
 The compiler owns *how to process* artifact kinds; it must not scatter *what kinds exist* across a
 handful of disconnected dictionaries. This module replaces five maps that had drifted apart
-(`_TYPE_TO_KIND`, `_GOVERNANCE_PREFIXES`, the directory `type_map`, `PPS_SECTION_BY_KIND`, and the
+(`_TYPE_TO_KIND`, `_GOVERNANCE_PREFIXES`, the directory `type_map`, `INDEX_SECTION_BY_KIND`, and the
 per-build `artifact_types` whitelist) with one `ArtifactKindDescriptor` per type-prefix.
 
 Every consumer asks the registry a question instead of indexing a raw map:
@@ -41,17 +41,17 @@ class ArtifactKindDescriptor:
     node_kind: str                      # NodeKind value (string): the topology classification
     disposition: str                    # EXECUTABLE | DECLARATIVE
     materialization_directory: str | None = None   # output dir under artifacts/, or None if not materialized here
-    pps_section: str | None = None      # PPS authoring-surface section, or None if not source-inspectable
+    index_section: str | None = None    # kind_index section for this kind, or None if not indexed
     canonical_keeps_prefix: bool = True # in canonical projection: keep this prefix vs collapse to node_kind
     artifact_kind: str | None = None    # canonical in-block discriminator (Kind Vocabulary); None = not yet authorized
 
     @property
     def inspectable_source(self) -> bool:
-        return self.pps_section is not None
+        return self.index_section is not None
 
 
-def _d(prefix, node_kind, disposition, directory=None, pps=None, keeps_prefix=True, ak=None):
-    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, pps, keeps_prefix, ak)
+def _d(prefix, node_kind, disposition, directory=None, index_section=None, keeps_prefix=True, ak=None):
+    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, index_section, keeps_prefix, ak)
 
 
 # The complete built-in table. Values are the EXACT union of the five legacy maps, so the registry is
@@ -122,13 +122,13 @@ class BuiltInArtifactRegistry:
             raise ValueError(f"Unknown artifact type prefix: {prefix}\nValid prefixes: {', '.join(valid)}")
         return d.materialization_directory
 
-    def pps_section(self, prefix: str) -> str | None:
+    def index_section(self, prefix: str) -> str | None:
         d = self._by_prefix.get(prefix)
-        return d.pps_section if d else None
+        return d.index_section if d else None
 
-    def pps_sections(self) -> dict[str, str]:
-        """Prefix → PPS section, for every source-inspectable kind (replaces PPS_SECTION_BY_KIND)."""
-        return {p: d.pps_section for p, d in self._by_prefix.items() if d.pps_section}
+    def index_sections(self) -> dict[str, str]:
+        """Prefix → kind_index section, for every indexed kind."""
+        return {p: d.index_section for p, d in self._by_prefix.items() if d.index_section}
 
     def canonical_type(self, node_kind: str, artifact_code: str) -> str:
         """The artifact_type written into the canonical projection (replaces _resolve_artifact_type).

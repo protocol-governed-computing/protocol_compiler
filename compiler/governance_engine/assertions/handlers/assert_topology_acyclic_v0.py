@@ -28,7 +28,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.topology::ASSERT_TOPOLOGY_ACYCLIC_V0",
+                "fqdn": "fb.execution_topology::ASSERT_TOPOLOGY_ACYCLIC_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing topology_cycle_analysis",
                 "fix": "Compiler must pre-compute cycle analysis before assert phase"
@@ -38,8 +38,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
     if cycle_analysis.get("has_cycle"):
         violations.append({
-            "fqdn": "fb.topology::ASSERT_TOPOLOGY_ACYCLIC_V0",
-            "rule": "fb.topology::INVARIANT_TOPOLOGY_ACYCLIC_V0",
+            "fqdn": "fb.execution_topology::ASSERT_TOPOLOGY_ACYCLIC_V0",
+            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_ACYCLIC_V0",
             "message": "Circular dependency detected in compiled topology graph",
             "fix": "Remove circular dependency between artifacts"
         })

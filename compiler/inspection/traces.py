@@ -2,7 +2,7 @@
 Trace surface — filesystem listing and trace-id resolution ONLY.
 
 Traces are runtime output. *What happened* belongs to `pgs_runtime examine`;
-pi never parses trace content. These helpers enumerate the trace tree
+si never parses trace content. These helpers enumerate the trace tree
 (traces/<domain>/<WF_CODE>/<TRACE_ID>/) and resolve a trace id to its
 .jsonl path so the CLI can delegate via subprocess.
 """

@@ -33,7 +33,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             "fqdn": "fb.execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0",
             "rule": "fb.execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0",
             "message": "No active placement contract found in FB_EXECUTION_PLACEMENT",
-            "fix": "Add a placement contract with status: active to execution/envelope/placement/",
+            "fix": "Add a placement contract with status: active to execution_placement/",
         })
     else:
         active_codes = [a.get("artifact_code") for a in active]

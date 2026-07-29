@@ -27,7 +27,7 @@ verifies the binding.
 from typing import Any
 
 RUNTIME_STAGE = "runtime_outcome"
-RULE = "fb.topology::INVARIANT_RUNTIME_INVARIANT_WIRED_V0"
+RULE = "fb.execution::INVARIANT_RUNTIME_INVARIANT_WIRED_V0"
 
 
 def _code(fqdn: str) -> str:
