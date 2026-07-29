@@ -21,14 +21,14 @@ from pathlib import Path
 
 COMPILER = Path(__file__).resolve().parents[1]
 WORKSPACE = COMPILER.parent
-COLLATZ = WORKSPACE / "platform" / "reference_workloads" / "collatz"
+COLLATZ = WORKSPACE / "conformance_workloads" / "workloads" / "collatz"
 DOMAIN_ATT = COLLATZ / "snapshot" / "compiled" / "trust"
 
 MACHINE = re.compile(r"(?P<h>^## Machine\s*\n+```yaml\s*\n)(?P<y>.*?)(?P<t>\n```)", re.M | re.S)
 
 # A domain-applicable invariant (imported into collatz) and a platform-only one (never imported).
-IMPORTED = WORKSPACE / "platform" / "registry" / "FB_TOPOLOGY" / "invariants" / "INVARIANT_TOPOLOGY_ACYCLIC_V0.md"
-PLATFORM_ONLY = WORKSPACE / "platform" / "registry" / "FB_CONSTITUTION" / "invariants" / "INVARIANT_COMPILER_NO_EXECUTION_V0.md"
+IMPORTED = WORKSPACE / "software_governance" / "registry" / "FB_TOPOLOGY" / "invariants" / "INVARIANT_TOPOLOGY_ACYCLIC_V0.md"
+PLATFORM_ONLY = WORKSPACE / "software_governance" / "registry" / "FB_CONSTITUTION" / "invariants" / "INVARIANT_COMPILER_NO_EXECUTION_V0.md"
 
 
 def _run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:

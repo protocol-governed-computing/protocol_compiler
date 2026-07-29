@@ -18,8 +18,8 @@ from pathlib import Path
 import yaml
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-REGISTRY = WORKSPACE / "platform" / "registry"
-OUT = WORKSPACE / "platform" / "doc" / "governance_surface_map.yaml"
+REGISTRY = WORKSPACE / "software_governance" / "registry"
+OUT = WORKSPACE / "software_governance" / "doc" / "governance_surface_map.yaml"
 
 MB = re.compile(r"^## Machine\s*\n+```yaml\s*\n(?P<y>.*?)\n```", re.M | re.S)
 DOMAIN_KINDS = {"WF", "CC", "CS", "CT", "RB", "AC", "IN", "EV", "TI", "TE"}

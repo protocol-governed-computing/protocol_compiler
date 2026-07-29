@@ -22,7 +22,7 @@ from pathlib import Path
 import yaml
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-REGISTRY = WORKSPACE / "platform" / "registry"
+REGISTRY = WORKSPACE / "software_governance" / "registry"
 
 MACHINE = re.compile(
     r"(?P<head>^## Machine\s*\n+```yaml\s*\n)(?P<y>.*?)(?P<tail>\n```)",

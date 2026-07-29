@@ -117,16 +117,24 @@ class LayerResolver:
 
     def _layer_root_from_config(self, layer_config: dict) -> Path | None:
         """
-        Resolve a layer's filesystem root under PGC_PLATFORM_ROOT — data-driven.
+        Resolve a layer's filesystem root — data-driven, from the declaring repo.
 
         Preference (protocol-declared, zero compiler-side per-domain knowledge):
-          1. platform_subpath — the layer declares its own subdir of the platform repo.
-             This is the DOMAIN-EXTENSION path: a new domain/workload registers its source
-             purely in the protocol (STRUCTURE_DISCOVERY_V0), with NO compiler edits.
-          2. registry_module — RI-0 harvest package names, mapped via _PGC_MODULE_MAP
+          1. domain_subpath — the layer declares its own subdir of the DOMAIN repo. This is
+             the DOMAIN-EXTENSION path: a workload or business domain lives in its own repo
+             (conformance_workloads, business_domains) and registers its source purely in
+             the protocol (its build manifest's layer_definitions), with NO compiler edits.
+          2. platform_subpath — the layer declares its own subdir of the platform repo.
+             For layers that genuinely belong to the platform surface.
+          3. registry_module — RI-0 harvest package names, mapped via _PGC_MODULE_MAP
              (the platform surface layers; kept for backward compatibility).
         """
-        from compiler.governance_engine.platform_root import platform_root
+        from compiler.governance_engine.platform_root import domain_root, platform_root
+
+        subpath = layer_config.get("domain_subpath")
+        if subpath:
+            parts = str(subpath).strip("/").split("/")
+            return domain_root().joinpath(*parts)
 
         subpath = layer_config.get("platform_subpath")
         if subpath:

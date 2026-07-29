@@ -107,7 +107,7 @@ Flattens every Machine block into dotted key paths, then classifies each leaf by
 python scripts/machine_key_census.py                      # whole registry
 python scripts/machine_key_census.py --kind INVARIANT     # one artifact kind
 python scripts/machine_key_census.py \
-    --roots ../platform/capability_transforms \
+    --roots ../software_governance/capability_transforms \
     --src ../protocol_compiler/compiler ../protocol_runtime
 ```
 
@@ -131,7 +131,7 @@ The definitive test. Delete the key, recompile, compare the snapshot:
 
 ```bash
 python scripts/machine_key_mutation.py \
-    --artifact ../platform/registry/FB_TOPOLOGY/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
+    --artifact ../software_governance/registry/FB_TOPOLOGY/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
     --key core.anti_patterns --key core.enforcement_stage --key governed_by
 ```
 

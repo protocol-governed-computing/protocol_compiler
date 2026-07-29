@@ -25,9 +25,9 @@ MACHINE_BLOCK = re.compile(
 WORKSPACE = Path(__file__).resolve().parents[2]
 
 DEFAULT_ROOTS = [
-    WORKSPACE / "platform" / "registry",
+    WORKSPACE / "software_governance" / "registry",
     WORKSPACE / "pgc_charter",
-    WORKSPACE / "platform" / "domains",
+    WORKSPACE / "software_governance" / "domains",
 ]
 
 DEFAULT_SRC = [

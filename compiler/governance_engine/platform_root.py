@@ -42,6 +42,32 @@ def governance_registry_root() -> Path:
     return platform_root() / "registry"
 
 
+_DOMAIN_ENV = "PGC_DOMAIN_ROOTS"
+
+
+def domain_root() -> Path:
+    """Absolute path to the domain being compiled. Fail-hard if unset or invalid.
+
+    A domain (workload or business domain) is self-describing and lives in its OWN repo —
+    it is not a subdirectory of the platform surface. Its build manifest declares layer
+    sources as `domain_subpath`, resolved here. Only the first PGC_DOMAIN_ROOTS entry is
+    a compile target; the rest are import surface.
+    """
+    v = os.environ.get(_DOMAIN_ENV, "").split(os.pathsep)[0]
+    if not v:
+        raise RuntimeError(
+            f"{_DOMAIN_ENV} is not set. A domain layer declared `domain_subpath`, which "
+            f"resolves under the domain repo root — set {_DOMAIN_ENV} to the domain root "
+            f"(the directory containing registry/)."
+        )
+    p = Path(v).expanduser().resolve()
+    if not (p / "registry").is_dir():
+        raise RuntimeError(
+            f"{_DOMAIN_ENV}={p} is not a PGC domain root (no registry/ directory found)."
+        )
+    return p
+
+
 _SNAPSHOT_ENV = "PGC_SNAPSHOT_ROOT"
 
 

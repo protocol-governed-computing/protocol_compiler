@@ -15,7 +15,7 @@ change and nothing can ever be shown dead.
 
 Usage:
     python scripts/machine_key_mutation.py \
-        --artifact ../platform/registry/FB_TOPOLOGY/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
+        --artifact ../software_governance/registry/FB_TOPOLOGY/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
         --key core.anti_patterns --key core.violation_response
 """
 
@@ -130,7 +130,7 @@ def main() -> int:
                     help="dotted Machine-block key path to delete; repeatable")
     ap.add_argument("--structure", default="STRUCTURE_BUILD_PLATFORM_CONFIG_V1")
     ap.add_argument("--snapshot", type=Path,
-                    default=WORKSPACE / "platform" / "snapshot")
+                    default=WORKSPACE / "software_governance" / "snapshot")
     args = ap.parse_args()
 
     artifact = args.artifact.resolve()

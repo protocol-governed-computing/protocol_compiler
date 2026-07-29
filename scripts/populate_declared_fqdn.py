@@ -26,14 +26,14 @@ MACHINE = re.compile(
 )
 
 CANONICAL_ROOTS = [
-    WORKSPACE / "platform" / "snapshot" / "compiled" / "canonical",
-    WORKSPACE / "platform" / "reference_workloads" / "collatz" / "snapshot" / "compiled" / "canonical",
+    WORKSPACE / "software_governance" / "snapshot" / "compiled" / "canonical",
+    WORKSPACE / "conformance_workloads" / "workloads" / "collatz" / "snapshot" / "compiled" / "canonical",
 ]
 REGISTRY_GLOBS = [
-    str(WORKSPACE / "platform" / "registry" / "**" / "*.md"),
-    str(WORKSPACE / "platform" / "capability_transforms" / "registry" / "**" / "*.md"),
-    str(WORKSPACE / "platform" / "capability_side_effects" / "registry" / "**" / "*.md"),
-    str(WORKSPACE / "platform" / "reference_workloads" / "collatz" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "software_governance" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "software_governance" / "capability_transforms" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "software_governance" / "capability_side_effects" / "registry" / "**" / "*.md"),
+    str(WORKSPACE / "conformance_workloads" / "workloads" / "collatz" / "registry" / "**" / "*.md"),
 ]
 
 

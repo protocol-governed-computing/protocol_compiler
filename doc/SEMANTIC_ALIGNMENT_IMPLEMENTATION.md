@@ -2,7 +2,7 @@
 
 Self-contained execution plan for one large checkpoint. Written for a session with **no prior context**. Execute A then B in order. Do not deviate from the acceptance gates.
 
-Work happens on branch **`semantic_alignment`**, already created and checked out on both `platform` and `protocol_compiler`. `protocol_runtime` and `snapshot_assembler` are **not touched** — A and B preserve every FQDN value, so the assembled snapshot stays consumable unchanged.
+Work happens on branch **`semantic_alignment`**, already created and checked out on both `software_governance` and `protocol_compiler`. `protocol_runtime` and `snapshot_assembler` are **not touched** — A and B preserve every FQDN value, so the assembled snapshot stays consumable unchanged.
 
 ---
 
@@ -38,11 +38,11 @@ If those two hold, no artifact's identity changed. `topology_hash` and `content_
 
 Re-capture the baseline at execution time in case earlier commits shifted it:
 ```bash
-cd protocol_compiler && ./compile.sh >/dev/null && ./compile_domain.sh ../platform/reference_workloads/collatz >/dev/null
-cp ../platform/snapshot/compiled/vocabulary/platform/reverse.json /tmp/base_platform_reverse.json
-cp ../platform/reference_workloads/collatz/snapshot/compiled/vocabulary/workload/reverse.json /tmp/base_workload_reverse.json
-python -c "import json;print('platform',json.load(open('../platform/snapshot/compiled/canonical/metadata.json'))['graph_address_hash'])"
-python -c "import json;print('collatz ',json.load(open('../platform/reference_workloads/collatz/snapshot/compiled/canonical/metadata.json'))['graph_address_hash'])"
+cd protocol_compiler && ./compile.sh >/dev/null && ./compile_domain.sh ../conformance_workloads/workloads/collatz >/dev/null
+cp ../software_governance/snapshot/compiled/vocabulary/platform/reverse.json /tmp/base_platform_reverse.json
+cp ../conformance_workloads/workloads/collatz/snapshot/compiled/vocabulary/workload/reverse.json /tmp/base_workload_reverse.json
+python -c "import json;print('platform',json.load(open('../software_governance/snapshot/compiled/canonical/metadata.json'))['graph_address_hash'])"
+python -c "import json;print('collatz ',json.load(open('../conformance_workloads/workloads/collatz/snapshot/compiled/canonical/metadata.json'))['graph_address_hash'])"
 ```
 
 ---
@@ -85,7 +85,7 @@ Identity becomes declared; the folder becomes discovery-only. FQDN **values are 
 ### B1 — populate authoritative `fqdn:` on every registry artifact
 
 Write a migration script `protocol_compiler/scripts/populate_declared_fqdn.py`:
-- For every `*.md` under `platform/registry/**` and `platform/reference_workloads/collatz/registry/**` (135 platform + collatz domain artifacts):
+- For every `*.md` under `software_governance/registry/**` and `conformance_workloads/workloads/collatz/registry/**` (135 platform + collatz domain artifacts):
   - Compute the artifact's **current path-derived FQDN** exactly as the compiler does today: namespace from the `FB_<NAME>` folder (platform) or the manifest `identity_rules` (collatz → `workload`), `artifact_code` from the filename (`filename_pattern`). This value must equal what the compiler already produces — verify against `reverse.json`.
   - Insert `fqdn: <derived>` as the **first key** of the `## Machine` YAML block if not already present and equal. Idempotent.
 - The script prints any artifact whose declared value would differ from the compiled `reverse.json` entry — there must be **zero** such; a difference is a bug in the script, not a real identity change.
@@ -117,10 +117,10 @@ Keep the change minimal and behavior-preserving: with B1 populated, declared == 
 ### B4 — prove the no-op
 
 ```bash
-cd protocol_compiler && ./compile.sh && ./compile_domain.sh ../platform/reference_workloads/collatz
-diff <(python -m json.tool ../platform/snapshot/compiled/vocabulary/platform/reverse.json) <(python -m json.tool /tmp/base_platform_reverse.json) && echo "PLATFORM IDENTITY PRESERVED"
-diff <(python -m json.tool ../platform/reference_workloads/collatz/snapshot/compiled/vocabulary/workload/reverse.json) <(python -m json.tool /tmp/base_workload_reverse.json) && echo "COLLATZ IDENTITY PRESERVED"
-python -c "import json;assert json.load(open('../platform/snapshot/compiled/canonical/metadata.json'))['graph_address_hash']=='c00003ce35547b187901c7e6d12a3fe280c07a76eaf08d4deca078b5cc4ecfea', 'ADDRESS HASH DRIFT'; print('platform address hash preserved')"
+cd protocol_compiler && ./compile.sh && ./compile_domain.sh ../conformance_workloads/workloads/collatz
+diff <(python -m json.tool ../software_governance/snapshot/compiled/vocabulary/platform/reverse.json) <(python -m json.tool /tmp/base_platform_reverse.json) && echo "PLATFORM IDENTITY PRESERVED"
+diff <(python -m json.tool ../conformance_workloads/workloads/collatz/snapshot/compiled/vocabulary/workload/reverse.json) <(python -m json.tool /tmp/base_workload_reverse.json) && echo "COLLATZ IDENTITY PRESERVED"
+python -c "import json;assert json.load(open('../software_governance/snapshot/compiled/canonical/metadata.json'))['graph_address_hash']=='c00003ce35547b187901c7e6d12a3fe280c07a76eaf08d4deca078b5cc4ecfea', 'ADDRESS HASH DRIFT'; print('platform address hash preserved')"
 ```
 Both `reverse.json` diffs empty and both address hashes identical ⇒ identity provably unchanged. Also confirm the migration cross-check invariant PASSES (declared == derived everywhere) and both builds are green/Verified/Attested. `graph_topology_hash` WILL differ (files edited) — expected, not a failure.
 
@@ -174,8 +174,8 @@ Once B4 passes:
 ## 6. Sequence & commit points
 
 1. Baseline capture (§1) → commit nothing.
-2. **A** → verify hash-neutral → commit `platform`: "semantic surface map (additive)".
-3. **B1** populate fqdn → **B2** constitution+invariants+handlers → **B3** compiler → **B4** prove no-op. Commit `platform` + `protocol_compiler` together: "declare identity; folder becomes discovery-only (identity preserved)".
+2. **A** → verify hash-neutral → commit `software_governance`: "semantic surface map (additive)".
+3. **B1** populate fqdn → **B2** constitution+invariants+handlers → **B3** compiler → **B4** prove no-op. Commit `software_governance` + `protocol_compiler` together: "declare identity; folder becomes discovery-only (identity preserved)".
 4. **B6** retire cross-check + derivation authority → prove green → commit: "retire path-derived identity".
 5. Update `pgc_charter/doc/governance_semantic_classification.md` §10/§13 to note identity is now declared (small edit; that repo is not branched — coordinate or defer).
 

@@ -82,7 +82,7 @@ Where finer scoping is needed, reuse the established idiom rather than inventing
 
 Two harnesses exist and must both stay green at every phase boundary:
 
-- **`./compile_domain.sh ../platform/reference_workloads/collatz`** — 25 artifacts, Verified, Attested. Exercises `layer_definitions`, `identity_rules`, `import_surface`, `_inject_imported_capabilities`, and CT/CS/CC/WF under a domain namespace.
+- **`./compile_domain.sh ../conformance_workloads/workloads/collatz`** — 25 artifacts, Verified, Attested. Exercises `layer_definitions`, `identity_rules`, `import_surface`, `_inject_imported_capabilities`, and CT/CS/CC/WF under a domain namespace.
 - **`graph_address_hash` equality** — derived from the typed graph, not source bytes, so equality across a semantically-neutral change is a hard proof of neutrality.
 
 What genuinely lacks coverage is the breadth of **domain build-manifest shapes**. Collatz exercises one. `SCHEMA_STRUCTURE_V0`, once closed, can reject a manifest key collatz does not use but a user domain does. Confined to Phase 3.
