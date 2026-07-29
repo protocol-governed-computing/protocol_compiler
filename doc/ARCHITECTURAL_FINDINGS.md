@@ -75,7 +75,7 @@ Each needs classifying: either the referenced domain is part of the platform's d
 
 ## 4. Transport artifacts are declared but unauthorized
 
-Two artifacts cannot satisfy a closed schema without authoring transport governance, which `transport/CLAUDE.md` explicitly defers:
+Two artifacts cannot satisfy a closed schema without authoring transport governance, which `protocol_transport/CLAUDE.md` explicitly defers:
 
 > Constitutions, compiler `TI_`/`TE_` kinds, and adapters are later phases and are **not yet authorized** until the standard is accepted.
 
