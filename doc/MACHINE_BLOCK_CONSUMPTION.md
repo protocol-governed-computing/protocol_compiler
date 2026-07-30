@@ -11,14 +11,16 @@ There is exactly one reader. `S1_EXTRACT` (`compiler/stages/s1_extract.py`) does
 ```
 STRUCTURE_DISCOVERY_V0 + STRUCTURE_<BUILD>_CONFIG   → layers to scan
         ↓  LayerResolver.resolve_layer_root(layer)
-platform/registry/FB_*/{constitutions,invariants,structures,schemas}/*.md
+software_governance/registry/<namespace>/{constitutions,invariants,structures}/*.md
         ↓  filename_pattern → artifact_type, name, version
-STRUCTURE_IDENTITY_V0 derivation rules              → namespace
-        ↓
+declared `fqdn:` in the artifact's Machine block     → namespace::CODE
+        ↓  STRUCTURE_IDENTITY_V0 authorizes the namespace
 namespace::ARTIFACT_CODE_Vn                         → Node.fqdn
 ```
 
-`FB_*` directories are **not** special-cased anywhere in the compiler. They are ordinary subdirectories under a layer root; the recursive `rglob("*.md")` in `_scan_layer` finds them, and the `module_path` derived from their relative path is what the identity rules match on to produce a namespace (`fb.topology`, `fb.constitution`, …). Renaming an `FB_*` folder changes the namespace and therefore every FQDN under it — nothing else.
+Directories are **not** special-cased anywhere in the compiler. The recursive `rglob("*.md")` in `_scan_layer` finds artifacts wherever they sit under a layer root, and **namespace comes from the `fqdn:` key declared in each artifact's Machine block** — not from the folder. `STRUCTURE_IDENTITY_V0` authorizes which namespaces may be declared; it does not assign them. Moving a file therefore changes no FQDN: the registry reorganization that flattened `registry/` to one directory per namespace moved 167 files and left the `snapshot_id` byte-identical.
+
+One caveat: `artifact_code` and `version` *are* parsed from the filename (`_V<n>`), and `INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0` requires the `fqdn:` suffix to equal that filename-derived code. So renaming a *file* fails the build until its `fqdn:` is updated to match.
 
 ### The Machine block
 
@@ -131,7 +133,7 @@ The definitive test. Delete the key, recompile, compare the snapshot:
 
 ```bash
 python scripts/machine_key_mutation.py \
-    --artifact ../software_governance/registry/FB_TOPOLOGY/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
+    --artifact ../software_governance/registry/execution_topology/invariants/INVARIANT_TOPOLOGY_ACYCLIC_V0.md \
     --key core.anti_patterns --key core.enforcement_stage --key governed_by
 ```
 

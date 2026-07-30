@@ -33,25 +33,59 @@ from dataclasses import dataclass
 EXECUTABLE = "EXECUTABLE"
 DECLARATIVE = "DECLARATIVE"
 
+# Governance Ontology (spec fragment 03) — both axes are CLOSED per ontology version.
+# §4 primary Semantic Category: exactly one per kind.
+DEFINITIONAL, NORMATIVE, CONTRACTUAL = "Definitional", "Normative", "Contractual"
+OPERATIONAL, PARTICIPATORY, EVIDENTIAL = "Operational", "Participatory", "Evidential"
+SEMANTIC_CATEGORIES = (DEFINITIONAL, NORMATIVE, CONTRACTUAL, OPERATIONAL, PARTICIPATORY, EVIDENTIAL)
+# §6 provenance: how the element came to exist. Semantic, not physical.
+AUTHORED, DERIVED, PRODUCED = "authored", "derived", "produced"
+PROVENANCES = (AUTHORED, DERIVED, PRODUCED)
+# §7 runtime disposition is a CATEGORY CONTRACT property, never stored per kind — it is derived
+# from the category so the two can never disagree. Distinct from the `disposition` field below,
+# which answers a different question (topology participation).
+_RUNTIME_DISPOSITION = {
+    DEFINITIONAL:  "not executable",
+    NORMATIVE:     "not executable",
+    CONTRACTUAL:   "not independently executable",
+    OPERATIONAL:   "executable",
+    PARTICIPATORY: "participates in execution",
+    EVIDENTIAL:    "produced by execution",
+}
+
 
 @dataclass(frozen=True)
 class ArtifactKindDescriptor:
     """Everything the pipeline needs to know about one artifact kind. One object, not five maps."""
     prefix: str                         # the artifact-code type token, e.g. "ENTITY", "CC", "STRUCTURE"
     node_kind: str                      # NodeKind value (string): the topology classification
-    disposition: str                    # EXECUTABLE | DECLARATIVE
+    disposition: str                    # EXECUTABLE | DECLARATIVE — TOPOLOGY PARTICIPATION only.
+                                        # Not ontology §7 runtime disposition (see runtime_disposition).
     materialization_directory: str | None = None   # output dir under artifacts/, or None if not materialized here
     index_section: str | None = None    # kind_index section for this kind, or None if not indexed
     canonical_keeps_prefix: bool = True # in canonical projection: keep this prefix vs collapse to node_kind
     artifact_kind: str | None = None    # canonical in-block discriminator (Kind Vocabulary); None = not yet authorized
+    semantic_category: str | None = None  # Governance Ontology §4 primary category; None = kind not authorized
+    provenance: str | None = None         # Governance Ontology §6 provenance; None = kind not authorized
 
     @property
     def inspectable_source(self) -> bool:
         return self.index_section is not None
 
+    @property
+    def runtime_disposition(self) -> str | None:
+        """Ontology §7 runtime disposition — derived from the category, never stored.
 
-def _d(prefix, node_kind, disposition, directory=None, index_section=None, keeps_prefix=True, ak=None):
-    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, index_section, keeps_prefix, ak)
+        Distinct from `disposition`: a CAPABILITY_CONTRACT participates in the execution
+        topology (disposition == EXECUTABLE) yet is "not independently executable" (§7).
+        """
+        return _RUNTIME_DISPOSITION.get(self.semantic_category)
+
+
+def _d(prefix, node_kind, disposition, directory=None, index_section=None, keeps_prefix=True, ak=None,
+       category=None, provenance=None):
+    return ArtifactKindDescriptor(prefix, node_kind, disposition, directory, index_section, keeps_prefix, ak,
+                                  category, provenance)
 
 
 # The complete built-in table. Values are the EXACT union of the five legacy maps, so the registry is
@@ -60,26 +94,45 @@ def _d(prefix, node_kind, disposition, directory=None, index_section=None, keeps
 # else they collapse to "GOVERNANCE".
 _DESCRIPTORS: tuple[ArtifactKindDescriptor, ...] = (
     # EXECUTABLE — execution topology
-    _d("WF", "WF", EXECUTABLE, "workflows", "workflows", ak="WORKFLOW"),
-    _d("CC", "CC", EXECUTABLE, "capability_contracts", "capability_contracts", ak="CAPABILITY_CONTRACT"),
-    _d("CT", "CT", EXECUTABLE, "capability_transforms", "capability_transforms", ak="CAPABILITY_TRANSFORM"),
-    _d("CS", "CS", EXECUTABLE, "capability_side_effects", "capability_side_effects", ak="CAPABILITY_SIDE_EFFECT"),
-    _d("IN", "IN", EXECUTABLE, "intents", "intents", ak="INTENT"),
-    _d("TI", "TI", EXECUTABLE, "ingress_intents", ak="TRANSPORT_INGRESS"),
-    _d("TE", "TE", EXECUTABLE, "transport/egress", ak="TRANSPORT_EGRESS"),
-    _d("RB", "RB", EXECUTABLE, "runtime_bindings", "runtime_bindings", ak="RUNTIME_BINDING"),
-    _d("EV", "EV", EXECUTABLE, "events", ak="EVENT"),
-    _d("AC", "AC", EXECUTABLE, "actors", ak="ACTOR"),
+    _d("WF", "WF", EXECUTABLE, "workflows", "workflows", ak="WORKFLOW",
+       category=OPERATIONAL, provenance=AUTHORED),
+    _d("CC", "CC", EXECUTABLE, "capability_contracts", "capability_contracts", ak="CAPABILITY_CONTRACT",
+       category=CONTRACTUAL, provenance=AUTHORED),
+    _d("CT", "CT", EXECUTABLE, "capability_transforms", "capability_transforms", ak="CAPABILITY_TRANSFORM",
+       category=OPERATIONAL, provenance=AUTHORED),
+    _d("CS", "CS", EXECUTABLE, "capability_side_effects", "capability_side_effects", ak="CAPABILITY_SIDE_EFFECT",
+       category=OPERATIONAL, provenance=AUTHORED),
+    _d("IN", "IN", EXECUTABLE, "intents", "intents", ak="INTENT",
+       category=OPERATIONAL, provenance=AUTHORED),
+    _d("TI", "TI", EXECUTABLE, "ingress_intents", ak="TRANSPORT_INGRESS",
+       category=CONTRACTUAL, provenance=AUTHORED),
+    _d("TE", "TE", EXECUTABLE, "transport/egress", ak="TRANSPORT_EGRESS",
+       category=CONTRACTUAL, provenance=AUTHORED),
+    _d("RB", "RB", EXECUTABLE, "runtime_bindings", "runtime_bindings", ak="RUNTIME_BINDING",
+       category=OPERATIONAL, provenance=AUTHORED),
+    # EVENT: the *kind* is an authored declaration of an event type (schema + trigger). The
+    # produced elements — event occurrences and trace records — belong to the runtime evidence
+    # model, not the artifact-kind ontology, so no kind carries provenance `produced`.
+    _d("EV", "EV", EXECUTABLE, "events", ak="EVENT",
+       category=EVIDENTIAL, provenance=AUTHORED),
+    _d("AC", "AC", EXECUTABLE, "actors", ak="ACTOR",
+       category=PARTICIPATORY, provenance=AUTHORED),
     # DECLARATIVE — own NodeKind
-    _d("ASSERT", "ASSERT", DECLARATIVE, "assertions", ak="ASSERT"),
+    _d("ASSERT", "ASSERT", DECLARATIVE, "assertions", ak="ASSERT",
+       category=NORMATIVE, provenance=DERIVED),
     _d("TEST_DATA", "TEST_DATA", DECLARATIVE),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, keep their prefix (old _GOVERNANCE_PREFIXES)
-    _d("INVARIANT", "GOVERNANCE", DECLARATIVE, "invariants", ak="INVARIANT"),
-    _d("VOCAB", "GOVERNANCE", DECLARATIVE, "vocabulary", ak="VOCABULARY"),
-    _d("CONSTITUTION", "GOVERNANCE", DECLARATIVE, "concerns", ak="CONSTITUTION"),
+    _d("INVARIANT", "GOVERNANCE", DECLARATIVE, "invariants", ak="INVARIANT",
+       category=NORMATIVE, provenance=AUTHORED),
+    _d("VOCAB", "GOVERNANCE", DECLARATIVE, "vocabulary", ak="VOCABULARY",
+       category=DEFINITIONAL, provenance=AUTHORED),
+    _d("CONSTITUTION", "GOVERNANCE", DECLARATIVE, "concerns", ak="CONSTITUTION",
+       category=NORMATIVE, provenance=AUTHORED),
     _d("SCHEMA", "GOVERNANCE", DECLARATIVE, "schemas"),
-    _d("STRUCTURE", "GOVERNANCE", DECLARATIVE, "structures", ak="STRUCTURE"),
-    _d("SURFACE", "GOVERNANCE", DECLARATIVE, "surface_contracts", ak="SURFACE_CONTRACT"),
+    _d("STRUCTURE", "GOVERNANCE", DECLARATIVE, "structures", ak="STRUCTURE",
+       category=DEFINITIONAL, provenance=AUTHORED),
+    _d("SURFACE", "GOVERNANCE", DECLARATIVE, "surface_contracts", ak="SURFACE_CONTRACT",
+       category=CONTRACTUAL, provenance=AUTHORED),
     _d("ENTITY", "GOVERNANCE", DECLARATIVE, "entities", "entities", ak="ENTITY"),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, collapse to "GOVERNANCE" in canonical (not in old prefixes)
     _d("LAYER", "GOVERNANCE", DECLARATIVE, keeps_prefix=False),
@@ -121,6 +174,25 @@ class BuiltInArtifactRegistry:
             valid = sorted(p for p, x in self._by_prefix.items() if x.materialization_directory)
             raise ValueError(f"Unknown artifact type prefix: {prefix}\nValid prefixes: {', '.join(valid)}")
         return d.materialization_directory
+
+    def semantic_category(self, artifact_kind: str) -> str | None:
+        """Governance Ontology §4 primary category for a canonical `artifact_kind`."""
+        d = self._by_kind.get(artifact_kind)
+        return d.semantic_category if d else None
+
+    def provenance(self, artifact_kind: str) -> str | None:
+        """Governance Ontology §6 provenance for a canonical `artifact_kind`."""
+        d = self._by_kind.get(artifact_kind)
+        return d.provenance if d else None
+
+    def runtime_disposition(self, artifact_kind: str) -> str | None:
+        """Ontology §7 runtime disposition for a canonical `artifact_kind`."""
+        d = self._by_kind.get(artifact_kind)
+        return d.runtime_disposition if d else None
+
+    def ontology_coverage(self) -> dict[str, tuple[str | None, str | None]]:
+        """Every authorized kind → (category, provenance). Ontology §11 conformance input."""
+        return {k: (d.semantic_category, d.provenance) for k, d in sorted(self._by_kind.items())}
 
     def index_section(self, prefix: str) -> str | None:
         d = self._by_prefix.get(prefix)

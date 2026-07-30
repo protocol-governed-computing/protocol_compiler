@@ -26,7 +26,7 @@ WORKSPACE = Path(__file__).resolve().parents[2]
 
 DEFAULT_ROOTS = [
     WORKSPACE / "software_governance" / "registry",
-    WORKSPACE / "pgc_charter",
+    WORKSPACE / "standards",
     WORKSPACE / "software_governance" / "domains",
 ]
 

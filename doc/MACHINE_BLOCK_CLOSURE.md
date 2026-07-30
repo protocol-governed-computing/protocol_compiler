@@ -114,7 +114,7 @@ python scripts/machine_key_mutation.py --artifact <path> --key <k>
 
 The census is the fast gate (static, whole-registry, seconds). The mutation verifier is the adjudicator for any key the census disputes — it is the only thing that distinguishes "name appears in source" from "compiler reads this key here". Run the census per-commit; run mutation on the keys it flags.
 
-Nothing enforces `additionalProperties: false` on a *new* schema either. Either assert that property over every schema in `FB_CONSTITUTION/schemas`, or accept the census as the backstop.
+Nothing enforces `additionalProperties: false` on a *new* schema either. Either assert that property over every schema in `registry/schema/`, or accept the census as the backstop.
 
 ---
 
