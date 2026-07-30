@@ -283,7 +283,7 @@ def _compute_governance_closure(
     return {
         "import_domain": domain,
         "governance_closure_hash": h.hexdigest(),
-        "invariant_count": len(members),
+        "closure_member_count": len(members),
     }
 
 
@@ -537,17 +537,29 @@ def _inject_imported_governance(
     build_config: dict[str, Any],
     errors: list[CompilerError],
 ) -> None:
-    """Import platform governance as checked protocol state.
+    """Import the platform's normative substrate as checked protocol state.
 
-    Domain-applicable INVARIANT nodes are lifted from the imported platform snapshot into this
-    domain's graph so S4 can assert them against the domain's own artifacts. Unlike capabilities
-    (import_role="execution", linked + emitted), governance is import_role="governance": it acts on
-    the domain graph and is dropped before materialize (canonical projection skips it) — it is the
-    asserter, never a subject, and never part of the domain's artifact set.
+    **A domain compile operates over its normative closure, not merely its authored artifacts.**
+    A domain is not an independent language — it is written in the PGC language, so every domain
+    compilation must begin with that language already in scope. Whatever is required to interpret,
+    validate and constrain the domain is lifted from the imported platform snapshot into this
+    domain's graph before S4 runs.
 
-    Applicability is derived, not declared: an invariant is imported iff its scope.applies_to
-    intersects the domain-instantiated kinds. Platform-only invariants (COMPILER/INVARIANT/
-    CONSTITUTION/SNAPSHOT/... scopes) have no domain subject and are never imported.
+    Two kinds make up that closure today:
+
+      * INVARIANT  — the rules asserted against the domain's artifacts. Applicability is derived,
+        not declared: imported iff its applies_to_kinds intersects the domain-instantiated kinds.
+        Platform-only invariants (COMPILER/INVARIANT/CONSTITUTION/SNAPSHOT/... scopes) have no
+        domain subject and are never imported.
+      * VOCABULARY — the symbol space those rules are evaluated against. Imported unconditionally:
+        a vocabulary has no "subject" to intersect, and a build carrying no vocabulary cannot be
+        measured against one, so omitting it silently disables every symbol rule.
+
+    Unlike capabilities (import_role="execution", linked + emitted), the closure is
+    import_role="governance": it acts on the domain graph and is dropped before materialize
+    (canonical projection skips it) — it is the asserter, never a subject, and never part of the
+    domain's artifact set. `_compute_governance_closure` digests exactly this set, so anything
+    imported here is bound into the domain's governance provenance automatically.
     """
     import json
 
@@ -557,51 +569,73 @@ def _inject_imported_governance(
         return  # platform build: no import_surface, no injection — must stay a no-op
 
     from compiler.governance_engine.platform_root import platform_root
-    inv_root = platform_root() / "snapshot" / "compiled" / "canonical" / "invariants"
-    if not inv_root.is_dir():
-        return
+    canonical = platform_root() / "snapshot" / "compiled" / "canonical"
 
     search_layers = (build_config.get("artifact_discovery", {}) or {}).get("search_layers", [])
     if not search_layers:
         return
     domain_layer = search_layers[0]
 
-    for path in sorted(inv_root.glob("*.json")):
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        fm = raw.get("frontmatter", {}) or {}
-        proj = fm.get("assert_projection", {}) or {}
-        kinds = proj.get("applies_to_kinds", []) or []
-        if not (set(kinds) & _DOMAIN_INSTANTIATED):
-            continue  # platform-only invariant — no domain subject
+    def _admits_invariant(raw: dict[str, Any]) -> bool:
+        proj = (raw.get("frontmatter", {}) or {}).get("assert_projection", {}) or {}
+        if not (set(proj.get("applies_to_kinds", []) or []) & _DOMAIN_INSTANTIATED):
+            return False  # platform-only invariant — no domain subject
         # A layer/surface-scoped invariant governs a specific surface (its allowed-list is that
         # surface's); domains declare their own surface-closure, so it is not generically imported.
-        if (proj.get("scope", {}) or {}).get("applies_to"):
+        return not (proj.get("scope", {}) or {}).get("applies_to")
+
+    # The normative closure, by materialization directory. A vocabulary has no subject to
+    # intersect, so it carries no admission filter — it is the language, imported whole.
+    closure_sources = (
+        ("invariants", _admits_invariant),
+        ("vocabulary", lambda raw: True),
+    )
+
+    for subdir, admits in closure_sources:
+        source_root = canonical / subdir
+        if not source_root.is_dir():
             continue
-        fqdn = raw.get("fqdn_id")
-        if not fqdn or fqdn in builder._nodes:
-            continue
-        namespace, artifact_code = fqdn.split("::", 1)
-        kind = _type_to_kind(raw.get("artifact_type"))
-        if kind is None:
-            continue
-        m = re.search(r"_V(\d+)$", artifact_code)
-        builder.add_node(Node.create(
-            fqdn=fqdn,
-            kind=kind,
-            namespace=namespace,
-            artifact_code=artifact_code,
-            version=f"V{m.group(1)}" if m else "V0",
-            layer_code=domain_layer,
-            content_hash=raw.get("content_hash", ""),
-            frontmatter=fm,                      # carries scope + assert_projection → derived ASSERT in S4
-            domain_name=None,
-            metadata={
-                "imported": True,
-                "import_role": "governance",     # asserts the domain graph; NOT emitted
-                "import_domain": domain,
-                "module_path": raw.get("module_path", ""),
-            },
-        ))
+        for path in sorted(source_root.glob("*.json")):
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            fm = raw.get("frontmatter", {}) or {}
+            if not admits(raw):
+                continue
+            _inject_closure_node(builder, raw, fm, domain, domain_layer)
+
+
+def _inject_closure_node(
+    builder: GraphBuilder,
+    raw: dict[str, Any],
+    fm: dict[str, Any],
+    domain: str,
+    domain_layer: str,
+) -> None:
+    """Add one imported normative-closure artifact to the domain graph (import_role=governance)."""
+    fqdn = raw.get("fqdn_id")
+    if not fqdn or fqdn in builder._nodes:
+        return
+    namespace, artifact_code = fqdn.split("::", 1)
+    kind = _type_to_kind(raw.get("artifact_type"))
+    if kind is None:
+        return
+    m = re.search(r"_V(\d+)$", artifact_code)
+    builder.add_node(Node.create(
+        fqdn=fqdn,
+        kind=kind,
+        namespace=namespace,
+        artifact_code=artifact_code,
+        version=f"V{m.group(1)}" if m else "V0",
+        layer_code=domain_layer,
+        content_hash=raw.get("content_hash", ""),
+        frontmatter=fm,                      # carries scope + assert_projection → derived ASSERT in S4
+        domain_name=None,
+        metadata={
+            "imported": True,
+            "import_role": "governance",     # asserts the domain graph; NOT emitted
+            "import_domain": domain,
+            "module_path": raw.get("module_path", ""),
+        },
+    ))
 
 
 def _parse_artifact_to_node(
