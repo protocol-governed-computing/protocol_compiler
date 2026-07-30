@@ -207,19 +207,19 @@ class ProtocolFSReader:
 
         for path in ct_dir.glob("*.json"):
             data = self._read_json(path)
-            ct_code = data.get("ct_code")
-            if not isinstance(ct_code, str):
+            artifact_code = data.get("artifact_code")
+            if not isinstance(artifact_code, str):
                 raise RuntimeError(
-                    f"Capability transform missing 'ct_code' in {path}"
+                    f"Capability transform missing 'artifact_code' in {path}"
                 )
 
             expected = path.stem.upper()
-            if ct_code != expected:
+            if artifact_code != expected:
                 raise RuntimeError(
                     f"Capability transform code mismatch in {path}: "
-                    f"expected '{expected}', found '{ct_code}'"
+                    f"expected '{expected}', found '{artifact_code}'"
                 )
 
-            transforms[ct_code] = data
+            transforms[artifact_code] = data
 
         return transforms

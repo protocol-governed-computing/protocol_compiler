@@ -94,27 +94,27 @@ class ProtocolLoader:
             # Scan pipeline for CT references
             for step in pipeline:
                 if isinstance(step, dict):
-                    ct_code = step.get("transform")
-                    if ct_code and ct_code not in ct_ir_registry:
+                    artifact_code = step.get("transform")
+                    if artifact_code and artifact_code not in ct_ir_registry:
                         try:
                             # PROTOCOL SOVEREIGNTY: Transform codes MUST be FQDN (namespace::CODE)
                             # No inference, no defaulting, no prefixing allowed
-                            if "::" not in ct_code:
+                            if "::" not in artifact_code:
                                 raise ValueError(
-                                    f"Transform code must be FQDN (namespace::CODE), got bare code: {ct_code}. "
-                                    f"Update artifact to use FQDN (e.g., 'capability_transforms::{ct_code}' or 'domains.blockchain::{ct_code}')"
+                                    f"Transform code must be FQDN (namespace::CODE), got bare code: {artifact_code}. "
+                                    f"Update artifact to use FQDN (e.g., 'capability_transforms::{artifact_code}' or 'domains.blockchain::{artifact_code}')"
                                 )
 
-                            ct_artifact = resolve_artifact(ct_code, self.search_roots)
+                            ct_artifact = resolve_artifact(artifact_code, self.search_roots)
                             # Store CT-IR section only (not entire artifact)
                             ct_ir = ct_artifact.get("ct_ir")
                             if ct_ir:
-                                # Store by FQDN (ct_code is already FQDN)
-                                ct_ir_registry[ct_code] = ct_ir
+                                # Store by FQDN (artifact_code is already FQDN)
+                                ct_ir_registry[artifact_code] = ct_ir
                             else:
                                 # CT artifact missing ct_ir - fail hard
                                 raise ValueError(
-                                    f"CT artifact {ct_code} missing ct_ir section. "
+                                    f"CT artifact {artifact_code} missing ct_ir section. "
                                     f"Compiler must generate ct_ir for all CT artifacts."
                                 )
                         except FileNotFoundError:

@@ -38,7 +38,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "governance.layers::ASSERT_CC_NO_IMPLICIT_CHAINING_V0",
+                "fqdn": "fb.capability_contracts::ASSERT_CC_NO_IMPLICIT_CHAINING_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing cc_chaining",
                 "fix": "Compiler must pre-compute CC chaining analysis before assert phase"
@@ -58,7 +58,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not chaining_result:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CC_NO_IMPLICIT_CHAINING_V0",
+                "rule": "fb.capability_contracts::INVARIANT_CC_NO_IMPLICIT_CHAINING_V0",
                 "message": "Missing chaining analysis for CC artifact",
                 "fix": "Compiler must analyze all CC artifacts"
             })
@@ -69,7 +69,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in chaining_result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.layers::INVARIANT_CC_NO_IMPLICIT_CHAINING_V0",
+                    "rule": "fb.capability_contracts::INVARIANT_CC_NO_IMPLICIT_CHAINING_V0",
                     "message": structural_violation.get("violation", "Unknown CC chaining violation"),
                     "fix": structural_violation.get("fix", "Remove orchestration fields from CC")
                 })

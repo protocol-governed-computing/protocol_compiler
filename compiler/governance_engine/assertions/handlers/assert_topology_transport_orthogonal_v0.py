@@ -61,7 +61,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 if field_name in _TRANSPORT_FIELD_NAMES:
                     violations.append({
                         "fqdn": fqdn,
-                        "rule": "governance.invariants::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
+                        "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
                         "message": (
                             f"Step '{step_id}' contains transport-semantic field '{field_name}' "
                             "— transport semantics must not appear in execution topology steps"
@@ -79,7 +79,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     if key in _TRANSPORT_FIELD_NAMES:
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
+                            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
                             "message": (
                                 f"Step '{step_id}' input key '{key}' is a transport-semantic field name "
                                 "— transport semantics must not appear in topology step inputs"
@@ -96,7 +96,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     if key in _TRANSPORT_FIELD_NAMES:
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
+                            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_TRANSPORT_ORTHOGONAL_V0",
                             "message": (
                                 f"Step '{step_id}' output key '{key}' is a transport-semantic field name "
                                 "— transport semantics must not appear in topology step outputs"

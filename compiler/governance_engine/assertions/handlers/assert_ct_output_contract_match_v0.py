@@ -45,7 +45,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not governed_by_list:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
                 "message": "CT artifact missing governed_by field",
                 "fix": "Add governed_by field specifying the governing CC FQDN"
             })
@@ -56,7 +56,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if cc_fqdn not in artifacts_by_fqdn:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
                 "message": f"Governing CC artifact not found in compilation graph: {cc_fqdn}",
                 "fix": f"Ensure CC artifact '{cc_fqdn}' exists and is included in build"
             })
@@ -81,7 +81,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not ct_impl_path or not ct_impl_path.exists():
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
                 "message": f"CT implementation file not found for {artifact_code}",
                 "fix": f"Create implementation file for CT '{artifact_code}' in transforms layer atoms/ or molecules/"
             })
@@ -93,7 +93,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if actual_keys is None:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
                 "message": f"No return statement found in CT implementation {ct_impl_path.name}",
                 "fix": "Add return statement with dict output in execute() function"
             })
@@ -112,7 +112,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_OUTPUT_CONTRACT_MATCH_V0",
                 "message": f"CT output doesn't match CC contract ({', '.join(msg_parts)})",
                 "fix": f"Update CT implementation to return exact keys from CC '{cc_fqdn}' output contract: {sorted(expected_keys)}"
             })

@@ -38,7 +38,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "governance.layers::ASSERT_WF_EXECUTION_PATH_VALID_V0",
+                "fqdn": "fb.workflow::ASSERT_WF_EXECUTION_PATH_VALID_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing wf_execution_graphs",
                 "fix": "Compiler must pre-compute WF execution graphs before assert phase"
@@ -58,7 +58,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not graph_result:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_WF_EXECUTION_PATH_VALID_V0",
+                "rule": "fb.workflow::INVARIANT_WF_EXECUTION_PATH_VALID_V0",
                 "message": "Missing execution graph analysis for WF artifact",
                 "fix": "Compiler must analyze all WF artifacts"
             })
@@ -69,7 +69,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in graph_result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.layers::INVARIANT_WF_EXECUTION_PATH_VALID_V0",
+                    "rule": "fb.workflow::INVARIANT_WF_EXECUTION_PATH_VALID_V0",
                     "message": structural_violation.get("violation", "Unknown WF structural violation"),
                     "fix": structural_violation.get("fix", "Fix WF execution graph structure")
                 })

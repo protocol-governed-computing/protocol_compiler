@@ -75,7 +75,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                         # Dangling reference — step_id doesn't exist in this pipeline
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_INPUT_REFERENCE_DECLARED_V0",
+                            "rule": "fb.capability_contracts::INVARIANT_TOPOLOGY_INPUT_REFERENCE_DECLARED_V0",
                             "message": (
                                 f"Step '{current_step_label}' input '{input_name}' references "
                                 f"undeclared step ID '{referenced_step_id}' — not found in pipeline"
@@ -89,7 +89,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                         # Forward reference — step_id is declared but not yet executed
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_INPUT_REFERENCE_DECLARED_V0",
+                            "rule": "fb.capability_contracts::INVARIANT_TOPOLOGY_INPUT_REFERENCE_DECLARED_V0",
                             "message": (
                                 f"Step '{current_step_label}' input '{input_name}' contains forward "
                                 f"reference to step '{referenced_step_id}' — result not yet available "

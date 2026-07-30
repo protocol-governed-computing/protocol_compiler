@@ -44,7 +44,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if ref_fqdn not in available_fqdns:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.layers::INVARIANT_PROTOCOL_SURFACE_CLOSED_V0",
+                    "rule": "fb.surface_contract::INVARIANT_PROTOCOL_SURFACE_CLOSED_V0",
                     "message": f"Dangling FQDN reference (artifact not found): {ref_fqdn}",
                     "fix": f"Either: (1) Create missing artifact '{ref_fqdn}', OR (2) Remove reference from {fqdn}"
                 })
@@ -93,8 +93,8 @@ def _extract_fqdn_references(artifact: dict) -> set[str]:
                 references.add(ref)
 
     # Pipeline transforms (for CC artifacts)
-    if frontmatter.get("artifact_kind") == "CC":
-        pipeline = frontmatter.get("pipeline", [])
+    if frontmatter.get("artifact_kind") == "CAPABILITY_CONTRACT":
+        pipeline = (frontmatter.get("core") or {}).get("pipeline", [])
 
         for step in pipeline:
             if not isinstance(step, dict):

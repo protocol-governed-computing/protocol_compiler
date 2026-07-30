@@ -53,14 +53,14 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 if "::" not in ref:
                     violations.append({
                         "fqdn": fqdn,
-                        "rule": "governance.layers::INVARIANT_FQDN_ONLY_REFERENCES_V0",
+                        "rule": "fb.artifact::INVARIANT_FQDN_ONLY_REFERENCES_V0",
                         "message": f"Field '{field}' uses short name '{ref}' (missing layer prefix)",
                         "fix": f"Change '{ref}' to FQDN format: layer::{ref}"
                     })
 
         # Check pipeline transforms (for CC artifacts)
-        if frontmatter.get("artifact_kind") == "CC":
-            pipeline = frontmatter.get("pipeline", [])
+        if frontmatter.get("artifact_kind") == "CAPABILITY_CONTRACT":
+            pipeline = (frontmatter.get("core") or {}).get("pipeline", [])
 
             for idx, step in enumerate(pipeline):
                 if not isinstance(step, dict):
@@ -70,7 +70,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 if transform and "::" not in transform:
                     violations.append({
                         "fqdn": fqdn,
-                        "rule": "governance.layers::INVARIANT_FQDN_ONLY_REFERENCES_V0",
+                        "rule": "fb.artifact::INVARIANT_FQDN_ONLY_REFERENCES_V0",
                         "message": f"Pipeline step {idx} uses short name '{transform}' (missing layer prefix)",
                         "fix": f"Change '{transform}' to FQDN format: layer::{transform}"
                     })

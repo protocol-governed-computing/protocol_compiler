@@ -326,7 +326,7 @@ def _build_ct_ir(
         return None, errors
 
     ct_ir = {
-        "ct_code": node.artifact_code,
+        "artifact_code": node.artifact_code,
         "ct_fqdn": node.fqdn,
         "atom_stream": atom_stream,
         "ct_composition_version": "V0",

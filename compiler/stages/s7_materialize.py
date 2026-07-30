@@ -1001,7 +1001,7 @@ def _generate_conformance_tests(
             )
             if target_match:
                 target_yaml = yaml.safe_load(target_match.group(1))
-                target_ct_code = target_yaml.get("ct_code") if target_yaml else None
+                target_ct_code = target_yaml.get("artifact_code") if target_yaml else None
 
         if not target_ct_code:
             continue

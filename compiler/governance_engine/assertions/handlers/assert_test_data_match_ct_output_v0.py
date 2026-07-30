@@ -39,7 +39,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not test_target:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                 "message": "TEST_DATA artifact missing test_target field",
                 "fix": "Add test_target field specifying the CT FQDN being tested"
             })
@@ -49,7 +49,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if test_target not in artifacts_by_fqdn:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                 "message": f"Test target CT not found in compilation graph: {test_target}",
                 "fix": f"Ensure CT artifact '{test_target}' exists and is included in build"
             })
@@ -61,7 +61,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not ct_governed_by:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                 "message": f"Target CT missing governed_by field: {test_target}",
                 "fix": f"Add governed_by field to CT artifact '{test_target}'"
             })
@@ -72,7 +72,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if cc_fqdn not in artifacts_by_fqdn:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                 "message": f"CT's governing CC not found in compilation graph: {cc_fqdn}",
                 "fix": f"Ensure CC artifact '{cc_fqdn}' exists and is included in build"
             })
@@ -96,7 +96,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if not expected_output:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                    "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                     "message": f"Test case {idx} missing expected output field",
                     "fix": f"Add 'expected' field to test case {idx} with expected output values"
                 })
@@ -115,7 +115,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.layers::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
+                    "rule": "fb.conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
                     "message": f"Test case {idx}: expected output keys don't match CC contract ({', '.join(msg_parts)})",
                     "fix": f"Update test case {idx} expected output to match CC '{cc_fqdn}' output contract: {sorted(expected_keys)}"
                 })
