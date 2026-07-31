@@ -166,8 +166,17 @@ def make_metadata(
     )
 
 
-# Version constants — compiler_version must match pyproject.toml
-COMPILER_VERSION = "1.0.0"
+# Release ordinal — derived from the repo's single version declaration, never restated here.
+# PGC versions the *composition*: all repos release together and the governance closure forces
+# lockstep, so a monotonic integer names which composition this repo belongs to. `VERSION` is the
+# sole declaration; pyproject derives it and so does this. Two statements of one fact drift apart.
+def _release() -> str:
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent   # compiler/projections → repo root
+    return (root / "VERSION").read_text(encoding="utf-8").strip()
+
+
+COMPILER_VERSION = _release()
 PROJECTION_SCHEMA_VERSION = "v0"
 
 # Declared schema contracts for projections consumed by external tooling (si).
