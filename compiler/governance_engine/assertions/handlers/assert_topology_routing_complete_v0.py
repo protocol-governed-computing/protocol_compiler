@@ -51,7 +51,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for code in sorted(unrouted):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.invariants::INVARIANT_TOPOLOGY_ROUTING_COMPLETE_V0",
+                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_ROUTING_COMPLETE_V0",
                     "message": (
                         f"Step '{step_id}' on_result missing routing for surface code '{code}' "
                         f"— declared in step result_surface but has no routing entry"
@@ -64,7 +64,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for code in sorted(unknown):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "governance.invariants::INVARIANT_TOPOLOGY_ROUTING_COMPLETE_V0",
+                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_ROUTING_COMPLETE_V0",
                     "message": (
                         f"Step '{step_id}' on_result contains code '{code}' "
                         f"— not declared in step result_surface"

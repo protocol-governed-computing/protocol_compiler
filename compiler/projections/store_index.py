@@ -11,7 +11,7 @@ into: store → owning structure, declared path, binding surface
 (RB + CS + workflows + consumer CCs). Emitted by `compiler.cli build`
 alongside the artifact index (same query-metadata projection family):
 
-    <workspace>/protocol_snapshot/artifact_index/stores.json
+    <workspace>/artifact_index/stores.json
 
 Doctrine: re-emission of declared facts only; deterministic; fail hard.
 """
@@ -30,7 +30,7 @@ _RB_DIR = "protocol_snapshot/artifacts/runtime_bindings"
 _EVIDENCE_ROOT = "evidence_snapshot"
 _DATA_ROOT_TEMPLATE = "{{module_data_root}}/"
 
-STORE_INDEX_RELATIVE_PATH = "protocol_snapshot/artifact_index/stores.json"
+STORE_INDEX_RELATIVE_PATH = "artifact_index/stores.json"
 
 
 def build_store_index(workspace: Path) -> dict[str, Any]:

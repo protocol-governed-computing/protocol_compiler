@@ -5,7 +5,7 @@ All CLI subcommands that consume a compiled workspace snapshot
 MUST call assert_snapshot_valid() before reading from it.
 
 The admissibility chain:
-  Invalid Protocol → No Snapshot → Invalid Snapshot → No Build → Invalid Build → No PPS
+  Invalid Protocol → No Snapshot → Invalid Snapshot → No Build → Invalid Build → No Index
 """
 
 import json

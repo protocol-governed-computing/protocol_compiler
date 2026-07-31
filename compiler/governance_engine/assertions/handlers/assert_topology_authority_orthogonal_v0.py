@@ -57,7 +57,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 if field_name in _AUTHORITY_FIELD_NAMES:
                     violations.append({
                         "fqdn": fqdn,
-                        "rule": "governance.invariants::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
+                        "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
                         "message": (
                             f"Step '{step_id}' contains authority-semantic field '{field_name}' "
                             "— authority semantics must not appear in execution topology steps"
@@ -75,7 +75,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     if key in _AUTHORITY_FIELD_NAMES:
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
+                            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
                             "message": (
                                 f"Step '{step_id}' input key '{key}' is an authority-semantic field name "
                                 "— authority semantics must not appear in topology step inputs"
@@ -93,7 +93,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     if key in _AUTHORITY_FIELD_NAMES:
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "governance.invariants::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
+                            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_AUTHORITY_ORTHOGONAL_V0",
                             "message": (
                                 f"Step '{step_id}' output key '{key}' is an authority-semantic field name "
                                 "— authority semantics must not appear in topology step outputs"

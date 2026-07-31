@@ -94,27 +94,27 @@ class ProtocolLoader:
             # Scan pipeline for CT references
             for step in pipeline:
                 if isinstance(step, dict):
-                    ct_code = step.get("transform")
-                    if ct_code and ct_code not in ct_ir_registry:
+                    artifact_code = step.get("transform")
+                    if artifact_code and artifact_code not in ct_ir_registry:
                         try:
                             # PROTOCOL SOVEREIGNTY: Transform codes MUST be FQDN (namespace::CODE)
                             # No inference, no defaulting, no prefixing allowed
-                            if "::" not in ct_code:
+                            if "::" not in artifact_code:
                                 raise ValueError(
-                                    f"Transform code must be FQDN (namespace::CODE), got bare code: {ct_code}. "
-                                    f"Update artifact to use FQDN (e.g., 'capability_transforms::{ct_code}' or 'domains.blockchain::{ct_code}')"
+                                    f"Transform code must be FQDN (namespace::CODE), got bare code: {artifact_code}. "
+                                    f"Update artifact to use FQDN (e.g., 'capability_transforms::{artifact_code}' or 'domains.blockchain::{artifact_code}')"
                                 )
 
-                            ct_artifact = resolve_artifact(ct_code, self.search_roots)
+                            ct_artifact = resolve_artifact(artifact_code, self.search_roots)
                             # Store CT-IR section only (not entire artifact)
                             ct_ir = ct_artifact.get("ct_ir")
                             if ct_ir:
-                                # Store by FQDN (ct_code is already FQDN)
-                                ct_ir_registry[ct_code] = ct_ir
+                                # Store by FQDN (artifact_code is already FQDN)
+                                ct_ir_registry[artifact_code] = ct_ir
                             else:
                                 # CT artifact missing ct_ir - fail hard
                                 raise ValueError(
-                                    f"CT artifact {ct_code} missing ct_ir section. "
+                                    f"CT artifact {artifact_code} missing ct_ir section. "
                                     f"Compiler must generate ct_ir for all CT artifacts."
                                 )
                         except FileNotFoundError:
@@ -137,7 +137,7 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
     PROTOCOL: Zero inference - all behavior declared explicitly.
     Full FQDN format is required: "namespace::ARTIFACT_CODE_V0"
     Examples:
-      - "fb.topology::STRUCTURE_RUNTIME_EXECUTION_V0"
+      - "fb.execution::STRUCTURE_RUNTIME_EXECUTION_V0"
       - "domains.blockchain::WF_CREATE_WALLET_V0"
       - "capability_transforms::CT_HASH_DATA_V0"
 
@@ -166,7 +166,7 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
             f"PROTOCOL VIOLATION: Bootstrap artifact must use FQDN format.\n"
             f"Expected: 'namespace::ARTIFACT_CODE', got: '{artifact_code}'\n"
             f"Examples:\n"
-            f"  - fb.topology::STRUCTURE_RUNTIME_EXECUTION_V0\n"
+            f"  - fb.execution::STRUCTURE_RUNTIME_EXECUTION_V0\n"
             f"  - domains.blockchain::WF_CREATE_WALLET_V0\n"
             f"  - capability_transforms::CT_HASH_DATA_V0"
         )
@@ -174,18 +174,11 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
     # PROTOCOL: Declared namespace → layer mapping (no inference)
     # This mapping is constitutional - defines which layer owns which namespace.
     # All fb.* namespaces are federation-boundary governance artifacts compiled to structures/.
+    # Every federation-boundary namespace resolves identically, so the rule is stated once
+    # rather than enumerated — adding a namespace requires no edit here.
+    FB_LAYER = ("GOVERNANCE", "compiled/artifacts/structures")
     NAMESPACE_LAYER_MAPPING = {
-        # Federation boundary namespaces (Constitutional Federation refactor)
-        "fb.constitution": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.topology": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.transport": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.authority": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.vocabulary": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.conformance": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.identity": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.blockchain": ("GOVERNANCE", "compiled/artifacts/structures"),
-        "fb.ai_governance": ("GOVERNANCE", "compiled/artifacts/structures"),
-        # Reusable capability namespaces
+        # Reusable capability namespaces (instance declarations, not governance)
         "capability_transforms": ("REUSABLE_TRANSFORMS", "compiled/artifacts/capability_transforms"),
         "capability_side_effects": ("REUSABLE_SIDE_EFFECTS", "compiled/artifacts/capability_side_effects"),
     }
@@ -217,9 +210,11 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
             "compiled" / "artifacts" / artifact_type_dir / fqdn_filename
         )
 
-    elif namespace in NAMESPACE_LAYER_MAPPING:
+    elif namespace.startswith("fb.") or namespace in NAMESPACE_LAYER_MAPPING:
         # Platform namespace: use declared mapping
-        layer_code, subpath = NAMESPACE_LAYER_MAPPING[namespace]
+        layer_code, subpath = (
+            FB_LAYER if namespace.startswith("fb.") else NAMESPACE_LAYER_MAPPING[namespace]
+        )
 
         # For platform builds, compiled artifacts are centralized at protocol root
         # (not in layer repo root) per STRUCTURE_BUILD_PLATFORM_CONFIG_V0
@@ -232,9 +227,9 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
     else:
         raise ValueError(
             f"PROTOCOL VIOLATION: Unsupported namespace: '{namespace}'\n"
-            f"Supported platform namespaces: {list(NAMESPACE_LAYER_MAPPING.keys())}\n"
-            f"Supported domain namespaces: domains.{{domain_name}}\n"
-            f"To add new namespace, update NAMESPACE_LAYER_MAPPING in protocol_loader.py"
+            f"Supported platform namespaces: any 'fb.*' federation boundary, plus "
+            f"{list(NAMESPACE_LAYER_MAPPING.keys())}\n"
+            f"Supported domain namespaces: domains.{{domain_name}}"
         )
 
     # Load artifact

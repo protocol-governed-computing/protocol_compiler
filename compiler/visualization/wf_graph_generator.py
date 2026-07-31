@@ -74,12 +74,12 @@ class WorkflowGraphGenerator:
         errors = []
 
         # Extract WF code
-        wf_code = wf_artifact.get("frontmatter", {}).get("wf_code")
+        wf_code = wf_artifact.get("artifact_code")
         if not wf_code:
             return {
                 "wf_code": "UNKNOWN",
                 "status": "FAILED",
-                "errors": ["Missing wf_code in frontmatter"]
+                "errors": ["Missing artifact_code on WF artifact"]
             }
 
         # Build graph model (CC nodes carry projection data)
@@ -145,8 +145,7 @@ class WorkflowGraphGenerator:
                 "execution_paths": list[list[str]]
             }
         """
-        frontmatter = wf_artifact.get("frontmatter", {})
-        wf_code = frontmatter.get("wf_code")
+        wf_code = wf_artifact.get("artifact_code")
 
         return self._build_graph(wf_artifact, cc_artifacts, wf_code)
 

@@ -1,9 +1,9 @@
 """
-pi — Protocol Inspection command processor (one-shot CLI surface).
+si — Snapshot Inspection command processor (one-shot CLI surface).
 
 Object-centric taxonomy over the inspection library:
 
-    pi <object> <verb> [target] [flags]
+    si <object> <verb> [target] [flags]
 
 Strictly read-only: every command queries materialized snapshot
 projections; nothing is written anywhere, including caches.
@@ -19,7 +19,7 @@ from compiler.inspection import behavior_logic as behavior_logic_lib
 from compiler.inspection import traces as trace_lib
 from compiler.inspection.errors import AmbiguousCode, InspectionError, UnresolvedFqdn
 from compiler.inspection.loader import (
-    PPS_SECTION_BY_KIND,
+    INDEX_SECTION_BY_KIND,
     Workspace,
     classify_lifecycle,
     parse_header_fields,
@@ -77,8 +77,8 @@ pass_session = click.make_pass_decorator(Session)
     help="Absolute path to pgs_workspace root (or set PGS_WORKSPACE)",
 )
 @click.pass_context
-def pi(ctx: click.Context, workspace: str | None) -> None:
-    """pi — protocol inspection over the compiled snapshot set (read-only)."""
+def si(ctx: click.Context, workspace: str | None) -> None:
+    """si — snapshot inspection over the assembled snapshot (read-only)."""
     if ctx.obj is None:  # shell dispatch passes its warm session via obj=
         ctx.obj = Session(workspace)
     if ctx.invoked_subcommand is None:
@@ -87,10 +87,10 @@ def pi(ctx: click.Context, workspace: str | None) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi artifact — kind-agnostic daily drivers
+# si artifact — kind-agnostic daily drivers
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def artifact() -> None:
     """Kind-agnostic artifact queries (any FQDN)."""
 
@@ -200,12 +200,12 @@ def artifact_owner(session: Session, ref: str, as_json: bool) -> None:
         "domain": entry["domain"],
         "structures": entry["structures"],
     }
-    if entry["kind"] in PPS_SECTION_BY_KIND:
-        pps_entry = session.workspace.pps.get(
-            PPS_SECTION_BY_KIND[entry["kind"]], {}
+    if entry["kind"] in INDEX_SECTION_BY_KIND:
+        index_entry = session.workspace.kind_index.get(
+            INDEX_SECTION_BY_KIND[entry["kind"]], {}
         ).get(fqdn)
-        if pps_entry and "subdomain" in pps_entry:
-            result["subdomain"] = pps_entry["subdomain"]
+        if index_entry and "subdomain" in index_entry:
+            result["subdomain"] = index_entry["subdomain"]
 
     def text(r: dict[str, Any]) -> None:
         heading(f"Owner: {fqdn}")
@@ -222,10 +222,10 @@ def artifact_owner(session: Session, ref: str, as_json: bool) -> None:
 @json_flag
 @pass_session
 def artifact_source(session: Session, ref: str, as_json: bool) -> None:
-    """Authoring Markdown, retrieved from the PPS snapshot."""
+    """Authoring Markdown, retrieved from the kind index."""
     fqdn, entry = session.resolver.resolve(ref)
-    pps_entry = session.workspace.pps_entry(fqdn, entry["kind"])
-    content = pps_entry.get("raw", {}).get("content", "")
+    index_entry = session.workspace.kind_index_entry(fqdn, entry["kind"])
+    content = index_entry.get("raw", {}).get("content", "")
     result = {"fqdn": fqdn, "kind": entry["kind"], "content": content}
 
     def text(r: dict[str, Any]) -> None:
@@ -253,7 +253,7 @@ def artifact_list(session: Session, kind: str | None, domain: str | None, as_jso
 
 
 # ─────────────────────────────────────────────────────────────────
-# Kind objects — pi wf|cc|ct|cs|rb|in|ev|ac (list/show sugar + extras)
+# Kind objects — si wf|cc|ct|cs|rb|in|ev|ac (list/show sugar + extras)
 # ─────────────────────────────────────────────────────────────────
 
 def _make_kind_group(name: str, kind: str) -> click.Group:
@@ -285,7 +285,7 @@ def _make_kind_group(name: str, kind: str) -> click.Group:
         if entry["kind"] != kind:
             raise InspectionError(
                 f"'{fqdn}' is kind {entry['kind']}, not {kind} — "
-                f"use: pi {entry['kind'].lower()} show, or pi artifact show"
+                f"use: si {entry['kind'].lower()} show, or si artifact show"
             )
         ctx.invoke(artifact_show, ref=fqdn, as_json=as_json)
 
@@ -296,7 +296,7 @@ def _make_kind_group(name: str, kind: str) -> click.Group:
 
 _KIND_GROUPS = {name: _make_kind_group(name, kind) for name, kind in KIND_OBJECTS.items()}
 for _group in _KIND_GROUPS.values():
-    pi.add_command(_group)
+    si.add_command(_group)
 
 
 @_KIND_GROUPS["wf"].command("lineage")
@@ -348,8 +348,8 @@ def wf_lineage(session: Session, ref: str, as_json: bool) -> None:
 def wf_outcomes(session: Session, ref: str, as_json: bool) -> None:
     """Reachable terminal states declared by the workflow."""
     fqdn, entry = session.resolver.resolve(ref)
-    pps_entry = session.workspace.pps_entry(fqdn, entry["kind"])
-    nodes = pps_entry.get("nodes", {})
+    index_entry = session.workspace.kind_index_entry(fqdn, entry["kind"])
+    nodes = index_entry.get("nodes", {})
     terminals = []
     for node_name in sorted(nodes):
         node = nodes[node_name]
@@ -384,10 +384,10 @@ def wf_outcomes(session: Session, ref: str, as_json: bool) -> None:
 def cc_outcomes(session: Session, ref: str, as_json: bool) -> None:
     """Enumerated outcome set declared by the CC."""
     fqdn, _ = session.resolver.resolve(ref)
-    outcomes = session.workspace.pps.get("cc_outcomes", {}).get(fqdn)
+    outcomes = session.workspace.kind_index.get("cc_outcomes", {}).get(fqdn)
     if outcomes is None:
-        pps_entry = session.workspace.pps_entry(fqdn, "CC")
-        outcomes = pps_entry.get("outcomes", [])
+        index_entry = session.workspace.kind_index_entry(fqdn, "CC")
+        outcomes = index_entry.get("outcomes", [])
     result = {"cc": fqdn, "outcomes": sorted(outcomes)}
 
     def text(r: dict[str, Any]) -> None:
@@ -507,10 +507,10 @@ def rb_resolve(session: Session, ref: str, as_json: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi topology — reachability and closure (the change-mgmt workhorse)
+# si topology — reachability and closure (the change-mgmt workhorse)
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def topology() -> None:
     """Reachability and closure across the federated graph."""
 
@@ -610,10 +610,10 @@ def topology_path(session: Session, source_ref: str, target_ref: str, as_json: b
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi vocab — the address space
+# si vocab — the address space
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def vocab() -> None:
     """Vocabulary / address-space queries."""
 
@@ -689,51 +689,51 @@ def vocab_stats(session: Session, as_json: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi pps — the authoring projection surface
+# si kind_index — the by-kind cross-reference surface
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
-def pps() -> None:
-    """PPS snapshot (authoring surface) queries."""
+@si.group(name="kind_index")
+def kind_index() -> None:
+    """Kind index queries — by-kind cross-reference over the snapshot."""
 
 
-@pps.command("stats")
+@kind_index.command("stats")
 @json_flag
 @pass_session
-def pps_stats(session: Session, as_json: bool) -> None:
-    """PPS coverage: indexed artifacts by kind, domains, subdomains."""
-    index = session.workspace.pps
+def kind_index_stats(session: Session, as_json: bool) -> None:
+    """Kind-index coverage: indexed artifacts by kind, domains, subdomains."""
+    index = session.workspace.kind_index
     result = {
         "version": index.get("version"),
         "generated_at": index.get("generated_at"),
         "counts": {
             section: len(index.get(section, {}))
-            for section in sorted(set(PPS_SECTION_BY_KIND.values()))
+            for section in sorted(set(INDEX_SECTION_BY_KIND.values()))
         },
         "domains": sorted(index.get("domains", {})),
         "subdomains": sorted(index.get("subdomains", {})),
     }
 
     def text(r: dict[str, Any]) -> None:
-        heading("PPS coverage")
+        heading("Kind-index coverage")
         for section, count in r["counts"].items():
             field(section, count)
         field("domains", ", ".join(r["domains"]))
         field("subdomains", ", ".join(r["subdomains"]))
 
-    emit(as_json, {"command": "pps stats"}, result, text)
+    emit(as_json, {"command": "kind_index stats"}, result, text)
 
 
-@pps.command("list")
-@click.option("--kind", type=click.Choice(sorted(PPS_SECTION_BY_KIND)), default=None)
+@kind_index.command("list")
+@click.option("--kind", type=click.Choice(sorted(INDEX_SECTION_BY_KIND)), default=None)
 @json_flag
 @pass_session
-def pps_list(session: Session, kind: str | None, as_json: bool) -> None:
+def kind_index_list(session: Session, kind: str | None, as_json: bool) -> None:
     """FQDNs present on the authoring surface."""
-    index = session.workspace.pps
+    index = session.workspace.kind_index
     sections = (
-        {kind: PPS_SECTION_BY_KIND[kind]}
-        if kind else dict(sorted(PPS_SECTION_BY_KIND.items()))
+        {kind: INDEX_SECTION_BY_KIND[kind]}
+        if kind else dict(sorted(INDEX_SECTION_BY_KIND.items()))
     )
     result = {
         k: sorted(index.get(section, {})) for k, section in sections.items()
@@ -745,21 +745,21 @@ def pps_list(session: Session, kind: str | None, as_json: bool) -> None:
             for f in fqdns:
                 fqdn_line(f)
 
-    emit(as_json, {"command": "pps list", "kind": kind}, result, text)
+    emit(as_json, {"command": "kind_index list", "kind": kind}, result, text)
 
 
-@pps.command("show")
+@kind_index.command("show")
 @click.argument("ref")
 @json_flag
 @pass_session
-def pps_show(session: Session, ref: str, as_json: bool) -> None:
-    """Raw PPS entry: parsed header + authoring Markdown."""
+def kind_index_show(session: Session, ref: str, as_json: bool) -> None:
+    """Raw kind-index entry: parsed header + authoring Markdown."""
     fqdn, entry = session.resolver.resolve(ref)
-    pps_entry = session.workspace.pps_entry(fqdn, entry["kind"])
-    result = pps_entry
+    index_entry = session.workspace.kind_index_entry(fqdn, entry["kind"])
+    result = index_entry
 
     def text(r: dict[str, Any]) -> None:
-        heading(f"PPS entry: {fqdn}")
+        heading(f"kind_index entry: {fqdn}")
         for key in sorted(r):
             if key == "raw":
                 continue
@@ -767,14 +767,14 @@ def pps_show(session: Session, ref: str, as_json: bool) -> None:
         click.echo()
         click.echo(r.get("raw", {}).get("content", ""))
 
-    emit(as_json, {"command": "pps show", "target": fqdn}, result, text)
+    emit(as_json, {"command": "kind_index show", "target": fqdn}, result, text)
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi snapshot — snapshot-level views
+# si snapshot — snapshot-level views
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def snapshot() -> None:
     """Snapshot-level status and structure queries."""
 
@@ -933,7 +933,7 @@ def snapshot_summary(session: Session, as_json: bool) -> None:
 @pass_session
 def snapshot_topology(session: Session, as_json: bool) -> None:
     """Domain → subdomain → workflow map (the FB boundary view)."""
-    workflows = session.workspace.pps.get("workflows", {})
+    workflows = session.workspace.kind_index.get("workflows", {})
     nested: dict[str, dict[str, list[str]]] = {}
     for fqdn in sorted(workflows):
         wf = workflows[fqdn]
@@ -981,7 +981,7 @@ def snapshot_stats(session: Session, as_json: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi artifact lifecycle — degraded form until the AR_ model lands
+# si artifact lifecycle — degraded form until the AR_ model lands
 # ─────────────────────────────────────────────────────────────────
 
 @artifact.command("lifecycle")
@@ -1012,10 +1012,10 @@ def artifact_lifecycle(session: Session, ref: str, as_json: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi behavior_logic — reads *.graph.json, never the PNGs
+# si behavior_logic — reads *.graph.json, never the PNGs
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group(name="behavior_logic")
+@si.group(name="behavior_logic")
 def behavior_logic() -> None:
     """Behavior Logic projections."""
 
@@ -1077,7 +1077,7 @@ def behavior_logic_show(session: Session, ref: str, as_json: bool) -> None:
 @click.option("--dot", "form", flag_value="dot")
 @pass_session
 def behavior_logic_render(session: Session, ref: str, form: str | None) -> None:
-    """Emit the behavior logic as Mermaid or DOT text (stdout only — pi writes nothing)."""
+    """Emit the behavior logic as Mermaid or DOT text (stdout only — si writes nothing)."""
     if form is None:
         raise InspectionError("declare an output form: --mermaid or --dot")
     fqdn, code = _behavior_logic_code(session, ref)
@@ -1097,10 +1097,10 @@ def behavior_logic_open(session: Session, ref: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi trace — delegating facade (traces belong to pgs_runtime examine)
+# si trace — delegating facade (traces belong to pgs_runtime examine)
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def trace() -> None:
     """Trace listing + delegation to pgs_runtime examine."""
 
@@ -1143,10 +1143,10 @@ def trace_explain(session: Session, trace_id: str) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi store — storage ownership (from the materialized store index)
+# si store — storage ownership (from the materialized store index)
 # ─────────────────────────────────────────────────────────────────
 
-@pi.group()
+@si.group()
 def store() -> None:
     """Entity-store ownership and consumers."""
 
@@ -1239,7 +1239,7 @@ def store_consumers(session: Session, name: str, as_json: bool) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────
-# pi snapshot validate / violations  +  top-level conveniences
+# si snapshot validate / violations  +  top-level conveniences
 # ─────────────────────────────────────────────────────────────────
 
 @snapshot.command("validate")
@@ -1293,7 +1293,7 @@ def snapshot_violations(session: Session, strict: bool, as_json: bool) -> None:
         sys.exit(1)
 
 
-@pi.command("validate")
+@si.command("validate")
 @click.option("--strict", is_flag=True, help="Exit non-zero unless VALID with zero violations")
 @json_flag
 @pass_session
@@ -1325,7 +1325,7 @@ def validate(session: Session, strict: bool, as_json: bool) -> None:
         sys.exit(1)
 
 
-@pi.command("stats")
+@si.command("stats")
 @json_flag
 @pass_session
 def stats(session: Session, as_json: bool) -> None:
@@ -1345,9 +1345,9 @@ def stats(session: Session, as_json: bool) -> None:
             "nodes": graph_stats["node_count"],
             "edges": graph_stats["edge_count"],
         },
-        "pps": {
-            section: len(session.workspace.pps.get(section, {}))
-            for section in sorted(set(PPS_SECTION_BY_KIND.values()))
+        "kind_index": {
+            section: len(session.workspace.kind_index.get(section, {}))
+            for section in sorted(set(INDEX_SECTION_BY_KIND.values()))
         },
     }
 
@@ -1357,8 +1357,8 @@ def stats(session: Session, as_json: bool) -> None:
         field("artifacts", r["artifacts"])
         field("stores", r["stores"])
         field("graph", f"{r['graph']['nodes']} nodes / {r['graph']['edges']} edges")
-        for section, count in r["pps"].items():
-            field(f"pps.{section}", count)
+        for section, count in r["kind_index"].items():
+            field(f"kind_index.{section}", count)
 
     emit(as_json, {"command": "stats"}, result, text)
 
@@ -1369,7 +1369,7 @@ def stats(session: Session, as_json: bool) -> None:
 
 def main() -> None:
     try:
-        pi(prog_name="pi")
+        si(prog_name="si")
     except InspectionError as exc:
         click.echo(f"Error: {exc}", err=True)
         sys.exit(exc.exit_code)

@@ -91,7 +91,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if cs_fqdn not in allowed_cs:
             violations.append({
                 "fqdn": cs_fqdn,
-                "rule": "governance.layers::INVARIANT_CS_SURFACE_CLOSED_V0",
+                "rule": "fb.capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V1",
                 "message": "Undeclared CS (exists in registry but not in allowed_capability_side_effects)",
                 "fix": f"Add '{cs_fqdn}' to allowed_capability_side_effects in {assert_code}"
             })
@@ -107,7 +107,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if allowed_fqdn not in discovered_cs:
                 violations.append({
                     "fqdn": allowed_fqdn,
-                    "rule": "governance.layers::INVARIANT_CS_SURFACE_CLOSED_V0",
+                    "rule": "fb.capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V1",
                     "message": "Declared CS not found (in allowed list but not discovered in registry)",
                     "fix": f"Remove '{allowed_fqdn}' from allowed_capability_side_effects (CS no longer exists)"
                 })
@@ -137,7 +137,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not runtime_exists:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "governance.layers::INVARIANT_CS_SURFACE_CLOSED_V0",
+                "rule": "fb.capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V1",
                 "message": f"Missing runtime implementation (not bound in RB and no runtime.py at {runtime_path})",
                 "fix": f"Either: (1) Bind CS in RB artifact, OR (2) Implement runtime.py at {runtime_path}"
             })

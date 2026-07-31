@@ -1001,7 +1001,7 @@ def _generate_conformance_tests(
             )
             if target_match:
                 target_yaml = yaml.safe_load(target_match.group(1))
-                target_ct_code = target_yaml.get("ct_code") if target_yaml else None
+                target_ct_code = target_yaml.get("artifact_code") if target_yaml else None
 
         if not target_ct_code:
             continue
@@ -1117,11 +1117,11 @@ def _generate_workflow_graphs(
     for fqdn, artifact in projections.items():
         artifact_type = artifact.get("artifact_type")
         if artifact_type == "WF":
-            wf_code = artifact.get("frontmatter", {}).get("wf_code")
+            wf_code = artifact.get("artifact_code")
             if wf_code:
                 wf_artifacts[wf_code] = artifact
         elif artifact_type == "CC":
-            cc_code = artifact.get("frontmatter", {}).get("cc_code")
+            cc_code = artifact.get("artifact_code")
             if cc_code:
                 cc_artifacts[cc_code] = artifact
 

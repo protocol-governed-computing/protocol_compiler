@@ -17,7 +17,7 @@ the corpus would drift from the compiler as the platform evolves.
 
 from typing import Any
 
-RULE = "fb.constitution::INVARIANT_GOVERNANCE_DECLARATION_RESOLVES_V0"
+RULE = "fb.governance::INVARIANT_GOVERNANCE_DECLARATION_RESOLVES_V0"
 
 # Terminal declarations: enforcement is deliberately outside the compiler. Their
 # admissibility against core.enforcement_model is governed by SCHEMA_CONSTITUTION_V0.

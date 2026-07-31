@@ -71,7 +71,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return False
 
     # Extract all discovered CT artifacts
-    # Note: CT artifacts may have artifact_kind="atom"/"molecule" OR ct_code field
+    # Note: CT artifacts may have artifact_kind="atom"/"molecule" OR artifact_code field
     discovered_ct = set()
     ct_artifacts = []
 
@@ -98,7 +98,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if ct_fqdn not in allowed_ct:
             violations.append({
                 "fqdn": ct_fqdn,
-                "rule": "governance.layers::INVARIANT_CT_SURFACE_CLOSED_V0",
+                "rule": "fb.capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
                 "message": "Undeclared CT (exists in registry but not in allowed_capability_transforms)",
                 "fix": f"Add '{ct_fqdn}' to allowed_capability_transforms in {assert_code}"
             })
@@ -114,7 +114,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if allowed_fqdn not in discovered_ct:
                 violations.append({
                     "fqdn": allowed_fqdn,
-                    "rule": "governance.layers::INVARIANT_CT_SURFACE_CLOSED_V0",
+                    "rule": "fb.capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
                     "message": "Declared CT not found (in allowed list but not discovered in registry)",
                     "fix": f"Remove '{allowed_fqdn}' from allowed_capability_transforms (CT no longer exists)"
                 })
@@ -125,8 +125,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     # No need to check for runtime.py files
     # (CT are resolved via direct code import, not RB bindings)
 
-    # (Legacy ct_code presence validation retired: identity is carried by fqdn and the kind by
-    # artifact_kind (Kind Vocabulary); ct_code is no longer a machine-block field.)
+    # (Legacy artifact_code presence validation retired: identity is carried by fqdn and the kind by
+    # artifact_kind (Kind Vocabulary); artifact_code is no longer a machine-block field.)
 
     # Return result
     if violations:
@@ -152,7 +152,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     }
 
 
-def _check_runtime_exists(ct_code: str, layer_resolver) -> tuple[bool, Path]:
+def _check_runtime_exists(artifact_code: str, layer_resolver) -> tuple[bool, Path]:
     """
     Check if runtime implementation exists for CT.
 
@@ -165,7 +165,7 @@ def _check_runtime_exists(ct_code: str, layer_resolver) -> tuple[bool, Path]:
     try:
         # PGC flat layout: capability_transforms/implementation/ct_x.py
         from compiler.governance_engine.platform_root import ct_implementation_root
-        runtime_path = ct_implementation_root() / f"{ct_code.lower()}.py"
+        runtime_path = ct_implementation_root() / f"{artifact_code.lower()}.py"
         return runtime_path.exists(), runtime_path
 
     except Exception as e:

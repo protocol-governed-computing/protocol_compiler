@@ -27,7 +27,7 @@ from pathlib import Path
 import yaml
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-REGISTRY = WORKSPACE / "platform" / "registry"
+REGISTRY = WORKSPACE / "software_governance" / "registry"
 
 MACHINE = re.compile(
     r"(?P<head>^## Machine\s*\n+```yaml\s*\n)(?P<y>.*?)(?P<tail>\n```)",
@@ -59,12 +59,12 @@ BINDINGS = {
     "SECURITY_DOMAIN_MUST_BE_DECLARED": "fb.security_domain::INVARIANT_SECURITY_DOMAIN_DECLARED_V0",
     "CROSS_DOMAIN_FLOW_REQUIRES_AUTHORIZATION": "fb.security_domain::INVARIANT_SECURITY_DOMAIN_DECLARED_V0",
     # Capability surfaces: the _V0 codes these referenced were superseded by _V1.
-    "CS_EXPLICIT_DECLARATION": "fb.topology::INVARIANT_CS_SURFACE_CLOSED_V1",
-    "CS_IMPLEMENTATION_DECLARED": "fb.topology::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
-    "CT_IMPLEMENTATION_DECLARED": "fb.topology::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
-    "CT_EXPLICIT_IO": "fb.topology::INVARIANT_CT_SURFACE_CLOSED_V1",
-    "CT_PURITY": "fb.topology::INVARIANT_ATOM_OUTPUT_PURITY_V0",
-    "CT_NO_SIDE_EFFECTS": "fb.topology::INVARIANT_ATOM_OUTPUT_PURITY_V0",
+    "CS_EXPLICIT_DECLARATION": "fb.capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V1",
+    "CS_IMPLEMENTATION_DECLARED": "fb.execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
+    "CT_IMPLEMENTATION_DECLARED": "fb.execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
+    "CT_EXPLICIT_IO": "fb.capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
+    "CT_PURITY": "fb.capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
+    "CT_NO_SIDE_EFFECTS": "fb.capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
     # Actor identity: only the authority-separation rule has an enforcing invariant.
     "AC_NO_AUTHORITY_SEMANTICS": "fb.authority::INVARIANT_ACTOR_AUTHORITY_SEPARATION_V0",
     # Invariant governance.

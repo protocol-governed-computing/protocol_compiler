@@ -108,7 +108,7 @@ def bootstrap(root: Path | None = None, governance_layers_dir: Path | None = Non
     # Resolve registry root (<platform>/registry/)
     if governance_layers_dir is None:
         from compiler.governance_engine.platform_root import governance_registry_root
-        governance_layers_dir = governance_registry_root() / "declaration" / "structure" / "structures"
+        governance_layers_dir = governance_registry_root() / "structure" / "structures"
 
     if not governance_layers_dir.exists():
         raise FileNotFoundError(
@@ -132,11 +132,11 @@ def bootstrap(root: Path | None = None, governance_layers_dir: Path | None = Non
         return artifact_path
 
     # Load FQDN tree
-    fqdn_path = find_governance_artifact("STRUCTURE_FQDN_TREE_V0", "declaration/structure/structures")
+    fqdn_path = find_governance_artifact("STRUCTURE_FQDN_TREE_V0", "structure/structures")
     _FQDN_TREE = _parse_fqdn_yaml_block(fqdn_path.read_text())
 
     # Load module data roots and layer directories
-    data_roots_path = find_governance_artifact("STRUCTURE_MODULE_DATA_ROOTS_V0", "declaration/structure/structures")
+    data_roots_path = find_governance_artifact("STRUCTURE_MODULE_DATA_ROOTS_V0", "structure/structures")
     structure_data = _parse_yaml_block(
         data_roots_path.read_text(),
         "STRUCTURE_MODULE_DATA_ROOTS_V0"
@@ -154,7 +154,7 @@ def bootstrap(root: Path | None = None, governance_layers_dir: Path | None = Non
     # Validate schemas exist (STRUCTURE-driven path).
     # PGC: schemas live under the platform root directly (root/registry/...), not under a
     # pgs_governance package subdir. schemas_subdir already includes the "registry/" prefix.
-    schemas_subdir = _get_layer_directory("schemas_subdir", "registry/declaration/schema")
+    schemas_subdir = _get_layer_directory("schemas_subdir", "registry/schema")
     schemas = root / schemas_subdir
     if not schemas.exists():
         raise RuntimeError(
@@ -556,7 +556,7 @@ class GovernancePaths:
     def vocabulary_reserved_dir(self) -> Path:
         """Reserved vocabulary specs."""
         gov_root = self._roots.governance  # pgs_governance/registry
-        vocab_reserved = _get_layer_directory("vocabulary_reserved_subdir", "declaration/vocabulary/reserved")
+        vocab_reserved = _get_layer_directory("vocabulary_reserved_subdir", "vocabulary/reserved")
         return gov_root / vocab_reserved
 
     def vocabulary_protocol_kinds(self) -> Path:
@@ -683,7 +683,7 @@ class GovernancePaths:
 
     def schemas_root(self) -> Path:
         """Schemas root (STRUCTURE-driven path)."""
-        schemas_subdir = _get_layer_directory("schemas_subdir", "registry/declaration/schema")
+        schemas_subdir = _get_layer_directory("schemas_subdir", "registry/schema")
         gov_root = self._roots.governance
         # Resolve relative to governance parent (pgs_governance) since gov_root = pgs_governance/registry
         return gov_root.parent / schemas_subdir

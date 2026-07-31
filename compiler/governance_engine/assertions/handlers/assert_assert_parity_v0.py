@@ -84,7 +84,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         invariant_code = invariant_names[base_name]
         violations.append({
             "fqdn": invariants[invariant_code],
-            "rule": "governance.layers::INVARIANT_ASSERT_PARITY_V0",
+            "rule": "fb.conformance::INVARIANT_ASSERT_PARITY_V0",
             "message": f"Orphaned INVARIANT (no matching ASSERT): {invariant_code}",
             "fix": f"Create matching ASSERT_{base_name}.md file with handler implementation"
         })
@@ -95,7 +95,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         assert_code = assert_names[base_name]
         violations.append({
             "fqdn": asserts[assert_code],
-            "rule": "governance.layers::INVARIANT_ASSERT_PARITY_V0",
+            "rule": "fb.conformance::INVARIANT_ASSERT_PARITY_V0",
             "message": f"Orphaned ASSERT (no matching INVARIANT): {assert_code}",
             "fix": f"Create matching INVARIANT_{base_name}.md file or delete orphaned ASSERT"
         })

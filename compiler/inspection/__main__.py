@@ -1,4 +1,4 @@
-"""Module entry point: python -m compiler.inspection — same as `pi`."""
+"""Module entry point: python -m compiler.inspection — same as `si`."""
 
 from compiler.inspection.cli import main
 

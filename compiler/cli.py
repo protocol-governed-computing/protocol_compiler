@@ -3,7 +3,6 @@ CLI entry point for PGS compiler.
 
 Subcommands:
   compile           — compile one or more STRUCTURE artifacts (S1–S9 pipeline)
-  build-pps         — build the PPS cross-reference index for a compiled workspace
   inspect           — query evidence_graph.json for a compiled structure
 
 Pipeline: S1 EXTRACT → S2 CANONICALIZE → S3 SEMANTIC_ADDRESSING →
@@ -128,70 +127,6 @@ def compile(
 
     if fail_count > 0:
         sys.exit(1)
-
-
-@cli.command(name="build-pps")
-@click.option(
-    "--workspace",
-    required=True,
-    help="Absolute path to pgs_workspace root (must have protocol_snapshot/ present)",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Verbose output",
-)
-def build_pps(workspace: str, verbose: bool) -> None:
-    """
-    Build pps_snapshot/index.json from compiled workspace artifacts.
-
-    Reads (read-only):
-      protocol_snapshot/  vocabulary_snapshot/  evidence_snapshot/
-
-    Emits:
-      pps_snapshot/index.json  — consumed by pgs_agent
-
-    Run AFTER all `compiler compile` and vocabulary aggregation steps complete.
-    """
-    from pathlib import Path
-    from compiler.atoms.snapshot_gate import assert_snapshot_valid
-    from compiler.stages.s10_pps_projection import PPSProjectionBuilder
-
-    ws = Path(workspace)
-
-    # Hard gate: snapshot must be VALID before building PPS.
-    assert_snapshot_valid(ws)
-
-    click.echo(f"PPS Projection — workspace: {ws}")
-    click.echo()
-
-    try:
-        builder = PPSProjectionBuilder(ws)
-        stats = builder.build()
-    except FileNotFoundError as exc:
-        click.echo(f"Error: {exc}", err=True)
-        sys.exit(1)
-    except Exception as exc:
-        click.echo(f"PPS build failed: {exc}", err=True)
-        sys.exit(1)
-
-    click.echo(f"   Workflows:             {stats['workflows']}")
-    click.echo(f"   Capability Contracts:  {stats['capability_contracts']}")
-    click.echo(f"   Capability Transforms: {stats['capability_transforms']}")
-    click.echo(f"   Capability Side Effects: {stats['capability_side_effects']}")
-    click.echo(f"   Intents:               {stats['intents']}")
-    click.echo(f"   Vocab entries:         {stats['vocab_entries']}")
-    click.echo(f"   Domains:               {', '.join(stats['domains'])}")
-    click.echo(f"   Subdomains:            {', '.join(stats['subdomains'])}")
-
-    if verbose:
-        click.echo()
-        click.echo(f"   Output: {stats['output']}")
-
-    click.echo()
-    click.echo(f"PPS snapshot written → {stats['output']}")
-    click.echo(f"\n{60*'='}\n")
 
 
 @cli.command()

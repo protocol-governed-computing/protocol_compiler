@@ -13,17 +13,17 @@
 #     flags — anything starting with '-' (e.g. -v/--verbose) is forwarded to the compiler
 #
 # Example:
-#   ./compile_domain.sh ../platform/reference_workloads/collatz
-#   ./compile_domain.sh ../platform/reference_workloads/collatz -v
+#   ./compile_domain.sh ../conformance_workloads/workloads/collatz
+#   ./compile_domain.sh ../conformance_workloads/workloads/collatz -v
 #
-# Env overrides: PGC_PLATFORM_ROOT (default sibling ../platform), PYTHON (default python).
+# Env overrides: PGC_PLATFORM_ROOT (default sibling ../software_governance), PYTHON (default python).
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"     # protocol_compiler/ = the `compiler` package root
 UMBRELLA="$(cd "$SCRIPT_DIR/.." && pwd)"                       # protocol-governed-computing/
 PYTHON="${PYTHON:-python}"
-PGC_PLATFORM_ROOT="${PGC_PLATFORM_ROOT:-$UMBRELLA/platform}"
+PGC_PLATFORM_ROOT="${PGC_PLATFORM_ROOT:-$UMBRELLA/software_governance}"
 
 DOMAIN_ROOT="${1:?usage: compile_domain.sh <domain_root> [STRUCTURE_CODE] [flags]}"
 DOMAIN_ROOT="$(cd "$DOMAIN_ROOT" && pwd)"

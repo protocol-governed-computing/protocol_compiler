@@ -35,7 +35,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 "fqdn": fqdn_id,
                 "artifact_code": artifact_code,
                 "content_hash": content_hash,
-                "rule": "fb.constitution::INVARIANT_ARTIFACT_CONTENT_HASH_DECLARED_V0",
+                "rule": "fb.compiler::INVARIANT_ARTIFACT_CONTENT_HASH_DECLARED_V0",
                 "message": (
                     f"Artifact is not fully materialized: content_hash is "
                     f"{'missing' if content_hash is None else 'empty'}"

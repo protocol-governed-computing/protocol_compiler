@@ -148,7 +148,7 @@ def _project_node(node: Node) -> dict[str, Any] | None:
     if node.ir is not None:
         ir = dict(node.ir)
 
-        if node.kind == NodeKind.CT and "ct_code" in ir:
+        if node.kind == NodeKind.CT and "artifact_code" in ir:
             artifact["ct_ir"] = _deep_dict(ir)
 
         elif node.kind == NodeKind.CS and "handler_ref" in ir:

@@ -9,14 +9,14 @@
 # Flags (anything starting with '-', e.g. -v/--verbose) are forwarded to the compiler in any position.
 #
 # Env overrides:
-#   PGC_PLATFORM_ROOT   (default: sibling ../platform)
+#   PGC_PLATFORM_ROOT   (default: sibling ../software_governance)
 #   PGC_SNAPSHOT_ROOT   (default: <platform>/snapshot)
 #   PYTHON              (default: python)
 #
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"            # protocol_compiler/ = the `compiler` package root
-PGC_PLATFORM_ROOT="${PGC_PLATFORM_ROOT:-$(cd "$SCRIPT_DIR/../platform" && pwd)}"
+PGC_PLATFORM_ROOT="${PGC_PLATFORM_ROOT:-$(cd "$SCRIPT_DIR/../software_governance" && pwd)}"
 PYTHON="${PYTHON:-python}"
 
 # Separate the optional STRUCTURE positional from pass-through flags (e.g. -v), so a flag may
