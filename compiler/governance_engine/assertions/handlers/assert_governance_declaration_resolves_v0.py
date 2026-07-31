@@ -25,6 +25,19 @@ _SENTINELS = frozenset({"PROCESS_ENFORCED", "RUNTIME_ENFORCED"})
 
 _HANDLER_MODULE_PREFIX = "pgs_governance.registry.handlers"
 
+# Enforcement stages whose mechanism is NOT the compiler. An invariant declaring one of these has
+# no derived compile-time ASSERT to register, and requiring one would force a vacuous handler into
+# the registry — a check that always passes because it is looking at the wrong scope.
+#
+#   runtime_outcome         bound to a CC violation outcome + WF routing; verified by
+#                           ASSERT_RUNTIME_INVARIANT_WIRED_V0
+#   composition_conformance evaluated by the assembler over the ASSEMBLED snapshot; admitted by
+#                           the invariant's own `composition_check` declaration
+#
+# The invariant is still required to be named by a constitution rule (Rule 2 below): what is
+# exempted is the compile-time HANDLER, never the governance closure.
+_NON_COMPILER_STAGES = frozenset({"runtime_outcome", "composition_conformance"})
+
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     from compiler.governance_engine.assertions.handlers import HANDLER_REGISTRY
@@ -73,6 +86,10 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     "fix": f"Author {target}, or bind the rule to an invariant that exists",
                 })
                 continue
+
+            stages = set(inv.get("frontmatter", {}).get("core", {}).get("enforcement_stage") or [])
+            if stages & _NON_COMPILER_STAGES:
+                continue  # enforced elsewhere; no derived compile-time ASSERT exists
 
             assert_code = "ASSERT_" + target.split("::")[-1][len("INVARIANT_"):]
             proj = inv.get("frontmatter", {}).get("assert_projection") or {}

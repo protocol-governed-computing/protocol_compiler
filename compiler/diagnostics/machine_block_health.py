@@ -13,8 +13,13 @@ adds only noise.
 Disposition (Machine Block §11): a top-level field with no detected compiler consumer is split
 by its kind's disposition. On a DECLARATIVE kind (STRUCTURE, VOCAB, … — inert definitions the
 topology references), such a field is *preserved* declared policy carried into the snapshot for
-downstream/runtime reference; that is a legitimate disposition, not a defect. Only a field on an
-EXECUTABLE kind with no consumer is a genuine *candidate unconsumed*.
+downstream/runtime reference; that is a legitimate disposition, not a defect.
+
+A field on an EXECUTABLE kind may also be preserved, but only by NAMING its consumer in
+`_DOWNSTREAM_CONSUMERS`. Boundary contracts (TI/TE) are the standing case: the compiler seals
+them and the transport engine or the inspector interprets them, and the compiler cannot import
+either — so the scan structurally cannot see those consumers. Everything else on an EXECUTABLE
+kind is a genuine *candidate unconsumed*.
 
 Severity: WARNING only, and only for genuine candidates. It never fails the build, changes
 runtime behavior, or asserts a conformance rule. The authoritative rule is the compiler's actual
@@ -35,12 +40,30 @@ from compiler.governance_engine.artifact_kinds import REGISTRY, DECLARATIVE
 
 _LITERAL = re.compile(r"""['"]([A-Za-z_][A-Za-z0-9_]*)['"]""")
 
+# Keys on an EXECUTABLE kind whose consumer is, BY ARCHITECTURE, outside the compiler.
+#
+# A boundary contract is a declaration the compiler seals and another component interprets. The
+# compiler cannot import that component — purity forbids it — so the source scan structurally
+# cannot see the consumer, and the key reads as unconsumed however live it is. Declaring it here
+# keeps the census honest: a false candidate teaches a reader to ignore the warning, and a
+# genuinely dead key then hides among the ones they have learned to skip.
+#
+# Each entry NAMES its consumer, so the claim is checkable rather than a blanket exemption. A key
+# that no component reads must not be listed — that is the finding the census exists to surface.
+_DOWNSTREAM_CONSUMERS: dict[tuple[str, str], str] = {
+    ("TE", "evidence_policy"): "consumed by the transport resolver (resolver/resolver.py)",
+    ("TI", "catalog"): "consumed by snapshot_inspector (inspector/catalog.py)",
+    ("WF", "subdomain"): "consumed by snapshot_assembler (assembler/indexes.py)",
+}
+
+_DECLARATIVE_POLICY = "declarative policy, no compiler consumer"
+
 
 @dataclass
 class KindReport:
     consumed: set[str] = field(default_factory=set)
     unconsumed: set[str] = field(default_factory=set)
-    preserved: set[str] = field(default_factory=set)
+    preserved: dict[str, str] = field(default_factory=dict)   # key → why it is not a candidate
 
 
 @dataclass
@@ -66,10 +89,17 @@ class HealthReport:
 
 
 def _source_literals(compiler_src: Path) -> set[str]:
-    """Every quoted identifier appearing anywhere in the compiler source (its consumption surface)."""
+    """Every quoted identifier appearing anywhere in the compiler source (its consumption surface).
+
+    This module is excluded from its own scan. Its literals name keys in order to CLASSIFY them,
+    never to consume them — counting those would let the census answer its own question, reporting
+    a key as compiler-consumed on the strength of the table that says it is consumed elsewhere.
+    """
     out: set[str] = set()
     for py in compiler_src.rglob("*.py"):
         if "__pycache__" in py.parts:
+            continue
+        if py.resolve() == Path(__file__).resolve():
             continue
         try:
             out.update(_LITERAL.findall(py.read_text(encoding="utf-8", errors="ignore")))
@@ -113,12 +143,16 @@ def check(nodes: Iterable[Any], schema_closed_prefixes: set[str], compiler_src: 
         is_declarative = descriptor is not None and descriptor.disposition == DECLARATIVE
         fm = getattr(node, "frontmatter", None) or {}
         for leaf in set(_declared_fields(fm)):
-            if leaf in literals:
+            # A DECLARED disposition outranks the heuristic scan: if the key is known to be
+            # consumed outside the compiler, an incidental literal match inside it proves nothing.
+            if (prefix, leaf) in _DOWNSTREAM_CONSUMERS:
+                by_kind[prefix].preserved[leaf] = _DOWNSTREAM_CONSUMERS[(prefix, leaf)]
+            elif leaf in literals:
                 by_kind[prefix].consumed.add(leaf)
             elif is_declarative:
                 # Machine Block §11: declared policy/reference data on a declarative kind, carried
                 # into the snapshot but not compiler-consumed — a legitimate *preserved* disposition.
-                by_kind[prefix].preserved.add(leaf)
+                by_kind[prefix].preserved[leaf] = _DECLARATIVE_POLICY
             else:
                 by_kind[prefix].unconsumed.add(leaf)
     return HealthReport(by_kind=dict(by_kind))
@@ -144,7 +178,7 @@ def format_report(report: HealthReport, verbose: bool) -> list[str]:
         for k in sorted(r.consumed):
             lines.append(f"  ✓ {k}")
         for k in sorted(r.preserved):
-            lines.append(f"  ○ {k}  (preserved — declarative policy, no compiler consumer)")
+            lines.append(f"  ○ {k}  (preserved — {r.preserved[k]})")
         for k in sorted(r.unconsumed):
             lines.append(f"  ⚠ {k}  (no detected compiler consumer)")
     lines += [
@@ -152,12 +186,14 @@ def format_report(report: HealthReport, verbose: bool) -> list[str]:
         "Summary:",
         f"  machine-block keys examined:  {report.examined}",
         f"  consumed:                     {consumed_total}",
-        f"  preserved (declarative):      {report.preserved_total}",
+        f"  preserved:                    {report.preserved_total}",
         f"  candidate unconsumed:         {report.candidate_unconsumed}",
         "",
         "NOTE: census results are heuristic diagnostics. They do not affect compilation",
-        "      success, runtime behavior, or conformance. 'Preserved' fields are declared",
-        "      policy on declarative kinds (Machine Block §11); a 'candidate' is only a key on",
-        "      an executable kind with no detected compiler consumer — not proof of disuse.",
+        "      success, runtime behavior, or conformance. 'Preserved' fields either carry",
+        "      declared policy on a declarative kind (Machine Block §11) or name a consumer",
+        "      outside the compiler, which the source scan cannot see. A 'candidate' is a key",
+        "      on an executable kind with no consumer detected or declared anywhere — the",
+        "      strongest signal this census can give, though still not proof of disuse.",
     ]
     return lines

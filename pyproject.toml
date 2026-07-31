@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pgc_compile = "compiler.cli:cli"
+protocol_compiler = "compiler.cli:cli"
 
 [project.urls]
 Repository = "https://github.com/protocol-governed-computing/protocol_compiler"
@@ -55,7 +55,6 @@ packages = [
   "compiler.stages",
   "compiler.projections",
   "compiler.governance",
-  "compiler.inspection",
   "compiler.visualization",
   "compiler.visualization.consumers",
   "compiler.visualization.views",

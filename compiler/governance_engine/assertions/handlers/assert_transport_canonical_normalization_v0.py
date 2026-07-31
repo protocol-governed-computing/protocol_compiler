@@ -49,15 +49,19 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     "fix": "Remove passthrough: true and declare an explicit input_contract",
                 })
 
-            # Ingress normalization is the declared input contract (by reference).
-            input_contract = fm.get("input_contract")
-            if not input_contract or (isinstance(input_contract, dict) and len(input_contract) == 0):
+            # Ingress normalization is the declared input contract. PRESENCE is the
+            # declaration; an EMPTY contract is a legal and meaningful one — it declares that
+            # the operation admits no input at all, which is the strongest normalization
+            # possible, not the absence of one. Treating `{}` as undeclared would force a
+            # parameterless operation to invent a field it does not have in order to be
+            # governed, which is how contracts start lying.
+            if "input_contract" not in fm or fm.get("input_contract") is None:
                 violations.append({
                     "assert": "ASSERT_TRANSPORT_CANONICAL_NORMALIZATION_V0",
                     "artifact": artifact_code,
                     "field": "input_contract",
-                    "violation": "TI artifact must declare a non-empty input_contract — no passthrough payloads permitted",
-                    "fix": "Add an input_contract with at least one field declaration",
+                    "violation": "TI artifact must declare an input_contract — no passthrough payloads permitted",
+                    "fix": "Add an input_contract; declare `{}` if the operation admits no input",
                 })
 
         elif artifact_type == "TE":

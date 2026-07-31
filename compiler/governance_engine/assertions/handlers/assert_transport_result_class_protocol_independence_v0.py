@@ -5,8 +5,11 @@ governed, protocol-neutral class — never an HTTP status, RPC error code, or ot
 representation. Pure rule checker — reads the artifact set from context.
 """
 
+# CONSTITUTION_TRANSPORT_EGRESS_V0. NOT_FOUND (the admitted request whose SUBJECT is absent) and
+# OPERATION_NOT_FOUND (an identity resolving to no registered TI/TE) are deliberately distinct.
 _GOVERNED_RESULT_CLASSES = {
-    "SUCCESS", "VIOLATION", "UNAUTHORIZED", "EXECUTION_FAILURE", "OPERATION_NOT_FOUND",
+    "SUCCESS", "VIOLATION", "UNAUTHORIZED", "NOT_FOUND", "OPERATION_NOT_FOUND",
+    "EXECUTION_FAILURE",
 }
 
 
