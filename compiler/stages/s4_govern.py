@@ -103,6 +103,20 @@ _HANDLER_MODULE_PREFIX = "pgs_governance.registry.handlers"
 # handler" is enforced by the synthesis loop itself (E702_UNKNOWN_ASSERT).
 _OBSOLETE_DERIVED_ASSERTS = frozenset({"ASSERT_ASSERT_PARITY_V0"})
 
+# Enforcement stages whose mechanism is NOT the compiler. Deriving a compile-time ASSERT for such
+# an invariant would demand a handler that could only ever look at the wrong scope, and a handler
+# written to satisfy that demand would pass unconditionally — a vacuous assertion admitted into the
+# registry by construction.
+#
+#   runtime_outcome         enforced by a CC violation outcome + WF routing; wiring verified by
+#                           ASSERT_RUNTIME_INVARIANT_WIRED_V0
+#   composition_conformance enforced by the assembler over the ASSEMBLED snapshot; a single domain
+#                           build contains none of the composition the rule is about
+#
+# The invariant is still governed: it must be named by a constitution rule, and its own
+# `composition_check` declaration is what admits it to the phase that does enforce it.
+_NON_COMPILER_STAGES = frozenset({"runtime_outcome", "composition_conformance"})
+
 
 def _derive_assert(inv_node) -> dict[str, Any] | None:
     """Synthesize an ASSERT descriptor from an INVARIANT node (transparent, automatic).
@@ -118,6 +132,9 @@ def _derive_assert(inv_node) -> dict[str, Any] | None:
         return None
     assert_code = "ASSERT_" + inv_code[len("INVARIANT_"):]
     if assert_code in _OBSOLETE_DERIVED_ASSERTS:
+        return None
+    stages = set((inv_node.frontmatter.get("core") or {}).get("enforcement_stage") or [])
+    if stages & _NON_COMPILER_STAGES:
         return None
     proj = inv_node.frontmatter.get("assert_projection") or {}
     module = proj.get("handler") or f"{_HANDLER_MODULE_PREFIX}.{assert_code.lower()}"

@@ -48,12 +48,18 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         fqdn = artifact.get("fqdn_id", "")
 
         if artifact_code.startswith("INVARIANT_"):
-            # Runtime-enforced invariants (enforcement_stage contains "runtime_outcome")
-            # are bound to a CC outcome and verified by ASSERT_RUNTIME_INVARIANT_WIRED_V0,
-            # not by a same-named ASSERT. They are exempt from INVARIANT<->ASSERT parity.
+            # An invariant enforced by a NON-COMPILER mechanism has no same-named ASSERT, and is
+            # exempt from INVARIANT<->ASSERT parity:
+            #   runtime_outcome         — bound to a CC violation outcome and WF routing; verified
+            #                             by ASSERT_RUNTIME_INVARIANT_WIRED_V0
+            #   composition_conformance — evaluated by the assembler over the ASSEMBLED snapshot;
+            #                             admitted by its own `composition_check` declaration
+            # A compile-time handler for a composition-scoped rule could only ever see one domain
+            # build, which is the opposite of the scope such a rule is about — the platform build
+            # legitimately contains none of the artifacts the composition must carry.
             core = artifact.get("frontmatter", {}).get("core", {})
             stages = core.get("enforcement_stage", []) or []
-            if "runtime_outcome" in stages:
+            if {"runtime_outcome", "composition_conformance"} & set(stages):
                 continue
             invariants[artifact_code] = fqdn
         elif artifact_code.startswith("ASSERT_"):
