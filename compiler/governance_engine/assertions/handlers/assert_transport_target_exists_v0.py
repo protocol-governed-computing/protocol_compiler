@@ -1,20 +1,42 @@
 """
 ASSERT_TRANSPORT_TARGET_EXISTS_V0 Handler
 
-Validates that every TI_ artifact declares an explicit workflow binding
-and that the declared workflow exists in the compiled artifact set.
+Every TI_ artifact must declare an explicit, static invocation target appropriate to its
+handler KIND. A boundary with no destination is a dead letter.
+
+What "target" means is kind-dependent, and the check is as strong as each kind allows:
+
+    WF_INVOCATION    handler.workflow  — must resolve to a WF in the compiled artifact set
+    SNAPSHOT_READ    handler.operation — must be declared and static
+    SNAPSHOT_QUERY   handler.operation — must be declared and static
+
+Only WF_INVOCATION can be checked for resolvability, because only its target is an artifact.
+An inspection target is an Operation Identity resolved by the inspector's own internal
+registry, which belongs to no compiled artifact set — the compiler cannot see it without
+importing an implementation, which compiler purity forbids. The check for those kinds is
+therefore declared-and-static, and says so rather than pretending to more.
+
+The kind set is CLOSED: an unrecognised handler kind is a violation, never a pass. Every TI is
+counted in `assert_count` whatever its kind, so a weaker check stays visible instead of looking
+like an absence of subjects.
 
 CONSTITUTIONAL: Pure rule checker — reads artifact set from context.
 """
 
+# Declared target field per handler kind. Closed set; no fallback, no inference.
+_TARGET_FIELD = {
+    "WF_INVOCATION": "workflow",
+    "SNAPSHOT_READ": "operation",
+    "SNAPSHOT_QUERY": "operation",
+}
+
+# Kinds whose target is an artifact, and can therefore be resolved against the compiled set.
+_RESOLVABLE_KINDS = {"WF_INVOCATION"}
+
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     """
-    Validate TI_ artifact workflow target bindings.
-
-    For every TI_ artifact:
-    - core.workflow must be declared
-    - The declared workflow (bare code or FQDN) must resolve to a WF artifact
+    Validate TI_ artifact invocation target bindings.
 
     Args:
         artifacts: All validated artifacts
@@ -29,7 +51,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     """
     violations = []
 
-    # Build index of declared WF artifact codes and FQDNs
+    # Index of declared WF artifact codes and FQDNs — the resolvable target population.
     wf_codes: set[str] = set()
     wf_fqdns: set[str] = set()
     for a in artifacts:
@@ -48,39 +70,58 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         ti_code = artifact.get("artifact_code", "UNKNOWN")
         ti_count += 1
-        # Accepted Transport-Standard shape: the invocation binding is `handler.workflow`
-        # (a governed executable target; a WF in the current RI).
         handler = artifact.get("frontmatter", {}).get("handler", {}) or {}
-        wf_ref = handler.get("workflow")
+        kind = handler.get("kind")
 
-        if not wf_ref:
+        target_field = _TARGET_FIELD.get(kind)
+        if target_field is None:
             violations.append({
                 "assert": "ASSERT_TRANSPORT_TARGET_EXISTS_V0",
                 "artifact": ti_code,
-                "violation": "TI artifact must declare a handler.workflow invocation target",
-                "fix": "Add handler.workflow: <WF FQDN> to declare the explicit governed target",
+                "handler_kind": kind,
+                "violation": f"TI declares handler.kind '{kind}', which is not a governed kind",
+                "fix": f"Declare one of: {sorted(_TARGET_FIELD)}",
             })
             continue
 
-        # Reject dynamic references ($ prefix)
-        if isinstance(wf_ref, str) and wf_ref.startswith("$"):
+        target = handler.get(target_field)
+        if not target:
             violations.append({
                 "assert": "ASSERT_TRANSPORT_TARGET_EXISTS_V0",
                 "artifact": ti_code,
-                "workflow": wf_ref,
-                "violation": "TI core.workflow must be a static FQDN — dynamic references are forbidden",
-                "fix": "Replace dynamic reference with explicit WF FQDN",
+                "handler_kind": kind,
+                "violation": f"TI with handler.kind '{kind}' must declare handler.{target_field}",
+                "fix": f"Add handler.{target_field} to declare the explicit governed target",
             })
             continue
+
+        # Reject dynamic references ($ prefix) for EVERY kind — a target resolved at request
+        # time is not a compile-time-closed boundary.
+        if isinstance(target, str) and target.startswith("$"):
+            violations.append({
+                "assert": "ASSERT_TRANSPORT_TARGET_EXISTS_V0",
+                "artifact": ti_code,
+                "handler_kind": kind,
+                "target": target,
+                "violation": (f"TI handler.{target_field} must be a static target — "
+                              "dynamic references are forbidden"),
+                "fix": "Replace the dynamic reference with an explicit static target",
+            })
+            continue
+
+        if kind not in _RESOLVABLE_KINDS:
+            continue  # declared + static is the whole check this kind admits
 
         # Resolve: accept bare code or full FQDN
-        wf_bare = wf_ref.split("::")[-1] if "::" in wf_ref else wf_ref
-        if wf_bare not in wf_codes and wf_ref not in wf_fqdns:
+        bare = target.split("::")[-1] if "::" in target else target
+        if bare not in wf_codes and target not in wf_fqdns:
             violations.append({
                 "assert": "ASSERT_TRANSPORT_TARGET_EXISTS_V0",
                 "artifact": ti_code,
-                "workflow": wf_ref,
-                "violation": f"TI core.workflow '{wf_ref}' does not resolve to a declared WF artifact",
+                "handler_kind": kind,
+                "workflow": target,
+                "violation": (f"TI handler.workflow '{target}' does not resolve to a "
+                              "declared WF artifact"),
                 "fix": "Declare the target WF artifact or correct the FQDN reference",
             })
 

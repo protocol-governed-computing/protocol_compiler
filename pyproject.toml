@@ -55,7 +55,6 @@ packages = [
   "compiler.stages",
   "compiler.projections",
   "compiler.governance",
-  "compiler.inspection",
   "compiler.visualization",
   "compiler.visualization.consumers",
   "compiler.visualization.views",
