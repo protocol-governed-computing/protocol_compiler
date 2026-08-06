@@ -45,13 +45,15 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         }
     """
     violations = []
-    rb_count = 0
+    # What was EXAMINED, not what was iterated. Counting RB artifacts here reported "5 examined"
+    # while `_FILE_PATH_CS_TYPES` was empty and no binding was checked at all — vacuity wearing the
+    # shape of coverage. A count that can be zero is what makes an empty scope visible.
+    examined = 0
 
     for artifact in artifacts:
         if artifact.get("artifact_type") != "RB":
             continue
 
-        rb_count += 1
         fqdn = artifact.get("fqdn_id", artifact.get("artifact_code", "UNKNOWN"))
         bindings = artifact.get("frontmatter", {}).get("core", {}).get("bindings", {})
 
@@ -66,6 +68,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if cs_code not in _FILE_PATH_CS_TYPES:
                 # Not a file-path CS type — policy schema is unconstrained here
                 continue
+
+            examined += 1
 
             # File-path CS type: policy.path must be declared and non-empty
             if not isinstance(binding_value, dict):
@@ -114,7 +118,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 })
 
     return {
-        "assert_count": rb_count,
+        "assert_count": examined,
         "violations": violations,
         "status": "FAILED" if violations else "PASSED",
     }

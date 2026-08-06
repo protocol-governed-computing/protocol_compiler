@@ -88,6 +88,8 @@ from compiler.governance_engine.assertions.handlers.assert_binding_integrity_v0 
 from compiler.governance_engine.assertions.handlers.assert_implementation_admissible_v0 import execute as assert_implementation_admissible_v0
 from compiler.governance_engine.assertions.handlers.assert_schema_conformance_v0 import execute as assert_schema_conformance_v0
 from compiler.governance_engine.assertions.handlers.assert_rb_binding_policy_conformance_v0 import execute as assert_rb_binding_policy_conformance_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_parameters_declared_v0 import execute as assert_rb_parameters_declared_v0
+from compiler.governance_engine.assertions.handlers.assert_inspection_capability_read_only_v0 import execute as assert_inspection_capability_read_only_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_storage_op_conformance_v0 import execute as assert_cc_storage_op_conformance_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_node_key_binding_unique_v0 import execute as assert_wf_node_key_binding_unique_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_test_data_outcome_declared_v0 import execute as assert_ct_test_data_outcome_declared_v0
@@ -173,6 +175,8 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_implementation_admissible_v0": assert_implementation_admissible_v0,
     "pgs_governance.registry.handlers.assert_schema_conformance_v0": assert_schema_conformance_v0,
     "pgs_governance.registry.handlers.assert_rb_binding_policy_conformance_v0": assert_rb_binding_policy_conformance_v0,
+    "pgs_governance.registry.handlers.assert_rb_parameters_declared_v0": assert_rb_parameters_declared_v0,
+    "pgs_governance.registry.handlers.assert_inspection_capability_read_only_v0": assert_inspection_capability_read_only_v0,
     "pgs_governance.registry.handlers.assert_cc_storage_op_conformance_v0": assert_cc_storage_op_conformance_v0,
     "pgs_governance.registry.handlers.assert_wf_node_key_binding_unique_v0": assert_wf_node_key_binding_unique_v0,
     "pgs_governance.registry.handlers.assert_ct_test_data_outcome_declared_v0": assert_ct_test_data_outcome_declared_v0,
