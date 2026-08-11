@@ -12,7 +12,7 @@ WS_TRACES="$WS_ROOT/traces"
 WS_SEEDS="$WS_ROOT/seeds"
 
 echo ""
-echo "PGS Cleanup"
+echo "PGC Cleanup"
 echo "============================================="
 echo ""
 

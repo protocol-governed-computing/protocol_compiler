@@ -105,7 +105,7 @@ def main():
     cwd = os.getcwd()
     parent = os.path.dirname(cwd)
 
-    print("\nPGS Declarative vs Imperative Analysis (Grouped)")
+    print("\nPGC Declarative vs Imperative Analysis (Grouped)")
     print(f"Root: {parent}")
     print("=" * 90)
 

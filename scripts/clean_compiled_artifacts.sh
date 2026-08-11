@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------
-# PGS Federated Artifact Cleanup (ALL repos)
+# PGC Federated Artifact Cleanup (ALL repos)
 # Run from pgs_compiler repo
 # -------------------------------------------------------------
 
@@ -11,7 +11,7 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 PARENT="$( dirname "$ROOT" )"
 
 echo ""
-echo "PGS Federated Artifact Cleanup"
+echo "PGC Federated Artifact Cleanup"
 echo "Root: $PARENT"
 echo "---------------------------------------------"
 
