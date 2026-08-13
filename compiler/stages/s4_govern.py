@@ -311,6 +311,12 @@ def _project_single_node(node) -> dict[str, Any]:
         "domain_name": node.domain_name,
         "content_hash": node.content_hash,
         "frontmatter": dict(node.frontmatter),
+        # The module organization an artifact was read from, which is the sole declared source of
+        # its owning subdomain — `namespace` answers the domain and cannot answer this. Carried
+        # rather than derived: the node already holds it, and an assertion that had to re-derive
+        # ownership would be a second derivation of one fact. Without it, an assertion about
+        # ownership reads None on both sides, finds them equal, and passes on everything.
+        "module_path": node.metadata.get("module_path", "") if node.metadata else "",
         "content": node.metadata.get("content", "") if node.metadata else "",
     }
 

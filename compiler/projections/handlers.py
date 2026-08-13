@@ -119,10 +119,63 @@ def project_handlers(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             if rb_bindings:
                 rb_policy[str(node.address)] = rb_bindings
 
+    # --- Per-act composed storage, with the reach of every entity marked ---
+    #
+    # An act resolves its records against the bindings it operates under: the one it owns, and any
+    # it declares it consults. Composed here and sealed, rather than resolved when the act runs —
+    # the runtime reads what it is handed and never resolves for itself, and that property is worth
+    # more than the few lines it saves.
+    #
+    # Keyed by act rather than by binding, because a binding is shared: two acts may own the same
+    # one and consult different others, and composing into the binding would hand each act the
+    # other's reach.
+    #
+    # Every entity carries `reach`. `owned` is written and read; `consulted` is read only, and the
+    # runtime refuses a write against it. The distinction cannot be inferred later: once two
+    # descriptions are merged, an entity's origin is gone unless it is recorded here.
+    wf_storage: dict[str, dict[str, Any]] = {}
+
+    for node in graph.nodes.values():
+        if node.kind != NodeKind.WF or node.address < 0:
+            continue
+
+        owned_fqdn = node.frontmatter.get("runtime_binding")
+        consulted = list(node.frontmatter.get("consults") or [])
+        if not owned_fqdn or not consulted:
+            # An act that consults nothing needs no composition: its owned binding already carries
+            # the one description it resolves against, and the policy injection below hands it over
+            # unchanged. Composing anyway would seal a second copy of one description.
+            continue
+
+        composed: dict[str, Any] = {}
+        for binding_fqdn, reach in [(owned_fqdn, "owned")] + [(c, "consulted") for c in consulted]:
+            rb_node = graph.nodes.get(binding_fqdn)
+            if rb_node is None:
+                continue
+            struct_fqdn = rb_node.frontmatter.get("core", {}).get("storage_structure", "")
+            struct_node = graph.nodes.get(struct_fqdn) if struct_fqdn else None
+            if struct_node is None:
+                continue
+            entities = _to_plain(struct_node.frontmatter).get("core", {}).get("entity_stores", {})
+            for entity, config in (entities or {}).items():
+                if entity in composed:
+                    # One record described twice, reached by one act. Which description answers
+                    # would depend on the order the bindings were named, and the model says a
+                    # record is described once. Left out of the composition and reported by the
+                    # rule that owns the question rather than silently preferred here.
+                    continue
+                composed[entity] = {**config, "reach": reach, "described_by": binding_fqdn}
+
+        if composed:
+            wf_storage[str(node.address)] = {
+                "frontmatter": {"core": {"entity_stores": composed}}
+            }
+
     content = {
         "ct":       ct,
         "cs":       cs,
         "rb_policy": rb_policy,
+        "wf_storage": wf_storage,
     }
 
     projection_hash = compute_projection_hash(content)

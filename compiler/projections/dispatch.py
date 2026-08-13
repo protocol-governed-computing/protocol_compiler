@@ -311,9 +311,25 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         if edge.kind == EdgeKind.WF_START:
             wf_start[edge.source_address] = edge.target_address
         elif edge.kind == EdgeKind.WF_BINDS_RB:
-            wf_rb[edge.source_address] = edge.target_address
+            # Owned binding only — set below from the declaration. An act that declares a reach
+            # produces several WF→RB edges, because an edge kind is derived from the two node kinds
+            # and cannot tell the binding an act owns from one it merely consults. Taking the last
+            # edge would make which binding an act writes through depend on edge order.
+            pass
         elif edge.kind == EdgeKind.WF_ADMITS_VIA_IN:
             wf_in[edge.source_address] = edge.target_address
+
+    # The owned binding, read from the declaration that names it. `runtime_binding` is exactly one:
+    # an act writes what it owns, and ownership that is shared is not ownership.
+    for node in graph.nodes.values():
+        if node.kind != NodeKind.WF or node.address < 0:
+            continue
+        owned = node.frontmatter.get("runtime_binding")
+        if not owned:
+            continue
+        owned_node = graph.nodes.get(owned)
+        if owned_node is not None and owned_node.address >= 0:
+            wf_rb[node.address] = owned_node.address
 
     entry: dict[str, dict[str, Any]] = {}
     for wf_addr, start_addr in wf_start.items():

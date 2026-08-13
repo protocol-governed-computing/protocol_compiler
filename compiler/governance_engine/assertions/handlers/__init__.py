@@ -54,6 +54,7 @@ from compiler.governance_engine.assertions.handlers.assert_conformance_assertion
 from compiler.governance_engine.assertions.handlers.assert_ev_schema_required_v0 import execute as assert_ev_schema_required_v0
 from compiler.governance_engine.assertions.handlers.assert_ev_append_only_v0 import execute as assert_ev_append_only_v0
 from compiler.governance_engine.assertions.handlers.assert_rb_cs_only_v0 import execute as assert_rb_cs_only_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_storage_subdomain_owned_v0 import execute as assert_rb_storage_subdomain_owned_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_traceable_v0 import execute as assert_cs_traceable_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_isolated_execution_v0 import execute as assert_cs_isolated_execution_v0
 from compiler.governance_engine.assertions.handlers.assert_in_no_execution_logic_v0 import execute as assert_in_no_execution_logic_v0
@@ -136,6 +137,7 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_ev_schema_required_v0": assert_ev_schema_required_v0,
     "pgs_governance.registry.handlers.assert_ev_append_only_v0": assert_ev_append_only_v0,
     "pgs_governance.registry.handlers.assert_rb_cs_only_v0": assert_rb_cs_only_v0,
+    "pgs_governance.registry.handlers.assert_rb_storage_subdomain_owned_v0": assert_rb_storage_subdomain_owned_v0,
     "pgs_governance.registry.handlers.assert_cs_traceable_v0": assert_cs_traceable_v0,
     "pgs_governance.registry.handlers.assert_cs_isolated_execution_v0": assert_cs_isolated_execution_v0,
     "pgs_governance.registry.handlers.assert_in_no_execution_logic_v0": assert_in_no_execution_logic_v0,

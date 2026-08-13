@@ -616,6 +616,11 @@ def _materialize_dispatch_and_handlers(
             "ct":        dict(handlers.content.get("ct", {})),
             "cs":        dict(handlers.content.get("cs", {})),
             "rb_policy": dict(handlers.content.get("rb_policy", {})),
+            # Per-act composed storage, present only for an act that declares a reach. Written
+            # explicitly like every other key: this materializer enumerates what it writes rather
+            # than copying the projection wholesale, so a projection key absent from this list is
+            # sealed nowhere and read by nothing.
+            "wf_storage": dict(handlers.content.get("wf_storage", {})),
         }
 
     for filename, data in files_to_write.items():

@@ -804,8 +804,12 @@ def _extract_references(
 
     # Singular reference fields
     singular_fields = ["vocabulary_id", "governed_by", "structure", "runtime_binding", "transform"]
-    # Plural reference fields
-    plural_fields = ["transforms", "side_effects"]
+    # Plural reference fields. `consults` is an act's declared reach — the bindings it reads and
+    # never writes. Extracted as references so an unresolvable one is refused by surface closure;
+    # which of the named bindings is owned and which is consulted is read from the declaration
+    # itself, never from the resulting edges, because an edge kind is derived from the two node
+    # kinds and cannot tell one WF→RB reference from another.
+    plural_fields = ["transforms", "side_effects", "consults"]
 
     # RB bindings: keys are artifact FQDNs
     core = frontmatter.get("core", {})
