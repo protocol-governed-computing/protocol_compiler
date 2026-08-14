@@ -98,8 +98,11 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     wf_start_keys: dict[int, str] = {}
     # Authority: wf_actor[wf_addr] = actor_context FQDN bound at WF level (core.actor_context).
     wf_actor: dict[int, str] = {}
-    # Observation: wf_emits[str(wf_addr)] = {exit_node_key: EV_FQDN} — domain events emitted on exit.
-    wf_emits: dict[str, dict[str, str]] = {}
+    # Observation: wf_emits[str(wf_addr)] = {exit_node_key: [EV_FQDN, ...]} — the moments announced
+    # on exit, in the order the artifact declares them. A single moment is a sequence of one: the
+    # order is normative, so what is sealed is a list even where the declaration names one, and the
+    # runtime never has to know which form the author wrote.
+    wf_emits: dict[str, dict[str, list[str]]] = {}
 
     for _wf_fqdn, _wf_n in graph.nodes.items():
         if _wf_n.kind != NodeKind.WF or _wf_n.address < 0:
@@ -123,7 +126,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
                 continue
             # Observation: an EXIT node may emit a domain event when reached.
             if _nd.get("type") == "EXIT" and _nd.get("emit"):
-                wf_emits.setdefault(_wf_s, {})[_nk] = _nd.get("emit")
+                _em = _nd.get("emit")
+                wf_emits.setdefault(_wf_s, {})[_nk] = [_em] if isinstance(_em, str) else list(_em)
             _fqdn_id = _nd.get("fqdn_id", "")
             if not _fqdn_id or _fqdn_id not in graph.nodes:
                 continue
@@ -142,8 +146,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
 
     # Observation: resolve exit-node emits to the (source_CC, outcome) transition that routes there,
     # so the runtime emits the domain event when the CC produces that outcome (exits carry no address).
-    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = EV_FQDN
-    emit_map: dict[str, dict[str, dict[str, str]]] = {}
+    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = [EV_FQDN, ...] in announced order
+    emit_map: dict[str, dict[str, dict[str, list[str]]]] = {}
     for _wf_s, _src_map in wf_node_next_keys.items():
         _exits = wf_emits.get(_wf_s, {})
         if not _exits:
