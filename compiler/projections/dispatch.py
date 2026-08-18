@@ -98,8 +98,11 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     wf_start_keys: dict[int, str] = {}
     # Authority: wf_actor[wf_addr] = actor_context FQDN bound at WF level (core.actor_context).
     wf_actor: dict[int, str] = {}
-    # Observation: wf_emits[str(wf_addr)] = {exit_node_key: EV_FQDN} — domain events emitted on exit.
-    wf_emits: dict[str, dict[str, str]] = {}
+    # Observation: wf_emits[str(wf_addr)] = {exit_node_key: [EV_FQDN, ...]} — the moments announced
+    # on exit, in the order the artifact declares them. A single moment is a sequence of one: the
+    # order is normative, so what is sealed is a list even where the declaration names one, and the
+    # runtime never has to know which form the author wrote.
+    wf_emits: dict[str, dict[str, list[str]]] = {}
 
     for _wf_fqdn, _wf_n in graph.nodes.items():
         if _wf_n.kind != NodeKind.WF or _wf_n.address < 0:
@@ -123,7 +126,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
                 continue
             # Observation: an EXIT node may emit a domain event when reached.
             if _nd.get("type") == "EXIT" and _nd.get("emit"):
-                wf_emits.setdefault(_wf_s, {})[_nk] = _nd.get("emit")
+                _em = _nd.get("emit")
+                wf_emits.setdefault(_wf_s, {})[_nk] = [_em] if isinstance(_em, str) else list(_em)
             _fqdn_id = _nd.get("fqdn_id", "")
             if not _fqdn_id or _fqdn_id not in graph.nodes:
                 continue
@@ -142,8 +146,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
 
     # Observation: resolve exit-node emits to the (source_CC, outcome) transition that routes there,
     # so the runtime emits the domain event when the CC produces that outcome (exits carry no address).
-    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = EV_FQDN
-    emit_map: dict[str, dict[str, dict[str, str]]] = {}
+    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = [EV_FQDN, ...] in announced order
+    emit_map: dict[str, dict[str, dict[str, list[str]]]] = {}
     for _wf_s, _src_map in wf_node_next_keys.items():
         _exits = wf_emits.get(_wf_s, {})
         if not _exits:
@@ -311,9 +315,25 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         if edge.kind == EdgeKind.WF_START:
             wf_start[edge.source_address] = edge.target_address
         elif edge.kind == EdgeKind.WF_BINDS_RB:
-            wf_rb[edge.source_address] = edge.target_address
+            # Owned binding only — set below from the declaration. An act that declares a reach
+            # produces several WF→RB edges, because an edge kind is derived from the two node kinds
+            # and cannot tell the binding an act owns from one it merely consults. Taking the last
+            # edge would make which binding an act writes through depend on edge order.
+            pass
         elif edge.kind == EdgeKind.WF_ADMITS_VIA_IN:
             wf_in[edge.source_address] = edge.target_address
+
+    # The owned binding, read from the declaration that names it. `runtime_binding` is exactly one:
+    # an act writes what it owns, and ownership that is shared is not ownership.
+    for node in graph.nodes.values():
+        if node.kind != NodeKind.WF or node.address < 0:
+            continue
+        owned = node.frontmatter.get("runtime_binding")
+        if not owned:
+            continue
+        owned_node = graph.nodes.get(owned)
+        if owned_node is not None and owned_node.address >= 0:
+            wf_rb[node.address] = owned_node.address
 
     entry: dict[str, dict[str, Any]] = {}
     for wf_addr, start_addr in wf_start.items():

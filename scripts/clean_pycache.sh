@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # -------------------------------------------------------------
-# PGS Federated Cache Cleanup (ALL repos - deterministic)
+# PGC Federated Cache Cleanup (ALL repos - deterministic)
 # -------------------------------------------------------------
 
 set -euo pipefail
@@ -11,7 +11,7 @@ PARENT="$( dirname "$ROOT" )"
 
 echo ""
 echo "=================================================="
-echo "PGS Federated Cache Cleanup"
+echo "PGC Federated Cache Cleanup"
 echo "Root: $PARENT"
 echo "=================================================="
 echo ""

@@ -95,7 +95,7 @@ def compile(
     elif not structures:
         structures = ["STRUCTURE_BUILD_PLATFORM_CONFIG_V0"]
 
-    click.echo(f"Starting PGS build for {len(structures)} structure(s)")
+    click.echo(f"Starting PGC build for {len(structures)} structure(s)")
     click.echo()
 
     success_count = 0
@@ -247,7 +247,7 @@ def _run_compile(structure: str, verbose: bool) -> None:
     # Derive display label from structure code: STRUCTURE_BUILD_BLOCKCHAIN_CONFIG_V0 → "blockchain"
     build_scope = structure.removeprefix("STRUCTURE_BUILD_").split("_CONFIG_")[0].lower()
 
-    click.echo(f"PGS Compiling  {build_scope} ..")
+    click.echo(f"PGC Compiling  {build_scope} ..")
     click.echo(f"   STRUCTURE: {structure}")
     click.echo()
 
@@ -293,7 +293,7 @@ def _run_compile(structure: str, verbose: bool) -> None:
     click.echo(f"   Verified: {verified}")
     click.echo(f"   Attested: {attested}")
     click.echo()
-    click.echo(f"PGS build complete for {structure}!")
+    click.echo(f"PGC build complete for {structure}!")
 
     _machine_block_health(state, structure, verbose)
 

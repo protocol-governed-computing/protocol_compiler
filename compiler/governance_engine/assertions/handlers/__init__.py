@@ -37,10 +37,12 @@ from compiler.governance_engine.assertions.handlers.assert_test_data_match_ct_ou
 from compiler.governance_engine.assertions.handlers.assert_unique_artifact_id_v0 import execute as assert_unique_artifact_id_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_execution_path_valid_v0 import execute as assert_wf_execution_path_valid_v0
 from compiler.governance_engine.assertions.handlers.assert_binding_surface_closed_v0 import execute as assert_binding_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_announcement_distinct_v0 import execute as assert_wf_announcement_distinct_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_cc_only_nodes_v0 import execute as assert_wf_cc_only_nodes_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_entry_intent_v0 import execute as assert_wf_entry_intent_v0
 from compiler.governance_engine.assertions.handlers.assert_in_schema_required_v0 import execute as assert_in_schema_required_v0
 from compiler.governance_engine.assertions.handlers.assert_in_workflow_binding_v0 import execute as assert_in_workflow_binding_v0
+from compiler.governance_engine.assertions.handlers.assert_superseded_not_referenced_v0 import execute as assert_superseded_not_referenced_v0
 from compiler.governance_engine.assertions.handlers.assert_rb_no_logic_v0 import execute as assert_rb_no_logic_v0
 from compiler.governance_engine.assertions.handlers.assert_transport_target_exists_v0 import execute as assert_transport_target_exists_v0
 from compiler.governance_engine.assertions.handlers.assert_transport_no_dynamic_routing_v0 import execute as assert_transport_no_dynamic_routing_v0
@@ -53,6 +55,7 @@ from compiler.governance_engine.assertions.handlers.assert_conformance_assertion
 from compiler.governance_engine.assertions.handlers.assert_ev_schema_required_v0 import execute as assert_ev_schema_required_v0
 from compiler.governance_engine.assertions.handlers.assert_ev_append_only_v0 import execute as assert_ev_append_only_v0
 from compiler.governance_engine.assertions.handlers.assert_rb_cs_only_v0 import execute as assert_rb_cs_only_v0
+from compiler.governance_engine.assertions.handlers.assert_rb_storage_subdomain_owned_v0 import execute as assert_rb_storage_subdomain_owned_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_traceable_v0 import execute as assert_cs_traceable_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_isolated_execution_v0 import execute as assert_cs_isolated_execution_v0
 from compiler.governance_engine.assertions.handlers.assert_in_no_execution_logic_v0 import execute as assert_in_no_execution_logic_v0
@@ -118,10 +121,12 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_unique_artifact_id_v0": assert_unique_artifact_id_v0,
     "pgs_governance.registry.handlers.assert_wf_execution_path_valid_v0": assert_wf_execution_path_valid_v0,
     "pgs_governance.registry.handlers.assert_binding_surface_closed_v0": assert_binding_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_wf_announcement_distinct_v0": assert_wf_announcement_distinct_v0,
     "pgs_governance.registry.handlers.assert_wf_cc_only_nodes_v0": assert_wf_cc_only_nodes_v0,
     "pgs_governance.registry.handlers.assert_wf_entry_intent_v0": assert_wf_entry_intent_v0,
     "pgs_governance.registry.handlers.assert_in_schema_required_v0": assert_in_schema_required_v0,
     "pgs_governance.registry.handlers.assert_in_workflow_binding_v0": assert_in_workflow_binding_v0,
+    "pgs_governance.registry.handlers.assert_superseded_not_referenced_v0": assert_superseded_not_referenced_v0,
     "pgs_governance.registry.handlers.assert_rb_no_logic_v0": assert_rb_no_logic_v0,
     "pgs_governance.registry.handlers.assert_transport_target_exists_v0": assert_transport_target_exists_v0,
     "pgs_governance.registry.handlers.assert_transport_no_dynamic_routing_v0": assert_transport_no_dynamic_routing_v0,
@@ -134,6 +139,7 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_ev_schema_required_v0": assert_ev_schema_required_v0,
     "pgs_governance.registry.handlers.assert_ev_append_only_v0": assert_ev_append_only_v0,
     "pgs_governance.registry.handlers.assert_rb_cs_only_v0": assert_rb_cs_only_v0,
+    "pgs_governance.registry.handlers.assert_rb_storage_subdomain_owned_v0": assert_rb_storage_subdomain_owned_v0,
     "pgs_governance.registry.handlers.assert_cs_traceable_v0": assert_cs_traceable_v0,
     "pgs_governance.registry.handlers.assert_cs_isolated_execution_v0": assert_cs_isolated_execution_v0,
     "pgs_governance.registry.handlers.assert_in_no_execution_logic_v0": assert_in_no_execution_logic_v0,
