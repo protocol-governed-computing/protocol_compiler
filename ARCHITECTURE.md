@@ -1,8 +1,8 @@
 # Architecture — `protocol_compiler`
 
-**Release 5.** This document is frozen for this release. It describes what this repository is, what
-it owns, and what it must never do. It is written to be read before any code, and assumes no prior
-familiarity with Protocol-Governed Computing.
+This document describes what this repository is, what it owns, and what it must never do. It is
+written to be read before any code, and assumes no prior familiarity with Protocol-Governed
+Computing.
 
 For the big picture — what PGC is and how the repositories compose — see
 **https://github.com/protocol-governed-computing**.
@@ -133,6 +133,7 @@ of the same verified thing, not separate compilations.
 |---|---|
 | canonical | the artifacts themselves, in normal form — what the assembler seals |
 | execution graph | every path a workflow may take, before anything runs |
+| tokenized | the same graph addressed by integer rather than by name — what the runtime actually walks |
 | dispatch | what the runtime consults to route between steps |
 | vocabulary | every named concept, indexed — so two things cannot quietly share a name |
 | evidence | why each artifact was admitted |
@@ -152,6 +153,7 @@ compile_domain.sh       compile one domain against it
 compiler/
     stages/             the nine stages, one file each
     governance_engine/  the rules, and the handlers that check them
+    governance/         graph-native governance predicates
     graph/              the semantic model everything is derived from
     projections/        the views listed above
     visualization/      graph rendering
