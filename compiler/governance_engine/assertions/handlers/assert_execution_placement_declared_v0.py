@@ -3,14 +3,14 @@ ASSERT_EXECUTION_PLACEMENT_DECLARED_V0 Handler
 
 Enforces INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0:
 Every compiled snapshot must declare exactly one active placement contract
-in the fb.execution_placement namespace.
+in the execution_placement namespace.
 """
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     contracts = [
         a for a in artifacts
-        if a.get("namespace") == "fb.execution_placement"
+        if a.get("namespace") == "execution_placement"
         and a.get("artifact_code", "").startswith("STRUCTURE_EXECUTION_PLACEMENT_")
     ]
 
@@ -30,16 +30,16 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
     if len(active) == 0:
         violations.append({
-            "fqdn": "fb.execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0",
-            "rule": "fb.execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0",
+            "fqdn": "execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0",
+            "rule": "execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0",
             "message": "No active placement contract found in FB_EXECUTION_PLACEMENT",
             "fix": "Add a placement contract with status: active to execution_placement/",
         })
     else:
         active_codes = [a.get("artifact_code") for a in active]
         violations.append({
-            "fqdn": "fb.execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0",
-            "rule": "fb.execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0",
+            "fqdn": "execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0",
+            "rule": "execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0",
             "message": f"Multiple active placement contracts found: {active_codes}. Exactly one is required.",
             "fix": "Set status: active on exactly one placement contract; mark others inactive.",
         })

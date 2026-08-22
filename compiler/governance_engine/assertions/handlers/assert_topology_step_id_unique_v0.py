@@ -45,7 +45,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         for dup_id in sorted(duplicate_ids):
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_STEP_ID_UNIQUE_V0",
+                "rule": "execution_topology::INVARIANT_TOPOLOGY_STEP_ID_UNIQUE_V0",
                 "message": (
                     f"Duplicate step ID '{dup_id}' detected in pipeline — "
                     "step IDs must be unique within a CC execution topology"

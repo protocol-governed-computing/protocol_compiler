@@ -60,7 +60,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                         for violation_msg, line_num in purity_violations:
                             violations.append({
                                 "fqdn": fqdn,
-                                "rule": "fb.capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
+                                "rule": "capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
                                 "message": f"{impl_path.name}:{line_num} - {violation_msg}",
                                 "fix": "Return error status in output dict instead of raising business logic exception"
                             })
@@ -68,7 +68,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         except Exception as e:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
+                "rule": "capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
                 "message": f"Failed to parse implementation file {impl_path.name}: {str(e)}",
                 "fix": "Fix Python syntax errors in CT implementation file"
             })

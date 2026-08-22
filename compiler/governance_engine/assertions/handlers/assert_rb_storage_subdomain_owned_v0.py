@@ -8,26 +8,25 @@ subdomains then describe one record and nothing says which is authoritative. Tha
 what an act needing another subdomain's records reaches for today, and it passes every other
 check — which is what makes it the easy wrong act.
 
-CONSTITUTIONAL: Pure rule checker — reads artifact frontmatter and module organization only
+CONSTITUTIONAL: Pure rule checker — reads artifact frontmatter only
 """
 
 RULE = "ASSERT_RB_STORAGE_SUBDOMAIN_OWNED_V0"
 
 
-def _owning_subdomain(module_path: str | None) -> str | None:
-    """The owning subdomain declared by an artifact's module organization.
+def _frontmatter(artifact: dict) -> dict:
+    return artifact.get("frontmatter") or {}
 
-    `<pkg>.registry.<subdomain>.<kind>` — the subdomain sits before a kind directory. A
-    domain-level artifact (`<pkg>.registry.<kind>`) is owned by the domain and not by a
-    subdomain, and reads as None. Derived exactly as the artifact index derives it, because two
-    derivations of one fact are two facts.
+
+def _owning_subdomain(artifact: dict) -> str | None:
+    """The owning subdomain, read from the artifact's declared `concern`.
+
+    Declared, never derived. This previously split `module_path` — the artifact's source directory —
+    which made a governance determination follow filesystem position and put a determining fact
+    outside the declaration surface (MB-1, `4c` §4.1, `2e` CA-8). The value is unchanged: `concern`
+    was migrated from exactly what the path derived.
     """
-    if not module_path:
-        return None
-    parts = module_path.split(".")
-    if len(parts) >= 4 and parts[1] == "registry":
-        return parts[2]
-    return None
+    return _frontmatter(artifact).get("concern") or None
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -53,7 +52,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
         checked += 1
         rb_code = artifact.get("artifact_code", "UNKNOWN")
-        mine = _owning_subdomain(artifact.get("module_path"))
+        mine = _owning_subdomain(artifact)
 
         structure = by_identity.get(named)
         if structure is None:
@@ -77,7 +76,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             })
             continue
 
-        theirs = _owning_subdomain(structure.get("module_path"))
+        theirs = _owning_subdomain(structure)
 
         # `None` is a value here rather than an absence: an artifact organized as
         # `<pkg>.registry.<kind>` is owned by its domain and not by a subdomain, which the artifact

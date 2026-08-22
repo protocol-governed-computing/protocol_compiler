@@ -83,7 +83,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 if re.search(pattern, line):
                     violations.append({
                         "fqdn": f"execution.layers::{file_path.name}",
-                        "rule": "fb.execution::INVARIANT_NO_SMART_EXECUTION_V0",
+                        "rule": "execution::INVARIANT_NO_SMART_EXECUTION_V0",
                         "message": f"{file_path.name}:{line_num} - {message}: {line.strip()}",
                         "fix": "Remove type-based conversion logic from execution layer - execution must be type-agnostic"
                     })

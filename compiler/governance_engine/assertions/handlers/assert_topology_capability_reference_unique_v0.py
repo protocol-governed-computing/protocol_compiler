@@ -38,7 +38,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if has_transform and has_side_effect:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.capability_contracts::INVARIANT_TOPOLOGY_CAPABILITY_REFERENCE_UNIQUE_V0",
+                    "rule": "capability_contracts::INVARIANT_TOPOLOGY_CAPABILITY_REFERENCE_UNIQUE_V0",
                     "message": (
                         f"Step '{step_id}' has both 'transform' and 'side_effect' — "
                         "exactly one capability reference is allowed per step"
@@ -48,7 +48,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             elif not has_transform and not has_side_effect:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.capability_contracts::INVARIANT_TOPOLOGY_CAPABILITY_REFERENCE_UNIQUE_V0",
+                    "rule": "capability_contracts::INVARIANT_TOPOLOGY_CAPABILITY_REFERENCE_UNIQUE_V0",
                     "message": (
                         f"Step '{step_id}' has no capability reference — "
                         "exactly one of 'transform' or 'side_effect' is required"

@@ -38,7 +38,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.capability_contracts::ASSERT_CC_INPUTS_SATISFIED_V0",
+                "fqdn": "capability_contracts::ASSERT_CC_INPUTS_SATISFIED_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing cc_inputs_satisfied",
                 "fix": "Compiler must pre-compute CC inputs satisfaction analysis before assert phase"
@@ -58,7 +58,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not inputs_result:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.capability_contracts::INVARIANT_CC_INPUTS_SATISFIED_V0",
+                "rule": "capability_contracts::INVARIANT_CC_INPUTS_SATISFIED_V0",
                 "message": "Missing inputs satisfaction analysis for WF artifact",
                 "fix": "Compiler must analyze all WF artifacts"
             })
@@ -69,7 +69,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in inputs_result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.capability_contracts::INVARIANT_CC_INPUTS_SATISFIED_V0",
+                    "rule": "capability_contracts::INVARIANT_CC_INPUTS_SATISFIED_V0",
                     "message": structural_violation.get("violation", "Unknown CC inputs violation"),
                     "fix": structural_violation.get("fix", "Ensure all CC inputs are satisfied")
                 })

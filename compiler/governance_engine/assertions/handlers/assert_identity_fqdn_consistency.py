@@ -17,7 +17,7 @@ def execute(artifacts, context):
         if not fqdn:
             violations.append({
                 "fqdn": code or "UNKNOWN",
-                "rule": "fb.artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
+                "rule": "artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
                 "message": f"Artifact missing fqdn_id field (code: {code})",
                 "fix": "Ensure artifact has fqdn_id field in format layer::artifact_code"
             })
@@ -26,7 +26,7 @@ def execute(artifacts, context):
         if "::" not in fqdn:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
+                "rule": "artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
                 "message": f"Invalid FQDN format (missing :: separator): {fqdn}",
                 "fix": f"Change FQDN to format layer::artifact_code"
             })
@@ -37,7 +37,7 @@ def execute(artifacts, context):
         if name != code:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
+                "rule": "artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
                 "message": f"FQDN code mismatch: name part '{name}' doesn't match artifact_code '{code}'",
                 "fix": f"Change FQDN to {namespace}::{code} or change artifact_code to {name}"
             })
@@ -45,7 +45,7 @@ def execute(artifacts, context):
         if fqdn in seen:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
+                "rule": "artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
                 "message": f"Duplicate FQDN in compilation graph: {fqdn}",
                 "fix": "Ensure each artifact has a unique FQDN"
             })
@@ -56,7 +56,7 @@ def execute(artifacts, context):
             if len(parts) != 2:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
+                    "rule": "artifact::INVARIANT_IDENTITY_FQDN_CONSISTENCY_V0",
                     "message": f"Invalid domain namespace format: {namespace} (expected: domains.domain_name)",
                     "fix": "Change namespace to format: domains.{domain_name}"
                 })

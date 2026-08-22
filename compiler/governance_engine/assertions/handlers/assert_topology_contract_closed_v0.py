@@ -79,7 +79,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         for code in sorted(uncontracted):
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
+                "rule": "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
                 "message": (
                     f"Topology can exit with '{code}' but '{code}' is not declared in "
                     "result_status_contract.allowed — uncontracted exit"
@@ -95,7 +95,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         for code in sorted(unreachable):
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
+                "rule": "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
                 "message": (
                     f"Contract declares '{code}' in result_status_contract.allowed but "
                     "no execution path exits the CC with this code — unreachable contract code"

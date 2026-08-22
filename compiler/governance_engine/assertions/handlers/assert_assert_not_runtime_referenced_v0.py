@@ -9,7 +9,7 @@ RB) for any ASSERT_ code at any depth of the machine block.
 import re
 from typing import Any
 
-RULE = "fb.conformance::INVARIANT_ASSERT_NOT_RUNTIME_REFERENCED_V0"
+RULE = "conformance::INVARIANT_ASSERT_NOT_RUNTIME_REFERENCED_V0"
 
 EXECUTABLE = frozenset({"WF", "CC", "CS", "CT", "RB"})
 ASSERT_CODE = re.compile(r"\bASSERT_[A-Z0-9_]+_V[0-9]+\b")

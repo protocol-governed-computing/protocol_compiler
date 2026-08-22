@@ -75,7 +75,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not successors:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
+                "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
                 "message": (f"{fqdn} declares superseded_by with no successor — 'superseded' with "
                             f"nothing standing in its place is a deletion wearing a softer word"),
                 "fix": "Name the artifact that stands in its place, or delete it deliberately.",
@@ -84,7 +84,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if str(successor) not in by_identity:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
+                    "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
                     "message": (f"{fqdn} is superseded by {successor}, which is not in this "
                                 f"composition — the artifact standing in its place must exist"),
                     "fix": f"Author {successor}, or correct the successor named.",
@@ -105,7 +105,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 successors = ", ".join(_frontmatter(superseded[target]).get("superseded_by") or [])
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
+                    "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
                     "message": (f"{fqdn} references {target}, which is superseded by {successors}. "
                                 f"A superseded artifact is unreachable — reaching it means the "
                                 f"composition still runs what the design stood down"),
