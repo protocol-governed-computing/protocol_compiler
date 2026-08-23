@@ -29,7 +29,7 @@ imported no governance either.
 
 import re
 
-RULE = "fb.vocabulary::INVARIANT_VOCABULARY_SYMBOLS_WELL_FORMED_V0"
+RULE = "vocabulary::INVARIANT_VOCABULARY_SYMBOLS_WELL_FORMED_V0"
 
 ARTIFACT_CODE = re.compile(r"^[A-Z][A-Z0-9_]*_V[0-9]+$")
 

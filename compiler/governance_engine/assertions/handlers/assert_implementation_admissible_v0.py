@@ -30,7 +30,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.execution::ASSERT_IMPLEMENTATION_ADMISSIBLE_V0",
+                "fqdn": "execution::ASSERT_IMPLEMENTATION_ADMISSIBLE_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing implementation_admissibility",
                 "fix": "Compiler must pre-compute implementation admissibility analysis before assert phase"
@@ -54,7 +54,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
+                    "rule": "execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
                     "message": structural_violation.get("violation", "Unknown implementation violation"),
                     "fix": structural_violation.get("fix", "Fix implementation declaration")
                 })

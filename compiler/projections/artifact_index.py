@@ -212,36 +212,14 @@ def _index_entry(
     entry = {
         "domain": domain,
         "kind": kind,
-        # owner_subdomain — the artifact's governed OWNERSHIP (single-valued), declared by its module
-        # organization (`pgs_<domain>.registry.<subdomain>.<kind>`), NOT by graph references. IMMUTABLE
-        # once emitted: it is a pure function of `module_path`, which is part of the immutable versioned
-        # artifact — so ownership cannot drift from a new consumer; re-homing to another subdomain changes
-        # `module_path` and therefore requires a NEW version (the old version's owner_subdomain is fixed).
-        # None for federation-level artifacts (constitution/layers/invariants) that are not subdomain-owned.
-        # Participation (which subdomains reach it) is a SEPARATE, computed dimension — never conflated.
-        "owner_subdomain": _owner_subdomain(raw.get("module_path")),
+        # owner_subdomain — the artifact's governed OWNERSHIP (single-valued), read from its
+        # DECLARED `concern`, never from graph references and never from its source directory.
+        # Declared rather than derived so a governance determination does not follow filesystem
+        # position (MB-1, `4c` §4.1). Participation is a SEPARATE, computed dimension.
+        "owner_subdomain": (raw.get("frontmatter") or {}).get("concern") or None,
         "structures": structures,
         "canonical_path": file.relative_to(workspace).as_posix(),
         "evidence_paths": evidence_paths,
         "addresses": {scope: scopes[scope] for scope in sorted(scopes)},
     }
     return fqdn, entry
-
-
-def _owner_subdomain(module_path: str | None) -> str | None:
-    """The owning subdomain declared by an artifact's module path, read with zero inference.
-
-    A subdomain-owned artifact is organized as `<pkg>.registry.<subdomain>.<kind>` — the subdomain
-    sits *before* a kind directory (4+ segments). Since the governance registry is organized one
-    directory per namespace, the subdomain of a governance artifact *is* its namespace
-    (`software_governance.registry.execution_topology.invariants` → `execution_topology`).
-
-    Returns None (not subdomain-owned) for domain-level shared artifacts organized as
-    `<pkg>.registry.<kind>` (3 segments, e.g. capability_transforms, capability_side_effects):
-    a pure transform belongs to the domain, not a subdomain."""
-    if not module_path:
-        return None
-    parts = module_path.split(".")
-    if len(parts) >= 4 and parts[1] == "registry":
-        return parts[2]
-    return None

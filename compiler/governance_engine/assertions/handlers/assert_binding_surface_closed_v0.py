@@ -34,7 +34,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         return {
             "assert_count": 0,
             "violations": [{
-                "fqdn": "fb.runtime_binding::ASSERT_BINDING_SURFACE_CLOSED_V0",
+                "fqdn": "runtime_binding::ASSERT_BINDING_SURFACE_CLOSED_V0",
                 "rule": "COMPILATION_CONTEXT_COMPLETE",
                 "message": "Compilation context missing wf_binding_surface",
                 "fix": (
@@ -59,7 +59,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if not surface_result:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.runtime_binding::INVARIANT_BINDING_SURFACE_CLOSED_V0",
+                "rule": "runtime_binding::INVARIANT_BINDING_SURFACE_CLOSED_V0",
                 "message": "Missing binding surface analysis for WF artifact",
                 "fix": "Compiler must analyze all WF artifacts for binding surface"
             })
@@ -69,7 +69,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for structural_violation in surface_result.get("violations", []):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.runtime_binding::INVARIANT_BINDING_SURFACE_CLOSED_V0",
+                    "rule": "runtime_binding::INVARIANT_BINDING_SURFACE_CLOSED_V0",
                     "message": structural_violation.get(
                         "violation", "Unknown binding surface violation"
                     ),

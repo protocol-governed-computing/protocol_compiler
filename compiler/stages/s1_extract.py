@@ -9,6 +9,7 @@ with kind=REFERENCES (typed in S2 CANONICALIZE).
 """
 
 import hashlib
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -713,8 +714,23 @@ def _parse_artifact_to_node(
         ))
         return None, [], errors, warnings
 
-    # Compute content hash
-    content_hash = hashlib.sha256(content_raw.encode("utf-8")).hexdigest()
+    # Integrity over a CANONICAL FORM of the semantic object, not over the serialization.
+    #
+    # `2c` MB-3: "Equality and identity MUST be defined over the semantic object. Integrity MUST be
+    # computed over a canonical form of the semantic object." `4c` ID-3 and `2d` KV-8 say the same
+    # from their own subjects — a representation change preserving meaning must not change identity.
+    #
+    # This hashed `content_raw`, the whole markdown file, so two artifacts declaring identical
+    # meaning hashed differently if their YAML keys were written in a different order or their prose
+    # differed by a space. Measured before the change: swapping two sibling keys in a machine block
+    # left the parsed mapping identical and moved this hash.
+    #
+    # The canonical form is the parsed machine block serialised with sorted keys and fixed
+    # separators. Prose is excluded because prose declares nothing (MB-1) — an artifact's integrity
+    # value should not move when a comment is reworded.
+    content_hash = hashlib.sha256(
+        json.dumps(frontmatter, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    ).hexdigest()
 
     # Determine node kind. `artifact_kind` declared in the Machine block is the SOLE authoritative
     # discriminator (Machine Block §6). The filename prefix is a naming convention only.

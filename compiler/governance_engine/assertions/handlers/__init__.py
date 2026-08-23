@@ -22,9 +22,13 @@ from compiler.governance_engine.assertions.handlers.assert_cc_no_unused_outputs_
 from compiler.governance_engine.assertions.handlers.assert_cs_surface_closed_v0 import execute as assert_cs_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_output_contract_match_v0 import execute as assert_ct_output_contract_match_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_closed_v0 import execute as assert_ct_surface_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_ct_surface_derived_closed_v0 import execute as assert_ct_surface_derived_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_fqdn_only_references_v0 import execute as assert_fqdn_only_references_v0
 from compiler.governance_engine.assertions.handlers.assert_fqdn_namespace_authorized_v0 import execute as assert_fqdn_namespace_authorized_v0
+from compiler.governance_engine.assertions.handlers.assert_concern_not_authority_v0 import execute as assert_concern_not_authority_v0
+from compiler.governance_engine.assertions.handlers.assert_authority_constituted_v0 import execute as assert_authority_constituted_v0
 from compiler.governance_engine.assertions.handlers.assert_structure_paths_well_formed_v0 import execute as assert_structure_paths_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_schema_description_well_formed_v0 import execute as assert_schema_description_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_ac_declaration_well_formed_v0 import execute as assert_ac_declaration_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_vocabulary_symbols_well_formed_v0 import execute as assert_vocabulary_symbols_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_assert_not_runtime_referenced_v0 import execute as assert_assert_not_runtime_referenced_v0
@@ -112,6 +116,7 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_cs_surface_closed_v0": assert_cs_surface_closed_v0,
     "pgs_governance.registry.handlers.assert_ct_output_contract_match_v0": assert_ct_output_contract_match_v0,
     "pgs_governance.registry.handlers.assert_ct_surface_closed_v0": assert_ct_surface_closed_v0,
+    "pgs_governance.registry.handlers.assert_ct_surface_derived_closed_v0": assert_ct_surface_derived_closed_v0,
     "pgs_governance.registry.handlers.assert_fqdn_only_references_v0": assert_fqdn_only_references_v0,
     "pgs_governance.registry.handlers.assert_identity_fqdn_consistency": assert_identity_fqdn_consistency,
     "pgs_governance.registry.handlers.assert_no_smart_execution_v0": assert_no_smart_execution_v0,
@@ -168,7 +173,10 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_cryptographic_trust_declared_v0": assert_cryptographic_trust_declared_v0,
     "pgs_governance.registry.handlers.assert_handler_registry_closed_v0": assert_handler_registry_closed_v0,
     "pgs_governance.registry.handlers.assert_fqdn_namespace_authorized_v0": assert_fqdn_namespace_authorized_v0,
+    "pgs_governance.registry.handlers.assert_concern_not_authority_v0": assert_concern_not_authority_v0,
+    "pgs_governance.registry.handlers.assert_authority_constituted_v0": assert_authority_constituted_v0,
     "pgs_governance.registry.handlers.assert_structure_paths_well_formed_v0": assert_structure_paths_well_formed_v0,
+    "pgs_governance.registry.handlers.assert_schema_description_well_formed_v0": assert_schema_description_well_formed_v0,
     "pgs_governance.registry.handlers.assert_ac_declaration_well_formed_v0": assert_ac_declaration_well_formed_v0,
     "pgs_governance.registry.handlers.assert_vocabulary_symbols_well_formed_v0": assert_vocabulary_symbols_well_formed_v0,
     "pgs_governance.registry.handlers.assert_assert_not_runtime_referenced_v0": assert_assert_not_runtime_referenced_v0,

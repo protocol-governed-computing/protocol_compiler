@@ -17,7 +17,7 @@ the corpus would drift from the compiler as the platform evolves.
 
 from typing import Any
 
-RULE = "fb.governance::INVARIANT_GOVERNANCE_DECLARATION_RESOLVES_V0"
+RULE = "governance::INVARIANT_GOVERNANCE_DECLARATION_RESOLVES_V0"
 
 # Terminal declarations: enforcement is deliberately outside the compiler. Their
 # admissibility against core.enforcement_model is governed by SCHEMA_CONSTITUTION_V0.
@@ -36,7 +36,11 @@ _HANDLER_MODULE_PREFIX = "pgs_governance.registry.handlers"
 #
 # The invariant is still required to be named by a constitution rule (Rule 2 below): what is
 # exempted is the compile-time HANDLER, never the governance closure.
-_NON_COMPILER_STAGES = frozenset({"runtime_outcome", "composition_conformance"})
+# Imported rather than restated. This set decides whether an obligation derives a compile-time check,
+# and it was a second copy of the one in `s4_govern` — two statements of one fact, which disagreed the
+# moment two stages were added there. A handler asking "does this obligation derive a check?" must ask
+# the thing that derives them.
+from compiler.stages.s4_govern import _NON_COMPILER_STAGES
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:

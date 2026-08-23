@@ -11,7 +11,7 @@ An actor declares identity and nothing else. Checks, over AC artifacts:
 
 from typing import Any
 
-RULE = "fb.actor::INVARIANT_AC_DECLARATION_WELL_FORMED_V0"
+RULE = "actor::INVARIANT_AC_DECLARATION_WELL_FORMED_V0"
 
 FORBIDDEN_KEYS = frozenset({
     "implementation", "pipeline", "steps", "operations",

@@ -115,7 +115,16 @@ _OBSOLETE_DERIVED_ASSERTS = frozenset({"ASSERT_ASSERT_PARITY_V0"})
 #
 # The invariant is still governed: it must be named by a constitution rule, and its own
 # `composition_check` declaration is what admits it to the phase that does enforce it.
-_NON_COMPILER_STAGES = frozenset({"runtime_outcome", "composition_conformance"})
+#   enforced_elsewhere      carried by a named mechanism outside the build; `core.enforced_by` says
+#                           which, and a stage routing elsewhere without one is refused
+#   declared_not_enforced   stated deliberately and carried by nothing yet. It derives no check
+#                           because there is nothing to derive one from — and saying so is the point:
+#                           an obligation deferred and never built is otherwise indistinguishable
+#                           from one in force, which is what fourteen checks with no refusal path
+#                           and ten prose deferrals nobody reads had made of this platform.
+_NON_COMPILER_STAGES = frozenset({
+    "runtime_outcome", "composition_conformance", "enforced_elsewhere", "declared_not_enforced",
+})
 
 
 def _derive_assert(inv_node) -> dict[str, Any] | None:

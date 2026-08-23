@@ -103,6 +103,11 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     # order is normative, so what is sealed is a list even where the declaration names one, and the
     # runtime never has to know which form the author wrote.
     wf_emits: dict[str, dict[str, list[str]]] = {}
+    # Every declared ending, by node key. An EXIT carries no address, so the sealed representation
+    # previously carried no trace of it — and a transition to a declared ending was indistinguishable
+    # at runtime from an outcome nobody routed. `3a` EX-5 requires an outcome with no declared
+    # routing to REFUSE, which is unenforceable while the two look the same.
+    wf_exit_keys: dict[str, dict[str, str]] = {}
 
     for _wf_fqdn, _wf_n in graph.nodes.items():
         if _wf_n.kind != NodeKind.WF or _wf_n.address < 0:
@@ -125,6 +130,8 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             if not hasattr(_nd, "get"):
                 continue
             # Observation: an EXIT node may emit a domain event when reached.
+            if _nd.get("type") == "EXIT":
+                wf_exit_keys.setdefault(_wf_s, {})[_nk] = str(_nd.get("type"))
             if _nd.get("type") == "EXIT" and _nd.get("emit"):
                 _em = _nd.get("emit")
                 wf_emits.setdefault(_wf_s, {})[_nk] = [_em] if isinstance(_em, str) else list(_em)
@@ -156,6 +163,29 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             for _cond_str, _tgt_nk in _cond_map.items():
                 if _tgt_nk in _exits:
                     emit_map.setdefault(_wf_s, {}).setdefault(_cc_s, {})[_cond_str] = _exits[_tgt_nk]
+
+    # Termination, declared rather than inferred from absence.
+    # terminal[str(wf_addr)][str(cc_addr)][str(condition_addr)] = {"exit": node_key, "type": "EXIT"}
+    #
+    # The scheduler consults routing first, then this. An outcome in neither is an outcome the
+    # declarations do not answer for, and `3a` EX-5 and `3c` RT-9 both require refusal there. Ending
+    # the traversal instead made a dead end indistinguishable from an ending — the workflow reported
+    # the last contract's status as its own, and reported success.
+    terminal: dict[str, dict[str, dict[str, dict[str, str]]]] = {}
+    for _wf_s, _src_map in wf_node_next_keys.items():
+        _exits = wf_exit_keys.get(_wf_s, {})
+        if not _exits:
+            continue
+        for _cc_s, _cond_map in _src_map.items():
+            for _cond_str, _tgt_nk in _cond_map.items():
+                if _tgt_nk not in _exits:
+                    continue
+                _cond_addr = _resolve_condition_address(graph, _cond_str)
+                if _cond_addr < 0:
+                    continue
+                terminal.setdefault(_wf_s, {}).setdefault(_cc_s, {})[str(_cond_addr)] = {
+                    "exit": _tgt_nk, "type": _exits[_tgt_nk],
+                }
 
     # --- Routing: WF_addr → {CC_addr → {condition_addr: {"addr": next_CC_addr, "key": next_node_key}}} ---
     # Source: NODE_NEXT edges (each carries wf_fqdn in metadata from S2).
@@ -349,8 +379,28 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             e["actor"] = wf_actor[wf_addr]   # Authority: actor context (FQDN) — runtime attribution
         entry[str(wf_addr)] = e
 
+    # Admission contracts, so the gate determines rather than assumes.
+    # admission[str(in_addr)] = {field: {"type": str, "required": bool}}
+    #
+    # The IN node declares `core.inputs`; the runtime admitted everything with an unconditional ACK,
+    # which is `1c` AI-6 — inability to determine producing the same outcome as governance that
+    # permits. Projecting the contract makes admission a determination over declared content.
+    admission: dict[str, dict[str, Any]] = {}
+    for _n in graph.nodes.values():
+        if _n.kind != NodeKind.IN or _n.address < 0:
+            continue
+        _inputs = (_n.frontmatter.get("core", {}) or {}).get("inputs", {}) or {}
+        if not hasattr(_inputs, "items"):
+            continue
+        admission[str(_n.address)] = {
+            str(_f): {"type": _s.get("type"), "required": bool(_s.get("required", False))}
+            for _f, _s in _inputs.items() if hasattr(_s, "get")
+        }
+
     content = {
         "routing":  routing,
+        "admission": admission,
+        "terminal": terminal,
         "pipeline": pipeline,
         "entry":    entry,
         "bindings": bindings,
@@ -379,6 +429,7 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         operation="dispatch_projected",
         detail={
             "routing_count":  len(routing),
+            "terminal_count": sum(len(c) for w in terminal.values() for c in w.values()),
             "pipeline_count": len(pipeline),
             "entry_count":    len(entry),
             "bindings_count": len(bindings),

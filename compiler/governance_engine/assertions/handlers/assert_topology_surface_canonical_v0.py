@@ -146,7 +146,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for code in sorted(missing):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_SURFACE_CANONICAL_V0",
+                    "rule": "execution_topology::INVARIANT_TOPOLOGY_SURFACE_CANONICAL_V0",
                     "contract": contract_code,
                     "message": (
                         f"Step '{step_id}' result_surface missing '{code}' "
@@ -160,7 +160,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             for code in sorted(extra):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_SURFACE_CANONICAL_V0",
+                    "rule": "execution_topology::INVARIANT_TOPOLOGY_SURFACE_CANONICAL_V0",
                     "contract": contract_code,
                     "message": (
                         f"Step '{step_id}' result_surface declares '{code}' "

@@ -39,7 +39,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if count > 1:
             violations.append({
                 "fqdn": fqdn,
-                "rule": "fb.artifact::INVARIANT_UNIQUE_ARTIFACT_ID_V0",
+                "rule": "artifact::INVARIANT_UNIQUE_ARTIFACT_ID_V0",
                 "message": f"Duplicate fqdn_id (appears {count} times in compilation graph)",
                 "fix": "Ensure each artifact has a unique FQDN (layer::artifact_code combination)"
             })

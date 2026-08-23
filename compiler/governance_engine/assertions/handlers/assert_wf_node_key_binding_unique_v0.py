@@ -85,7 +85,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     first_nk = seen_fingerprints[fingerprint]
                     violations.append({
                         "fqdn": wf_fqdn,
-                        "rule": "fb.workflow::INVARIANT_WF_NODE_KEY_BINDING_UNIQUE_V0",
+                        "rule": "workflow::INVARIANT_WF_NODE_KEY_BINDING_UNIQUE_V0",
                         "message": (
                             f"WF '{wf_fqdn}' uses CC '{fqdn_id}' in two nodes "
                             f"('{first_nk}' and '{node_key}') with identical inputs. "

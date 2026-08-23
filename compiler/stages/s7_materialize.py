@@ -604,6 +604,8 @@ def _materialize_dispatch_and_handlers(
         files_to_write["dispatch.json"] = {
             "projection_class": dispatch.metadata.projection_class.value,
             "routing":   dict(dispatch.content.get("routing", {})),
+            "terminal":  dict(dispatch.content.get("terminal", {})),
+            "admission": dict(dispatch.content.get("admission", {})),
             "pipeline":  dict(dispatch.content.get("pipeline", {})),
             "entry":     dict(dispatch.content.get("entry", {})),
             "bindings":  dict(dispatch.content.get("bindings", {})),

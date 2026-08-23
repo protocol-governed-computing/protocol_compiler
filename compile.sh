@@ -37,7 +37,8 @@ export PGC_PLATFORM_ROOT
 echo "PGC compile"
 echo "  compiler : $SCRIPT_DIR (package: compiler)"
 echo "  platform : $PGC_PLATFORM_ROOT"
-echo "  snapshot : ${PGC_SNAPSHOT_ROOT:-$PGC_PLATFORM_ROOT/snapshot}"
+export PGC_SNAPSHOT_ROOT="${PGC_SNAPSHOT_ROOT:-$PGC_PLATFORM_ROOT/snapshot}"
+echo "  snapshot : $PGC_SNAPSHOT_ROOT"
 echo "  structure: $STRUCTURE"
 echo
 

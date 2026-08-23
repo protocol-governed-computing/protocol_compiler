@@ -38,7 +38,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if not isinstance(step, dict):
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
+                    "rule": "execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
                     "message": f"Pipeline step at index {i} is {type(step).__name__}, not a typed step dict",
                     "fix": "Replace string pipeline entries with explicit typed step objects",
                 })
@@ -50,7 +50,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if not step_id:
                 violations.append({
                     "fqdn": fqdn,
-                    "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
+                    "rule": "execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
                     "message": f"Pipeline step at index {i} missing explicit 'step' identifier",
                     "fix": "Add a unique 'step' field to every pipeline step",
                 })
@@ -62,7 +62,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                     if isinstance(ref, str) and _WILDCARD_RESULTS_PATTERN.match(ref):
                         violations.append({
                             "fqdn": fqdn,
-                            "rule": "fb.execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
+                            "rule": "execution_topology::INVARIANT_TOPOLOGY_STEP_DECLARED_V0",
                             "message": (
                                 f"Step '{step_id or i}' input '{input_name}' uses wildcard reference "
                                 f"'{ref}' — must reference a specific declared step ID"

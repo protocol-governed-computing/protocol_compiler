@@ -137,7 +137,7 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
     PROTOCOL: Zero inference - all behavior declared explicitly.
     Full FQDN format is required: "namespace::ARTIFACT_CODE_V0"
     Examples:
-      - "fb.execution::STRUCTURE_RUNTIME_EXECUTION_V0"
+      - "execution::STRUCTURE_RUNTIME_EXECUTION_V0"
       - "domains.blockchain::WF_CREATE_WALLET_V0"
       - "capability_transforms::CT_HASH_DATA_V0"
 
@@ -166,7 +166,7 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
             f"PROTOCOL VIOLATION: Bootstrap artifact must use FQDN format.\n"
             f"Expected: 'namespace::ARTIFACT_CODE', got: '{artifact_code}'\n"
             f"Examples:\n"
-            f"  - fb.execution::STRUCTURE_RUNTIME_EXECUTION_V0\n"
+            f"  - execution::STRUCTURE_RUNTIME_EXECUTION_V0\n"
             f"  - domains.blockchain::WF_CREATE_WALLET_V0\n"
             f"  - capability_transforms::CT_HASH_DATA_V0"
         )

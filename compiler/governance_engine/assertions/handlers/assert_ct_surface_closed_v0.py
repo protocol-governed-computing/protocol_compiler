@@ -98,7 +98,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         if ct_fqdn not in allowed_ct:
             violations.append({
                 "fqdn": ct_fqdn,
-                "rule": "fb.capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
+                "rule": "capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
                 "message": "Undeclared CT (exists in registry but not in allowed_capability_transforms)",
                 "fix": f"Add '{ct_fqdn}' to allowed_capability_transforms in {assert_code}"
             })
@@ -114,7 +114,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if allowed_fqdn not in discovered_ct:
                 violations.append({
                     "fqdn": allowed_fqdn,
-                    "rule": "fb.capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
+                    "rule": "capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
                     "message": "Declared CT not found (in allowed list but not discovered in registry)",
                     "fix": f"Remove '{allowed_fqdn}' from allowed_capability_transforms (CT no longer exists)"
                 })

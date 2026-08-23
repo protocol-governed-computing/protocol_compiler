@@ -63,7 +63,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             except Exception as e:
                 violations.append({
                     "fqdn": td_fqdn,
-                    "rule": "fb.capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
+                    "rule": "capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
                     "message": (
                         f"TEST_DATA '{td_fqdn}' case '{case_id}' has unparseable yaml: {e}"
                     ),
@@ -79,7 +79,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             if outcome is None:
                 violations.append({
                     "fqdn": td_fqdn,
-                    "rule": "fb.capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
+                    "rule": "capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
                     "message": (
                         f"TEST_DATA '{td_fqdn}' case '{case_id}' is missing "
                         f"expected_outcome. Every test case must explicitly declare "
@@ -93,7 +93,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             elif outcome not in _VALID_OUTCOMES:
                 violations.append({
                     "fqdn": td_fqdn,
-                    "rule": "fb.capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
+                    "rule": "capability_transforms::INVARIANT_CT_TEST_DATA_OUTCOME_DECLARED_V0",
                     "message": (
                         f"TEST_DATA '{td_fqdn}' case '{case_id}' declares "
                         f"expected_outcome '{outcome}' which is not a valid value. "

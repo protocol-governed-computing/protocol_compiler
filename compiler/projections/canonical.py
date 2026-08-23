@@ -13,7 +13,6 @@ Output format per artifact:
     "namespace": "namespace",
     "version": "0",
     "layer_code": "PLATFORM",
-    "module_path": "pkg.registry.module",
     "content": "# full markdown source ...",
     "content_hash": "sha256hex",
     "frontmatter": {...},
@@ -133,7 +132,12 @@ def _project_node(node: Node) -> dict[str, Any] | None:
         "namespace": node.namespace,
         "version": node.version,
         "layer_code": node.layer_code,
-        "module_path": metadata.get("module_path", ""),
+        # `module_path` is deliberately NOT projected. It is where the source file sat, which is a
+        # property of the file and not of the semantic object (MB-3, `4c` §2.2). Carrying it into a
+        # projection the snapshot identity covers made a pure relocation change the composite
+        # identity — move an artifact between directories, change no declaration, and the snapshot
+        # became a different snapshot. Ownership is now read from the declared `concern`; nothing
+        # reads this. It remains in graph metadata for diagnostics, where it determines nothing.
         "content": metadata.get("content", ""),
         "content_hash": node.content_hash,
         "frontmatter": _deep_dict(frontmatter),

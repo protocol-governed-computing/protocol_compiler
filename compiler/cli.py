@@ -277,6 +277,15 @@ def _run_compile(structure: str, verbose: bool) -> None:
             click.echo(f"   {stage_name} failed with {len(state.errors)} error(s):", err=True)
             for error in state.errors:
                 click.echo(f"      {error.format(verbose=verbose)}", err=True)
+            # A refusal is a determination and is evidenced as fully as an admission (EV-3, EN-12).
+            # AI-8 permits exactly this: after refusal the governed state is as though the proposal
+            # had not been made, "except for the evidence that it was refused".
+            from compiler.diagnostics import determination
+            rec = determination.write(state, structure, "REFUSED", failed_at=stage_name)
+            if rec:
+                click.echo(f"   determination recorded: {rec}", err=True)
+            else:
+                click.echo("   WARNING: determination record could not be written", err=True)
             raise RuntimeError(f"PGS build failed at {stage_name} for {structure}")
 
         if state.warnings:
@@ -294,6 +303,12 @@ def _run_compile(structure: str, verbose: bool) -> None:
     click.echo(f"   Attested: {attested}")
     click.echo()
     click.echo(f"PGC build complete for {structure}!")
+
+    # The admission is evidenced by the same record shape as a refusal, so the two are comparable.
+    from compiler.diagnostics import determination
+    rec = determination.write(state, structure, "ADMITTED")
+    if rec:
+        click.echo(f"   determination recorded: {rec}")
 
     _machine_block_health(state, structure, verbose)
 

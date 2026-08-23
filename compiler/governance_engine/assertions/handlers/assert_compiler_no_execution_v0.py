@@ -60,7 +60,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 "artifact_code": artifact_code,
                 "artifact_type": artifact_type,
                 "contaminated_fields": sorted(contaminated_fields),
-                "rule": "fb.compiler::INVARIANT_COMPILER_NO_EXECUTION_V0",
+                "rule": "compiler::INVARIANT_COMPILER_NO_EXECUTION_V0",
                 "message": (
                     f"{artifact_type} artifact frontmatter contains execution-state fields: "
                     f"{sorted(contaminated_fields)}"

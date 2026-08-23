@@ -45,7 +45,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
             violations.append({
                 "fqdn": fqdn_id,
                 "artifact_code": artifact_code,
-                "rule": "fb.compiler::INVARIANT_HANDLER_REGISTRY_CLOSED_V0",
+                "rule": "compiler::INVARIANT_HANDLER_REGISTRY_CLOSED_V0",
                 "message": "ASSERT artifact has no implementation.module declared",
                 "fix": "Declare implementation.module in the ASSERT artifact's machine block",
             })
@@ -56,7 +56,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 "fqdn": fqdn_id,
                 "artifact_code": artifact_code,
                 "module": module,
-                "rule": "fb.compiler::INVARIANT_HANDLER_REGISTRY_CLOSED_V0",
+                "rule": "compiler::INVARIANT_HANDLER_REGISTRY_CLOSED_V0",
                 "message": f"Handler not registered: {module}",
                 "fix": "Add handler import and HANDLER_REGISTRY entry in handlers/__init__.py",
             })

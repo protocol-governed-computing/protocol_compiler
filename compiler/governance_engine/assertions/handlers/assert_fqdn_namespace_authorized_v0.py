@@ -7,7 +7,7 @@ permanent guard that replaces path-derivation: a file may live anywhere, but it 
 an unauthorized namespace.
 """
 
-RULE = "fb.artifact::INVARIANT_FQDN_NAMESPACE_AUTHORIZED_V0"
+RULE = "artifact::INVARIANT_FQDN_NAMESPACE_AUTHORIZED_V0"
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
