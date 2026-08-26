@@ -58,7 +58,7 @@ The platform surface compiles first — a domain resolves its governance and cap
 against the platform's compiled vocabulary:
 
 ```bash
-./compile.sh                                  # the platform surface
+./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V1   # the platform surface — named, no default
 ./compile_domain.sh <domain_root>             # one domain, against the compiled platform
 ```
 

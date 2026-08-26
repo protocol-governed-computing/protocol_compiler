@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -24,6 +25,11 @@ WORKSPACE = COMPILER.parent
 COLLATZ = WORKSPACE / "conformance_workloads" / "workloads" / "collatz"
 DOMAIN_ATT = COLLATZ / "snapshot" / "compiled" / "trust"
 
+# Named, never defaulted: a platform is whatever a build config declares (6a §8) and a snapshot
+# must name the profile it claims (1b §11). The tools have no defaults, so the caller names them.
+PLATFORM_STRUCTURE = "STRUCTURE_BUILD_PLATFORM_CONFIG_V1"
+SNAPSHOT_PROFILE = "REFERENCE_PLATFORM_PROFILE_V1"
+
 MACHINE = re.compile(r"(?P<h>^## Machine\s*\n+```yaml\s*\n)(?P<y>.*?)(?P<t>\n```)", re.M | re.S)
 
 # A domain-applicable invariant (imported into collatz) and a platform-only one (never imported).
@@ -31,12 +37,12 @@ IMPORTED = WORKSPACE / "software_governance" / "registry" / "execution_topology"
 PLATFORM_ONLY = WORKSPACE / "software_governance" / "registry" / "compiler" / "invariants" / "INVARIANT_COMPILER_NO_EXECUTION_V0.md"
 
 
-def _run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+def _run(cmd: list[str], cwd: Path, env: dict | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
 
 
 def compile_platform() -> None:
-    r = _run(["./compile.sh"], COMPILER)
+    r = _run(["./compile.sh", PLATFORM_STRUCTURE], COMPILER)
     assert "0 failed" in r.stdout, f"platform compile failed:\n{r.stdout[-1500:]}"
 
 
@@ -61,7 +67,9 @@ def perturb(path: Path, marker: str) -> bytes:
 
 
 def assemble() -> subprocess.CompletedProcess:
-    return _run(["./assemble.sh"], WORKSPACE / "snapshot_assembler")
+    # Named, not defaulted: a snapshot must name the profile it claims (1b §11).
+    return _run(["./assemble.sh"], WORKSPACE / "snapshot_assembler",
+                env={**os.environ, "PGC_SNAPSHOT_PROFILE": SNAPSHOT_PROFILE})
 
 
 def main() -> int:

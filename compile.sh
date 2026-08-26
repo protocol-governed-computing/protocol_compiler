@@ -3,9 +3,12 @@
 # PGC compile runner — no PYTHONPATH / env fuss.
 #
 # Usage:
-#   ./compile.sh                                  # default structure (platform V1)
-#   ./compile.sh -v                               # default structure, verbose
+#   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V1
 #   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V1 -v
+#
+# The STRUCTURE is REQUIRED. There is no default platform: a governance surface is whatever a
+# build config declares, and defaulting one presumes *the* platform the way a defaulted profile
+# presumes *the* profile. `compile_domain.sh` already requires its domain root; this matches it.
 # Flags (anything starting with '-', e.g. -v/--verbose) are forwarded to the compiler in any position.
 #
 # Env overrides:
@@ -29,7 +32,13 @@ for arg in "$@"; do
     *)  if [[ -z "$STRUCTURE" ]]; then STRUCTURE="$arg"; else FLAGS+=("$arg"); fi ;;
   esac
 done
-STRUCTURE="${STRUCTURE:-STRUCTURE_BUILD_PLATFORM_CONFIG_V1}"
+if [[ -z "$STRUCTURE" ]]; then
+  echo "usage: compile.sh <STRUCTURE_CODE> [flags]" >&2
+  echo "  e.g. compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V1" >&2
+  echo "  No default: a platform is whatever a build config declares, and none is minimal by" >&2
+  echo "  nature (6a §8). Name the structure you mean." >&2
+  exit 2
+fi
 
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 export PGC_PLATFORM_ROOT
