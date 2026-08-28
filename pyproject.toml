@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "protocol_compiler"
+dynamic = ["version"]
+description = "Protocol-Governed Computing — protocol compiler: topology-native governance compilation with multi-projection output (import package: compiler)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+
+authors = [
+  { name = "Bhash Ganti aka Bachi" }
+]
+
+keywords = [
+  "protocol-governed-systems",
+  "pgs",
+  "topology-compiler",
+  "governance-compilation",
+  "semantic-addressing"
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development",
+  "Topic :: System :: Distributed Computing"
+]
+
+dependencies = [
+  "click",
+  "pyyaml",
+  "jsonschema"
+]
+
+[project.scripts]
+protocol_compiler = "compiler.cli:cli"
+
+[project.urls]
+Repository = "https://github.com/protocol-governed-computing/protocol_compiler"
+
+[tool.setuptools]
+include-package-data = true
+packages = [
+  "compiler",
+  "compiler.atoms",
+  "compiler.graph",
+  "compiler.stages",
+  "compiler.projections",
+  "compiler.governance",
+  "compiler.visualization",
+  "compiler.visualization.consumers",
+  "compiler.visualization.views",
+]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.yaml", "*.json", "*.sh"]
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}
