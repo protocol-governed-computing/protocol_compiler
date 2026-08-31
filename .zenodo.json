@@ -1,0 +1,33 @@
+{
+  "upload_type": "software",
+  "title": "PGC Reference Implementation: Protocol Compiler (protocol_compiler)",
+  "description": "<p>Topology-native governance compiler. Translates protocol declarations into sealed, verified projections and decides admissibility: an artifact violating the constitutional surface is refused rather than repaired downstream. Contains no runtime logic.</p><p>Part of the Protocol-Governed Computing reference corpus. Cite the version DOI of the release you used, not the concept DOI.</p>",
+  "creators": [
+    {
+      "name": "Ganti, Bhash",
+      "orcid": "0009-0007-3810-6520",
+      "affiliation": "Independent researcher"
+    }
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "protocol-governed computing",
+    "governance",
+    "declarative semantics",
+    "conformance",
+    "compiler",
+    "admissibility",
+    "projections"
+  ],
+  "access_right": "open",
+  "language": "eng",
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.22150616",
+      "relation": "references",
+      "resource_type": "software",
+      "scheme": "doi"
+    }
+  ],
+  "notes": "Implements or supports the Open PGC Standard (10.5281/zenodo.22150616). Version is taken from the GitHub release tag; do not hard-code it here."
+}
