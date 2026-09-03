@@ -1,5 +1,5 @@
 """
-CLI entry point for PGS compiler.
+CLI entry point for PGC compiler.
 
 Subcommands:
   compile           — compile one or more STRUCTURE artifacts (S1–S9 pipeline)
@@ -51,7 +51,7 @@ def assert_structure_integrity(structure_code: str) -> None:
 
 @click.group()
 def cli() -> None:
-    """PGS compiler — topology-native governance compilation."""
+    """PGC protocol compiler — topology-native governance compilation."""
     pass
 
 
@@ -224,7 +224,7 @@ def inspect(
 
 def _run_compile(structure: str, verbose: bool) -> None:
     """
-    Run PGS compilation pipeline (S1-S8) for a single structure.
+    Run PGC compilation pipeline (S1-S8) for a single structure.
 
     Each stage is a pure function: State -> State.
     Pipeline halts on first stage with errors.
@@ -286,7 +286,7 @@ def _run_compile(structure: str, verbose: bool) -> None:
                 click.echo(f"   determination recorded: {rec}", err=True)
             else:
                 click.echo("   WARNING: determination record could not be written", err=True)
-            raise RuntimeError(f"PGS build failed at {stage_name} for {structure}")
+            raise RuntimeError(f"PGC build failed at {stage_name} for {structure}")
 
         if state.warnings:
             click.echo(f"      {len(state.warnings)} warning(s)")

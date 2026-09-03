@@ -172,8 +172,15 @@ def make_metadata(
 # sole declaration; pyproject derives it and so does this. Two statements of one fact drift apart.
 def _release() -> str:
     from pathlib import Path
+    # Source tree and editable installs: the repo-root VERSION is authoritative.
     root = Path(__file__).resolve().parent.parent.parent   # compiler/projections → repo root
-    return (root / "VERSION").read_text(encoding="utf-8").strip()
+    declared = root / "VERSION"
+    if declared.is_file():
+        return declared.read_text(encoding="utf-8").strip()
+    # Installed wheel: no repo root exists. The ordinal ships as package data,
+    # written from the repo-root declaration at build time by scripts/sync_version.py.
+    shipped = Path(__file__).resolve().parent.parent / "VERSION"
+    return shipped.read_text(encoding="utf-8").strip()
 
 
 COMPILER_VERSION = _release()
