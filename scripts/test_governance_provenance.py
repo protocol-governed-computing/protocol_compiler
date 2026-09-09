@@ -28,7 +28,7 @@ DOMAIN_ATT = COLLATZ / "snapshot" / "compiled" / "trust"
 # Named, never defaulted: a platform is whatever a build config declares (6a §8) and a snapshot
 # must name the profile it claims (1b §11). The tools have no defaults, so the caller names them.
 PLATFORM_STRUCTURE = "STRUCTURE_BUILD_PLATFORM_CONFIG_V1"
-SNAPSHOT_PROFILE = "REFERENCE_PLATFORM_PROFILE_V1"
+SNAPSHOT_PROFILE = "GOVERNANCE_SURFACE_PROFILE_V0"
 
 MACHINE = re.compile(r"(?P<h>^## Machine\s*\n+```yaml\s*\n)(?P<y>.*?)(?P<t>\n```)", re.M | re.S)
 
