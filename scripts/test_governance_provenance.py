@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import re
+import yaml
 import os
 import subprocess
 import sys
@@ -57,11 +58,29 @@ def domain_hash() -> str:
 
 
 def perturb(path: Path, marker: str) -> bytes:
-    """Append a harmless comment line inside the Machine block, changing its content_hash."""
+    """Add a harmless KEY inside the Machine block, changing its content_hash.
+
+    It must be a key, not a comment. `content_hash` is taken over the machine block *parsed and
+    canonically serialised* — prose declares nothing (MB-1), so an artifact's integrity value does
+    not move when a comment is reworded. A comment therefore perturbs the file and not the artifact,
+    and every property below would report a false negative: the closure hash cannot move, so
+    SENSITIVITY sees no change and ENFORCEMENT has no drift for assembly to catch. An unconsumed key
+    is refused by ASSERT_SCHEMA_CONFORMANCE_V0 (`additionalProperties: false`), and so is a repeated
+    enum member. The schema is closed and every declared field carries meaning, so **no
+    semantically-inert perturbation of an invariant exists** — which is itself the right design. The
+    mutation therefore changes a real declared value: `core.violation_response` FAIL_IMMEDIATELY ->
+    WARN, valid for a compiler-stage invariant and restored immediately afterwards. It is a genuine
+    change to the governance that checked the build, which is precisely what the closure hash is
+    supposed to track.
+    """
     backup = path.read_bytes()
     text = path.read_text()
     m = MACHINE.search(text)
-    body = m.group("y").rstrip() + f"\n# provenance-mutation-{marker}"
+    y = yaml.safe_load(m.group("y"))
+    assert y["core"]["violation_response"] == "FAIL_IMMEDIATELY", (
+        f"{path.name}: expected FAIL_IMMEDIATELY to perturb, got {y['core']['violation_response']}")
+    y["core"]["violation_response"] = "WARN"
+    body = yaml.safe_dump(y, sort_keys=False, width=100).rstrip()
     path.write_text(text[: m.start()] + m.group("h") + body + m.group("t") + text[m.end():])
     return backup
 

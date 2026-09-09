@@ -55,5 +55,8 @@ include = ["compiler*"]
 
 [tool.setuptools.package-data]
 # VERSION has no extension, so it needs naming explicitly — it carries the
-# composition ordinal an installed wheel cannot otherwise reach.
-"*" = ["*.md", "*.yaml", "*.json", "*.sh", "VERSION"]
+# composition ordinal an installed wheel cannot otherwise reach. Scoped to the
+# package rather than "*": a bare pattern applies to every found package and ships
+# whatever later sits beside a module. That is how declarations reached two other
+# wheels in this family.
+"compiler" = ["VERSION"]

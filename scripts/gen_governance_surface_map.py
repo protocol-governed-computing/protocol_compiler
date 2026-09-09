@@ -5,7 +5,7 @@ Since Phase C, the registry folders ARE the concern classification
 from each artifact's path. The remaining coordinates (lifecycle, enforcement_locus,
 authority, coverage) are derived from real artifact fields, not hand-assigned.
 
-Emits platform/doc/governance_surface_map.yaml. This is documentation ABOUT the registry;
+Emits software_governance/surface_map/governance_surface_map.yaml. This is documentation ABOUT the registry;
 it lives in doc/, not registry/, so it is not compiled (hash-neutral).
 """
 
@@ -19,7 +19,7 @@ import yaml
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 REGISTRY = WORKSPACE / "software_governance" / "registry"
-OUT = WORKSPACE / "software_governance" / "doc" / "governance_surface_map.yaml"
+OUT = WORKSPACE / "software_governance" / "surface_map" / "governance_surface_map.yaml"
 
 MB = re.compile(r"^## Machine\s*\n+```yaml\s*\n(?P<y>.*?)\n```", re.M | re.S)
 DOMAIN_KINDS = {"WF", "CC", "CS", "CT", "RB", "AC", "IN", "EV", "TI", "TE"}

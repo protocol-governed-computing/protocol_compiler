@@ -129,7 +129,7 @@ Nothing enforces `additionalProperties: false` on a *new* schema either. Either 
 | `invariant_code` | delete — restates filename, already falls back |
 | `core.rule`, `core.summary`, `core.description` | move below fence |
 | `core.enforcement_stage` | decide (§4) |
-| `core.scope`, `core.violation_response` | delete — superseded by `assert_projection.scope` / fail-hard doctrine |
+| `core.scope`, `core.violation_response` | delete — superseded by `assert_projection.scope` / fail-hard doctrine (see the note below before doing this one) |
 | `core.anti_patterns`, `core.clarification`, `examples` | move below fence |
 | `extensions.error_codes` | move below fence, or bind to `ErrorCode` and make it resolve |
 
@@ -154,6 +154,29 @@ Nothing enforces `additionalProperties: false` on a *new* schema either. Either 
 Either it is a real dimension — in which case it belongs in `assert_projection.enforcement.phase`, which already exists and is already read, and the two should be merged — or it is decoration on 38 artifacts and should be deleted with the one handler repointed at `enforcement.phase`.
 
 Merging into `assert_projection.enforcement.phase` is the better option: one enforcement-parameter block per invariant, no second location, and it eliminates a field that reads as binding on 38 artifacts while binding on few.
+
+---
+
+## 4b. One dependency to repoint before deleting `core.violation_response`
+
+`scripts/test_governance_provenance.py` perturbs `core.violation_response`
+(`FAIL_IMMEDIATELY` → `WARN`) on an invariant to prove that the governance-closure hash tracks the
+governance a domain compiled against. Deleting the key breaks that test at its assertion that the
+field reads `FAIL_IMMEDIATELY`.
+
+**Repointing it is not trivial, and the reason is this document's own success.** The perturbation
+must change the artifact's `content_hash`, which is taken over the machine block *parsed and
+canonically serialised* — so a comment is invisible, and the test was red for exactly that reason
+until it was fixed. Every other candidate was refused: an added key by
+`ASSERT_SCHEMA_CONFORMANCE_V0` (`additionalProperties: false`), and a repeated enum member by the
+same assertion. The schema is closed and every surviving field carries meaning, so **the closer this
+document gets to done, the fewer fields remain that can be perturbed at all.** `core.violation_response`
+is usable today because it is a declared enum with more than one admissible value.
+
+Whoever executes this row should decide the replacement in the same change rather than leaving it to
+be found as a mystery test failure. The likely candidate after this closure is
+`assert_projection.enforcement.phase` — if §4 merges `enforcement_stage` into it, it becomes a
+declared, multi-valued, enforcement-bearing field, which is what the test needs.
 
 ---
 
