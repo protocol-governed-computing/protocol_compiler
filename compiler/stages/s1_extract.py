@@ -91,6 +91,7 @@ def s1_extract(state: State) -> State:
     # --- Step 1: Load discovery and build configs ---
     try:
         discovery_master = load_structure_artifact("STRUCTURE_DISCOVERY_V0", search_roots)
+        boundary_selection = load_structure_artifact("STRUCTURE_BOUNDARY_SELECTION_V0", search_roots)
         build_config = load_structure_artifact(structure_artifact_code, search_roots)
     except (FileNotFoundError, RuntimeError, ValueError) as e:
         return state.with_errors(CompilerError(
@@ -154,6 +155,12 @@ def s1_extract(state: State) -> State:
     discovered = _discover_artifacts(
         search_layers, discovery_layers, discovery_rules,
         build_artifact_types, errors
+    )
+
+    # Selectable boundaries are resolved in scope: the surface declares what is available, this
+    # build declares what is active, and only the selected structures continue into the pipeline.
+    discovered = _select_boundary_modes(
+        discovered, build_config, boundary_selection, structure_artifact_code, errors
     )
 
     if not discovered and not errors:
@@ -430,6 +437,122 @@ def _read_declared_fqdn(source_path: str) -> str | None:
         fq = block.get("fqdn")
         return fq if isinstance(fq, str) and "::" in fq else None
     return None
+
+
+def _declared_mode(source_path: str, field: str) -> str | None:
+    """The mode a boundary structure declares, if it is available to select.
+
+    Read from the artifact rather than inferred from its name. The two agree today and a name is
+    not a declaration: an artifact whose code and declared mode disagreed would be selected by the
+    wrong one, and the name is the one nothing governs.
+
+    A **superseded** structure declares no available mode. Supersession deletes nothing — the
+    artifact remains, because snapshots built under it claimed it and a claim nobody can read is
+    not a claim — but what it declared is no longer offered to a build. Without this, a mode named
+    by a successor would resolve to both it and its predecessor, and the arrangement would be
+    undetermined between two artifacts that agree.
+    """
+    try:
+        content = Path(source_path).read_text(encoding="utf-8")
+    except Exception:
+        return None
+    m = _MACHINE_BLOCK_PATTERN.search(content)
+    if not m:
+        return None
+    try:
+        block = yaml.safe_load(m.group("machine_yaml").rstrip())
+    except yaml.YAMLError:
+        return None
+    if not isinstance(block, dict) or block.get("superseded_by"):
+        return None
+    mode = block.get(field)
+    return mode if isinstance(mode, str) else None
+
+
+def _select_boundary_modes(
+    discovered: list[dict[str, Any]],
+    build_config: dict[str, Any],
+    boundary_selection: dict[str, Any],
+    structure_artifact_code: str,
+    errors: list[CompilerError],
+) -> list[dict[str, Any]]:
+    """Reduce each selectable boundary to the single arrangement this build named.
+
+    A selectable boundary is one where the surface declares several arrangements and a composition
+    may have only one — placement, scheduling, security domain, cryptographic trust. The surface
+    declares what is available and a build declares what is active, so selection happens here, in
+    scope, and the unselected arrangements never enter the pipeline. A composition carrying every
+    mode its surface declares would carry permissions its configuration never granted.
+
+    Which boundaries are selectable, and where each side of the selection is written, is declared
+    by `STRUCTURE_BOUNDARY_SELECTION_V0` rather than held here. A table deciding what a build may
+    choose is governance; holding it in the compiler would make the set of selectable boundaries a
+    property of a build tool.
+
+    **Authorization is not decided here.** A mode no structure declares resolves to nothing and is
+    refused, which is how an unauthorized mode fails — a surface carries a structure only for a
+    mode its constitution admits. Stating the authorized set twice, once in a constitution and once
+    in Python, would create two places for it to disagree.
+
+    A build whose scope reaches no structure of a boundary selects nothing there and is left alone.
+    Domain builds are in that position: these boundaries are declared by the governance surface,
+    and a domain compiles against a surface rather than restating it.
+    """
+    boundaries = (boundary_selection.get("contract") or {}).get("selectable_boundaries") or []
+    keep_ids: set[int] = set()
+    drop_ids: set[int] = set()
+
+    for boundary in boundaries:
+        prefix = boundary.get("declared_by_prefix")
+        names_in = boundary.get("names_mode_in")
+        declares_in = boundary.get("declares_mode_in", names_in)
+        if not prefix or not names_in:
+            continue
+
+        candidates = [
+            a for a in discovered
+            if a.get("artifact_type") == "STRUCTURE"
+            and a.get("artifact_code", "").startswith(prefix)
+        ]
+        if not candidates:
+            continue
+
+        named = build_config.get(names_in)
+        if not named:
+            errors.append(CompilerError(
+                code=ErrorCode.E901_INTERNAL_ERROR,
+                message=(
+                    f"STRUCTURE {structure_artifact_code} names no {names_in}, and "
+                    f"{len(candidates)} {boundary.get('namespace')} structure(s) are in scope. An "
+                    f"absent selection is refused rather than defaulted: defaulting one would let a "
+                    f"composition reach an arrangement no configuration declared."
+                ),
+                phase="S1_EXTRACT",
+            ))
+            continue
+
+        selected = [a for a in candidates
+                    if _declared_mode(a["source_path"], declares_in) == named]
+        if len(selected) != 1:
+            found = sorted(a.get("artifact_code", "?") for a in selected)
+            errors.append(CompilerError(
+                code=ErrorCode.E901_INTERNAL_ERROR,
+                message=(
+                    f"{names_in} {named!r} resolves to {len(selected)} declaring structure(s) "
+                    f"{found} in {boundary.get('namespace')}; exactly one is required. A named mode "
+                    f"that resolves to nothing declares nothing — either it is unauthorized, or the "
+                    f"structure declaring it was superseded."
+                ),
+                phase="S1_EXTRACT",
+            ))
+            continue
+
+        keep_ids.add(id(selected[0]))
+        drop_ids.update(id(a) for a in candidates if a is not selected[0])
+
+    if errors:
+        return discovered
+    return [a for a in discovered if id(a) not in drop_ids or id(a) in keep_ids]
 
 
 def _derive_fqdns(
