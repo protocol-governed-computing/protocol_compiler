@@ -20,9 +20,11 @@ never granted.
 _ASSERT = "execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V1"
 _RULE = "execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V1"
 
-# Authorized by CONSTITUTION_EXECUTION_PLACEMENT_V1 §1. Authorizing a mode is an amendment to that
-# constitution; this list is the compiler's copy of it and must not be extended here alone.
-AUTHORIZED_MODES = ("LOCAL_SINGLE_NODE", "LOCAL_MULTI_WORKER")
+# No copy of the authorized modes is held here. It was, and that was a second place for the set to
+# disagree with the constitution that declares it. Authorization is enforced where it can only be
+# stated once: a mode no structure declares resolves to nothing at selection and the build refuses,
+# and a surface carries a structure only for a mode CONSTITUTION_EXECUTION_PLACEMENT_V1 §1 admits.
+# What remains here is cardinality, which is what the invariant actually says.
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -53,17 +55,14 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                    "more than one reaching the composition is a materialization fault, not a "
                    "configuration one.",
         })
-    else:
-        mode = (carried[0].get("frontmatter", {}) or {}).get("placement_mode")
-        if mode not in AUTHORIZED_MODES:
-            violations.append({
-                "fqdn": _ASSERT,
-                "rule": _RULE,
-                "message": f"Placement mode {mode!r} is not authorized. Authorized modes are "
-                           f"{list(AUTHORIZED_MODES)}.",
-                "fix": "Authorizing a mode is an amendment to CONSTITUTION_EXECUTION_PLACEMENT_V1 "
-                       "§1, never a configuration value.",
-            })
+    elif not (carried[0].get("frontmatter", {}) or {}).get("placement_mode"):
+        violations.append({
+            "fqdn": _ASSERT,
+            "rule": _RULE,
+            "message": "The carried placement structure declares no placement_mode, so the "
+                       "composition records no arrangement.",
+            "fix": "A placement structure declares its mode in placement_mode.",
+        })
 
     return {
         "assert_count": len(carried),
