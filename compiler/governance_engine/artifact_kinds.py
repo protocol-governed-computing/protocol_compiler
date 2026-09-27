@@ -120,7 +120,10 @@ _DESCRIPTORS: tuple[ArtifactKindDescriptor, ...] = (
     # DECLARATIVE — own NodeKind
     _d("ASSERT", "ASSERT", DECLARATIVE, "assertions", ak="ASSERT",
        category=NORMATIVE, provenance=DERIVED),
-    _d("TEST_DATA", "TEST_DATA", DECLARATIVE),
+    # A test vector states what a transform must produce: a normative declaration, authored in a
+    # design and rendered by construction (conformance::CONSTITUTION_TEST_DATA_V1).
+    _d("TEST_DATA", "TEST_DATA", DECLARATIVE, "test_data", ak="TEST_DATA",
+       category=NORMATIVE, provenance=AUTHORED),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, keep their prefix (old _GOVERNANCE_PREFIXES)
     _d("INVARIANT", "GOVERNANCE", DECLARATIVE, "invariants", ak="INVARIANT",
        category=NORMATIVE, provenance=AUTHORED),

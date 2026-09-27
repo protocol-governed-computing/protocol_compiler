@@ -13,11 +13,9 @@ output directory. Handles:
 """
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
-import yaml
 
 from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
 from compiler.governance_engine.structure.loading.protocol_loader import _get_artifact_type_dir_from_prefix
@@ -944,6 +942,64 @@ def _materialize_evidence_views(
     return warnings
 
 
+def _conformance_cases(
+    td_fqdn: str, frontmatter: dict[str, Any], ct_by_fqdn: dict[str, dict],
+) -> tuple[list[dict[str, Any]], list[CompilerError]]:
+    """The runnable cases one vector declares, each bound to its target as sealed.
+
+    Pure, so the binding can be judged without a build. Cases are governed content and are read from
+    the vector's Machine block (`SCHEMA_TEST_DATA_V0`). A vector whose target does not resolve, or
+    resolves to a transform with no sealed form, is a build failure: skipping it would report a domain
+    as having run its vectors when one of them was never run.
+    """
+    errors: list[CompilerError] = []
+    target = frontmatter.get("target")
+    ct_artifact = ct_by_fqdn.get(target) if isinstance(target, str) else None
+    if ct_artifact is None:
+        errors.append(CompilerError(
+            code=ErrorCode.E201_MISSING_REFERENCE,
+            message=f"Test vector targets {target!r}, which is not a transform this build declares",
+            phase="S7_MATERIALIZE", fqdn_id=td_fqdn,
+        ))
+        return [], errors
+    ct_ir_base = ct_artifact.get("ct_ir")
+    if not ct_ir_base:
+        errors.append(CompilerError(
+            code=ErrorCode.E205_CT_VALIDATION_FAILED,
+            message=f"Test vector targets {target}, which has no sealed form to run",
+            phase="S7_MATERIALIZE", fqdn_id=td_fqdn,
+        ))
+        return [], errors
+
+    input_types = {
+        key: spec["type"]
+        for key, spec in (ct_ir_base.get("inputs") or {}).items()
+        if isinstance(spec, dict) and "type" in spec
+    } if isinstance(ct_ir_base.get("inputs"), dict) else {}
+
+    out: list[dict[str, Any]] = []
+    for case in frontmatter.get("cases") or []:
+        ct_ir = dict(ct_ir_base)
+        ct_ir["inputs"] = case.get("bindings", {})
+        if input_types:
+            ct_ir["input_types"] = input_types
+        runnable: dict[str, Any] = {
+            "artifact_type": "CT_CONFORMANCE",
+            "ct_fqdn": target,
+            "ct_ir": ct_ir,
+            "expected": case.get("expected", {}),
+            "expected_outcome": case["expected_outcome"],
+            "fqdn": f"{target}::{case['case_id']}",
+            "test_data_source": td_fqdn,
+        }
+        if case.get("assertions"):
+            runnable["assertions"] = case["assertions"]
+        if case.get("recorded"):
+            runnable["recorded"] = case["recorded"]
+        out.append(runnable)
+    return out, errors
+
+
 def _generate_conformance_tests(
     graph: Graph,
     projections: Any,
@@ -951,34 +1007,24 @@ def _generate_conformance_tests(
     resolver: LayerResolver,
 ) -> tuple[list[str], list[CompilerError], list[TraceEvent]]:
     """
-    Generate CT conformance test files from TEST_DATA nodes.
+    Write every runnable case the build's vectors declare, where the build declares.
 
-    For each TEST_DATA node:
-    1. Resolve target CT via core.target_artifact
-    2. Parse test cases from markdown body (### Case N: case_id + yaml block)
-    3. Build CT_CONFORMANCE JSON (ct_ir with bound inputs + expected outputs)
-    4. Write to STRUCTURE-resolved conformance output path
+    One file per case, bound to its target transform as sealed. A build with no vectors writes
+    nothing and declares nothing; a build with vectors must declare where its cases go.
     """
     materialized: list[str] = []
     errors: list[CompilerError] = []
     trace: list[TraceEvent] = []
 
-    # Collect TEST_DATA nodes
     test_data_nodes = [
         node for node in graph.nodes.values()
         if node.kind == NodeKind.TEST_DATA
     ]
-
     if not test_data_nodes:
         return materialized, errors, trace
 
-    # Resolve conformance output directory
     try:
-        conf_dir = resolver.resolve_output_path(
-            "conformance",
-            "COMPILER",
-            structure_config,
-        )
+        conf_dir = resolver.resolve_output_path("conformance", "COMPILER", structure_config)
     except (RuntimeError, ValueError) as e:
         errors.append(CompilerError(
             code=ErrorCode.E301_WRITE_FAILED,
@@ -989,97 +1035,20 @@ def _generate_conformance_tests(
 
     conf_dir.mkdir(parents=True, exist_ok=True)
 
-    # Index CT projections by artifact_code for binding
-    ct_by_code: dict[str, dict] = {}
-    for fqdn, artifact in projections.items():
-        if artifact.get("artifact_type") == "CT":
-            ct_by_code[artifact["artifact_code"]] = artifact
+    ct_by_fqdn: dict[str, dict] = {
+        artifact["fqdn_id"]: artifact
+        for artifact in projections.values()
+        if artifact.get("artifact_type") == "CT"
+    }
 
-    # Process each TEST_DATA node
     for td_node in test_data_nodes:
-        core = td_node.frontmatter.get("core", {})
-        target_ct_code = core.get("target_artifact") if isinstance(core, dict) else None
-
-        if not target_ct_code:
-            # Try parsing from content Target section
-            content = td_node.metadata.get("content", "")
-            target_match = re.search(
-                r"## Target\s*\n+```yaml\s*\n(.*?)\n```", content, re.DOTALL
-            )
-            if target_match:
-                target_yaml = yaml.safe_load(target_match.group(1))
-                target_ct_code = target_yaml.get("artifact_code") if target_yaml else None
-
-        if not target_ct_code:
-            continue
-
-        ct_artifact = ct_by_code.get(target_ct_code)
-        if not ct_artifact:
-            continue
-
-        ct_ir_base = ct_artifact.get("ct_ir")
-        if not ct_ir_base:
-            continue
-
-        # Parse test cases from markdown body
-        content = td_node.metadata.get("content", "")
-        case_blocks = re.findall(
-            r"### Case \d+: (\w+).*?```yaml\n(.*?)```",
-            content,
-            re.DOTALL,
-        )
-
-        for case_id, case_data in case_blocks:
-            try:
-                case_dict = yaml.safe_load(case_data)
-            except Exception as e:
-                errors.append(CompilerError(
-                    code=ErrorCode.E101_INVALID_YAML,
-                    message=f"Failed to parse case '{case_id}' in {td_node.fqdn}: {e}",
-                    phase="S7_MATERIALIZE",
-                    fqdn_id=td_node.fqdn,
-                ))
-                continue
-
-            bindings = case_dict.get("bindings", {})
-            expected = case_dict.get("expected", {})
-            assertions = case_dict.get("assertions", {})
-            expected_outcome = case_dict.get("expected_outcome", "SUCCESS")
-
-            # Build CT-IR with bound inputs
-            ct_ir = dict(ct_ir_base)
-
-            # Extract input_types before replacing inputs with test values
-            input_types = {}
-            if isinstance(ct_ir.get("inputs"), dict):
-                for key, spec in ct_ir["inputs"].items():
-                    if isinstance(spec, dict) and "type" in spec:
-                        input_types[key] = spec["type"]
-
-            ct_ir["inputs"] = bindings
-            if input_types:
-                ct_ir["input_types"] = input_types
-
-            # Build conformance test artifact
-            ct_fqdn = ct_artifact["fqdn_id"]
-            test = {
-                "artifact_type": "CT_CONFORMANCE",
-                "ct_fqdn": ct_fqdn,
-                "ct_ir": ct_ir,
-                "expected": expected,
-                "expected_outcome": expected_outcome,
-                "fqdn": f"{ct_fqdn}::{case_id}",
-                "test_data_source": td_node.fqdn,
-            }
-            if assertions:
-                test["assertions"] = assertions
-
-            # Write to disk
-            filename = f"{ct_fqdn.replace('::', '__')}__{case_id}.json"
+        cases, case_errors = _conformance_cases(td_node.fqdn, dict(td_node.frontmatter), ct_by_fqdn)
+        errors.extend(case_errors)
+        for runnable in cases:
+            filename = runnable["fqdn"].replace("::", "__") + ".json"
             output_path = conf_dir / filename
-
             try:
-                json_content = json.dumps(test, indent=2, sort_keys=True)
+                json_content = json.dumps(runnable, indent=2, sort_keys=True)
                 temp_path = output_path.with_suffix(".tmp")
                 temp_path.write_text(json_content, encoding="utf-8")
                 temp_path.replace(output_path)
@@ -1087,16 +1056,15 @@ def _generate_conformance_tests(
             except Exception as e:
                 errors.append(CompilerError(
                     code=ErrorCode.E301_WRITE_FAILED,
-                    message=f"Failed to write conformance test {filename}: {e}",
+                    message=f"Failed to write conformance case {filename}: {e}",
                     phase="S7_MATERIALIZE",
                     fqdn_id=td_node.fqdn,
                 ))
                 continue
-
             trace.append(TraceEvent.create(
                 stage="S7_MATERIALIZE",
                 operation="conformance_written",
-                subject_fqdn=f"{ct_fqdn}::{case_id}",
+                subject_fqdn=runnable["fqdn"],
                 detail={"output_path": str(output_path), "test_data_source": td_node.fqdn},
                 family=EventFamily.MATERIALIZATION.value,
             ))

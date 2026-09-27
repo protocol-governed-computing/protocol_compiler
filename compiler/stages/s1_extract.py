@@ -653,7 +653,12 @@ def _inject_imported_capabilities(
 # Artifact kinds a domain build instantiates. An imported invariant is domain-applicable
 # iff its declared scope.applies_to intersects this set (design §2). The set is the single
 # derivation point for domain-vs-platform applicability — never a declared build token.
-_DOMAIN_INSTANTIATED = frozenset({"WF", "CC", "CS", "CT", "RB", "AC", "IN", "EV", "TI", "TE"})
+#
+# TEST_DATA is instantiated by a domain: a transform's vectors are proven in the build of the domain
+# that supplies it (conformance::CONSTITUTION_TEST_DATA_V1). Leaving it out imported every invariant
+# over vectors that also named another kind, and silently dropped every one that named vectors alone —
+# so a domain's vectors compiled unjudged by exactly the rules written for them.
+_DOMAIN_INSTANTIATED = frozenset({"WF", "CC", "CS", "CT", "RB", "AC", "IN", "EV", "TI", "TE", "TEST_DATA"})
 
 
 def _inject_imported_governance(

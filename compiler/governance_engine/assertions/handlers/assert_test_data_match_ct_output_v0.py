@@ -1,134 +1,62 @@
 """
 ASSERT_TEST_DATA_MATCH_CT_OUTPUT_V0 Handler
 
-Validates TEST_DATA expected outputs match target CT output contract.
+A vector's expected outputs are outputs its target transform declares. A case expecting SUCCESS states,
+for every output the transform declares, either the value it must have or an assertion on its form, and
+states nothing the transform does not declare. A case expecting VIOLATION states no outputs: a refusal
+yields none.
+
+The target is the transform the vector names, and its outputs are the transform's own declared outputs.
+The check this replaces compared against a capability contract it took to be the transform's governor —
+the first entry of its `governed_by`, which in this composition is a constitution — and so could not
+have judged a vector correctly had it ever been given one.
+
+CONSTITUTIONAL: Pure rule checker - reads pre-computed structure from context
 """
 
-from typing import Any
+from compiler.governance_engine.assertions.handlers._test_data import cases, target, vectors
+from compiler.governance_engine.assertions.handlers._transform_index import index
+
+ASSERT = "ASSERT_TEST_DATA_MATCH_CT_OUTPUT_V0"
+
+
+def _declared_outputs(ct: dict) -> set[str]:
+    outputs = ct.get("frontmatter", {}).get("core", {}).get("outputs", {})
+    return set(outputs) if isinstance(outputs, dict) else set()
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
-    """
-    Verify TEST_DATA expected keys match CT output contracts.
-
-    Args:
-        artifacts: All validated artifacts
-        compilation_context: Contains artifacts_by_fqdn mapping
-
-    Returns:
-        {
-            "assert_count": int,
-            "violations": list[dict]
-        }
-    """
     violations = []
-    artifacts_by_fqdn = compilation_context["artifacts_by_fqdn"]
+    idx = index(artifacts)
+    checked = 0
 
-    # Filter to TEST_DATA artifacts only
-    test_data_artifacts = [
-        a for a in artifacts
-        if a.get("frontmatter", {}).get("artifact_kind") == "TEST_DATA"
-    ]
+    def refuse(vector, message, fix):
+        violations.append({"assert": ASSERT, "artifact": vector.get("artifact_code", "UNKNOWN"),
+                           "violation": message, "fix": fix})
 
-    for td_artifact in test_data_artifacts:
-        fqdn = td_artifact["fqdn_id"]
-        frontmatter = td_artifact.get("frontmatter", {})
-
-        # Extract test_target (CT FQDN)
-        test_target = frontmatter.get("test_target")
-        if not test_target:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                "message": "TEST_DATA artifact missing test_target field",
-                "fix": "Add test_target field specifying the CT FQDN being tested"
-            })
+    for vector in vectors(artifacts):
+        checked += 1
+        tested = idx.get(target(vector))
+        if tested is None:
+            refuse(vector, f"targets {target(vector)!r}, which is not a transform this build declares",
+                   "Name the transform the vector tests by its FQDN")
             continue
-
-        # Load CT artifact
-        if test_target not in artifacts_by_fqdn:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                "message": f"Test target CT not found in compilation graph: {test_target}",
-                "fix": f"Ensure CT artifact '{test_target}' exists and is included in build"
-            })
-            continue
-
-        ct_artifact = artifacts_by_fqdn[test_target]
-        ct_governed_by = ct_artifact.get("frontmatter", {}).get("governed_by", [])
-
-        if not ct_governed_by:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                "message": f"Target CT missing governed_by field: {test_target}",
-                "fix": f"Add governed_by field to CT artifact '{test_target}'"
-            })
-            continue
-
-        # Load CC artifact
-        cc_fqdn = ct_governed_by[0]
-        if cc_fqdn not in artifacts_by_fqdn:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                "message": f"CT's governing CC not found in compilation graph: {cc_fqdn}",
-                "fix": f"Ensure CC artifact '{cc_fqdn}' exists and is included in build"
-            })
-            continue
-
-        cc_artifact = artifacts_by_fqdn[cc_fqdn]
-        cc_output = cc_artifact.get("frontmatter", {}).get("output", {})
-
-        if not cc_output:
-            # CC has no output declaration - skip check
-            continue
-
-        # Expected keys from CC
-        expected_keys = set(cc_output.keys())
-
-        # Check test cases
-        test_cases = frontmatter.get("test_cases", [])
-        for idx, test_case in enumerate(test_cases):
-            expected_output = test_case.get("expected", {})
-
-            if not expected_output:
-                violations.append({
-                    "fqdn": fqdn,
-                    "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                    "message": f"Test case {idx} missing expected output field",
-                    "fix": f"Add 'expected' field to test case {idx} with expected output values"
-                })
+        declared = _declared_outputs(tested)
+        for case in cases(vector):
+            stated = set(case.get("expected") or {}) | set(case.get("assertions") or {})
+            case_id = case.get("case_id")
+            if case.get("expected_outcome") == "VIOLATION":
+                if stated:
+                    refuse(vector, f"case {case_id!r} expects a refusal and states outputs {sorted(stated)}",
+                           "A refusal yields no outputs; state none")
                 continue
-
-            actual_keys = set(expected_output.keys())
-            missing_keys = expected_keys - actual_keys
-            extra_keys = actual_keys - expected_keys
-
-            if missing_keys or extra_keys:
-                msg_parts = []
-                if missing_keys:
-                    msg_parts.append(f"missing keys: {sorted(missing_keys)}")
-                if extra_keys:
-                    msg_parts.append(f"extra keys: {sorted(extra_keys)}")
-
-                violations.append({
-                    "fqdn": fqdn,
-                    "rule": "conformance::INVARIANT_TEST_DATA_MATCH_CT_OUTPUT_V0",
-                    "message": f"Test case {idx}: expected output keys don't match CC contract ({', '.join(msg_parts)})",
-                    "fix": f"Update test case {idx} expected output to match CC '{cc_fqdn}' output contract: {sorted(expected_keys)}"
-                })
-
-    if violations:
-        return {
-            "assert_count": len(test_data_artifacts),
-            "violations": violations,
-            "status": "FAILED"
-        }
-
-    return {
-        "assert_count": len(test_data_artifacts),
-        "violations": [],
-        "status": "PASSED"
-    }
+            missing, extra = declared - stated, stated - declared
+            if missing:
+                refuse(vector, f"case {case_id!r} states nothing for declared outputs {sorted(missing)}",
+                       "State each declared output's value, or an assertion on its form")
+            if extra:
+                refuse(vector, f"case {case_id!r} states outputs {tested.get('artifact_code')} does not "
+                               f"declare: {sorted(extra)}",
+                       "State only outputs the transform declares")
+    return {"assert_count": checked, "violations": violations,
+            "status": "FAILED" if violations else "PASSED"}

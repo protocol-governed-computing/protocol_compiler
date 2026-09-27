@@ -10,14 +10,18 @@ import sys
 
 from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v1 import execute as assertion_modes
 from compiler.governance_engine.assertions.handlers.assert_test_data_records_match_purity_v0 import execute as records_match
+from compiler.governance_engine.assertions.handlers.assert_test_data_match_ct_output_v0 import execute as output_match
+from compiler.governance_engine.assertions.handlers.assert_ct_test_data_outcome_declared_v0 import execute as outcome_declared
+from compiler.stages.s7_materialize import _conformance_cases
 
 NS = "probe"
 MOL = "capability_transforms::CONSTITUTION_MOLECULES_V0"
 
 
-def atom(code, purity="ct_pure"):
+def atom(code, purity="ct_pure", outputs=("candidates",)):
     return {"artifact_type": "CT", "artifact_code": code, "fqdn_id": f"{NS}::{code}",
-            "frontmatter": {"machine": {"ct_kind": "atom", "ct_purity": purity,
+            "frontmatter": {"core": {"outputs": {o: {"type": "array"} for o in outputs}},
+                            "machine": {"ct_kind": "atom", "ct_purity": purity,
                                         "implementation": {"module": "m", "callable": "execute"}}}}
 
 
@@ -33,8 +37,10 @@ def vector(target, *cases):
             "frontmatter": {"target": f"{NS}::{target}", "cases": list(cases)}}
 
 
-def case(recorded=None, assertions=None):
-    out = {"case_id": "c", "expected_outcome": "SUCCESS", "bindings": {}}
+def case(recorded=None, assertions=None, expected=None, outcome="SUCCESS"):
+    out = {"case_id": "c", "expected_outcome": outcome, "bindings": {}}
+    if expected is not None:
+        out["expected"] = expected
     if recorded is not None:
         out["recorded"] = recorded
     if assertions is not None:
@@ -101,6 +107,52 @@ def test_assertions_use_declared_forms_only():
     ]:
         bad = vector("CT_IMPURE_OFFER_V0", case(assertions={"f": spec}))
         assert any(expect in v for v in found(assertion_modes, [bad])), (spec, found(assertion_modes, [bad]))
+
+
+def test_a_case_states_exactly_the_outputs_its_target_declares():
+    exact = vector("CT_IMPURE_OFFER_V0", case(assertions={"candidates": {"mode": "property", "type": "non_zero"}}))
+    assert found(output_match, COMPOSITION + [exact]) == []
+    missing = vector("CT_IMPURE_OFFER_V0", case(expected={}))
+    assert any("states nothing for declared outputs" in v for v in found(output_match, COMPOSITION + [missing]))
+    extra = vector("CT_IMPURE_OFFER_V0", case(expected={"candidates": [], "bonus": 1}))
+    assert any("does not declare" in v for v in found(output_match, COMPOSITION + [extra]))
+    refusal = vector("CT_IMPURE_OFFER_V0", case(outcome="VIOLATION", expected={"candidates": []}))
+    assert any("expects a refusal" in v for v in found(output_match, COMPOSITION + [refusal]))
+    nowhere = {**vector("CT_IMPURE_OFFER_V0", case()), "frontmatter": {"target": "probe::CT_NONE_V0", "cases": [case()]}}
+    assert any("not a transform" in v for v in found(output_match, COMPOSITION + [nowhere]))
+
+
+def test_every_case_declares_its_outcome():
+    assert found(outcome_declared, [vector("CT_PURE_CHOOSE_V0", case())]) == []
+    assert len(found(outcome_declared, [vector("CT_PURE_CHOOSE_V0", case(outcome=None))])) == 1
+
+
+SEALED = {"probe::CT_WRITE_V0": {"fqdn_id": "probe::CT_WRITE_V0", "artifact_type": "CT",
+                                 "ct_ir": {"atom_stream": [{"atom": "x"}], "outputs": {"r": {"from": "written"}},
+                                           "inputs": {"positions": {"type": "array"}}}}}
+
+
+def test_a_case_is_bound_to_its_target_as_sealed_with_its_records():
+    recorded = {"written[0]/offered": OFFERED}
+    frontmatter = {"target": "probe::CT_WRITE_V0",
+                   "cases": [{"case_id": "two_words", "expected_outcome": "SUCCESS",
+                              "bindings": {"positions": [1, 2]}, "expected": {"r": "a b"},
+                              "recorded": recorded}]}
+    (runnable,), errors = _conformance_cases("probe::TEST_DATA_PROBE_V0", frontmatter, SEALED)
+    assert errors == []
+    assert runnable["ct_ir"]["atom_stream"] == [{"atom": "x"}]
+    assert runnable["ct_ir"]["inputs"] == {"positions": [1, 2]}
+    assert runnable["ct_ir"]["input_types"] == {"positions": "array"}
+    assert runnable["recorded"] == recorded
+    assert runnable["fqdn"] == "probe::CT_WRITE_V0::two_words"
+
+
+def test_a_vector_that_cannot_be_bound_stops_the_build():
+    _, errors = _conformance_cases("probe::TD", {"target": "probe::CT_NONE_V0", "cases": [case()]}, SEALED)
+    assert len(errors) == 1 and "not a transform" in errors[0].message
+    unsealed = {"probe::CT_X_V0": {"fqdn_id": "probe::CT_X_V0", "artifact_type": "CT"}}
+    _, errors = _conformance_cases("probe::TD", {"target": "probe::CT_X_V0", "cases": [case()]}, unsealed)
+    assert len(errors) == 1 and "no sealed form" in errors[0].message
 
 
 if __name__ == "__main__":
