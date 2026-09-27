@@ -4,8 +4,10 @@ Test vectors through a real domain build — the compiler's half of transform_co
 The assertion tests judge each check in isolation, and all of them passed while the build could not
 parse a vector at all and silently skipped two of the rules written for vectors. So this builds a real
 domain: a copy of the reference workload, given one vector, compiled against the platform surface
-exactly as `compile_domain.sh` compiles any domain. The clean vector must compile and write its runnable
-cases; each tamper must stop the build on the rule that names it.
+exactly as `compile_domain.sh` builds any domain: compile, then conformance. The clean vector must compile,
+write its runnable cases and prove its transform; each declaration defect must stop the compile on the
+rule that names it, before conformance runs; a transform that does not do what its vector says must
+fail the build at conformance.
 
 Needs the platform surface compiled (the regression compiles it first). Writes only to a temporary
 directory.
@@ -97,7 +99,8 @@ def _build(vector: str) -> tuple[int, str, list[str]]:
         domain = _domain(Path(tmp), vector)
         run = subprocess.run([str(W / "protocol_compiler" / "compile_domain.sh"), str(domain)],
                              capture_output=True, text=True)
-        cases = sorted(p.name for p in (domain / "snapshot/compiled/transform_conformance").glob("*.json"))
+        cases = sorted(p.name for p in (domain / "snapshot/compiled/transform_conformance").glob("*.json")
+                       if p.name != "result.json")
         if cases:
             first = json.loads((domain / "snapshot/compiled/transform_conformance" / cases[0]).read_text())
             assert first["ct_fqdn"] == "workload::CT_PURE_COLLATZ_STEP_V0", first
@@ -116,6 +119,21 @@ def test_each_defect_stops_the_build_on_its_own_rule():
         assert CLEAN.count(old) == 1, name
         code, out, _ = _build(CLEAN.replace(old, new))
         assert code != 0 and rule in out, (name, rule, out[-1500:])
+        # Conformance runs only after a successful compile: a domain the compiler refused is never run.
+        assert "[conformance]" not in out, (name, out[-800:])
+
+
+def test_the_build_proves_the_vector_after_compiling():
+    code, out, _ = _build(CLEAN)
+    assert code == 0, out[-1500:]
+    assert "[conformance] workload: 1 proven, 1 unproven, 0 refused" in out, out[-800:]
+    assert "UNPROVEN  workload::CT_PURE_TERMINATION_CHECK_V0" in out, out[-800:]
+
+
+def test_a_transform_that_does_not_do_what_its_vector_says_fails_the_build():
+    code, out, _ = _build(CLEAN.replace('"3": [3, 10,', '"3": [3, 11,'))
+    assert code != 0, out[-1500:]
+    assert "Build Summary: 1 succeeded" in out and "1 refused" in out, out[-1500:]
 
 
 if __name__ == "__main__":

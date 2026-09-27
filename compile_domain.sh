@@ -8,6 +8,8 @@
 #
 # Usage:
 #   ./compile_domain.sh <domain_root> [STRUCTURE_CODE] [flags]
+#     Compiles the domain, then runs its transform conformance (runtime conformance); fails if either
+#     fails.
 #     <domain_root> — dir containing registry/structures/STRUCTURE_BUILD_<X>_CONFIG_V0.md
 #     STRUCTURE_CODE — optional; auto-discovered from the domain's registry/structures if omitted
 #     flags — anything starting with '-' (e.g. -v/--verbose) is forwarded to the compiler
@@ -57,4 +59,12 @@ echo "  platform : $PGC_PLATFORM_ROOT (import surface)"
 echo "  out      : $PGC_SNAPSHOT_ROOT"
 echo
 
-exec "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}
+"$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}
+
+# Conformance, after a successful compile and before the domain can be assembled
+# (conformance::CONSTITUTION_TEST_DATA_V1). A transform's implementation belongs to this domain, so its
+# vectors run in this domain's build — on every build, because the composition seals a declaration and
+# not the code behind it. The compiler never imports the runtime; this script composes the two tools.
+# A refused transform fails the build; an unproven one is reported by name.
+echo
+exec "$UMBRELLA/protocol_runtime/run.sh" conformance "$DOMAIN_ROOT"
