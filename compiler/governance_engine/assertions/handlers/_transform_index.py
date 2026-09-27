@@ -5,7 +5,7 @@ A molecule names its steps by code or by FQDN; both resolve through one index, s
 reads a step's target the same way rather than each carrying its own resolution.
 """
 
-CONSTITUTION_DETERMINISTIC = "capability_transforms::CONSTITUTION_CAPABILITY_TRANSFORMS_V0"
+CONSTITUTION_DETERMINISTIC = "capability_transforms::CONSTITUTION_DETERMINISTIC_ATOMS_V0"
 CONSTITUTION_MOLECULES = "capability_transforms::CONSTITUTION_MOLECULES_V0"
 CONSTITUTION_NONDETERMINISTIC = "capability_transforms::CONSTITUTION_NONDETERMINISTIC_ATOMS_V0"
 

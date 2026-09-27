@@ -20,7 +20,7 @@ if s5 is None:
     import importlib
     s5 = importlib.import_module("compiler.stages.s5_construct")
 
-DET = "capability_transforms::CONSTITUTION_CAPABILITY_TRANSFORMS_V0"
+DET = "capability_transforms::CONSTITUTION_DETERMINISTIC_ATOMS_V0"
 MOL = "capability_transforms::CONSTITUTION_MOLECULES_V0"
 NDA = "capability_transforms::CONSTITUTION_NONDETERMINISTIC_ATOMS_V0"
 NS = "probe"
