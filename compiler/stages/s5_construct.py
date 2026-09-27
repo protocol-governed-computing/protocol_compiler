@@ -203,118 +203,11 @@ def _build_ct_ir(
             ct_ir_outputs[output_name] = {"from": result_symbol}
 
     elif ct_kind == "molecule":
-        steps = machine.get("steps", [])
-        if not steps:
-            errors.append(CompilerError(
-                code=ErrorCode.E205_CT_VALIDATION_FAILED,
-                message="Molecule CT missing steps",
-                phase="S5_CONSTRUCT",
-                fqdn_id=node.fqdn,
-            ))
+        lowered = _lower_molecule(node, ct_index, errors, depth=0)
+        if lowered is None:
             return None, errors
-
-        for step in steps:
-            step_kind = step.get("kind")
-
-            if step_kind == "atom":
-                atom_code = step.get("atom")
-                atom_node = ct_index.get(atom_code)
-                if not atom_node:
-                    errors.append(CompilerError(
-                        code=ErrorCode.E201_MISSING_REFERENCE,
-                        message=f"Unresolved atom reference: {atom_code}",
-                        phase="S5_CONSTRUCT",
-                        fqdn_id=node.fqdn,
-                    ))
-                    continue
-
-                atom_machine = atom_node.frontmatter.get("machine", {})
-                atom_impl = atom_machine.get("implementation", {}) if isinstance(atom_machine, dict) else {}
-                atom_core = atom_node.frontmatter.get("core", {})
-
-                if not atom_impl.get("module") or not atom_impl.get("callable"):
-                    errors.append(CompilerError(
-                        code=ErrorCode.E205_CT_VALIDATION_FAILED,
-                        message=f"Atom '{atom_code}' has no implementation — cannot embed handler_ref",
-                        phase="S5_CONSTRUCT",
-                        fqdn_id=node.fqdn,
-                    ))
-                    continue
-
-                transformed = {
-                    "atom": atom_node.fqdn,
-                    "out": step.get("as"),
-                    "args": step.get("with", {}),
-                    "handler_ref": {
-                        "module": atom_impl["module"],
-                        "callable": atom_impl["callable"],
-                    },
-                    "input_types": _extract_input_types(
-                        atom_core.get("inputs", {}) if isinstance(atom_core, dict) else {}
-                    ),
-                }
-                atom_stream.append(transformed)
-
-            elif step_kind == "molecule":
-                mol_code = step.get("molecule")
-                mol_node = ct_index.get(mol_code)
-                if not mol_node:
-                    errors.append(CompilerError(
-                        code=ErrorCode.E201_MISSING_REFERENCE,
-                        message=f"Unresolved molecule reference: {mol_code}",
-                        phase="S5_CONSTRUCT",
-                        fqdn_id=node.fqdn,
-                    ))
-                    continue
-
-                mol_core = mol_node.frontmatter.get("core", {})
-                transformed = {
-                    "atom": mol_node.fqdn,
-                    "out": step.get("as"),
-                    "args": step.get("with", {}),
-                    "input_types": _extract_input_types(
-                        mol_core.get("inputs", {}) if isinstance(mol_core, dict) else {}
-                    ),
-                }
-                atom_stream.append(transformed)
-
-            elif step_kind == "loop":
-                mol_code = step.get("molecule")
-                mol_node = ct_index.get(mol_code)
-                if not mol_node:
-                    errors.append(CompilerError(
-                        code=ErrorCode.E201_MISSING_REFERENCE,
-                        message=f"Unresolved molecule reference: {mol_code}",
-                        phase="S5_CONSTRUCT",
-                        fqdn_id=node.fqdn,
-                    ))
-                    continue
-
-                mol_core = mol_node.frontmatter.get("core", {})
-                loop_spec = {
-                    "over": step.get("over"),
-                    "iterator": step.get("iterator"),
-                    "accumulator": step.get("accumulator", {}),
-                    "inputs": step.get("inputs", {}),
-                    "update_accumulator": step.get("update_accumulator", {}),
-                }
-                transformed = {
-                    "atom": mol_node.fqdn,
-                    "out": step.get("as"),
-                    "loop": loop_spec,
-                    "input_types": _extract_input_types(
-                        mol_core.get("inputs", {}) if isinstance(mol_core, dict) else {}
-                    ),
-                }
-                atom_stream.append(transformed)
-
-            else:
-                atom_stream.append(step)
-
-        # Transform emit → outputs
-        emit_config = machine.get("emit", {})
-        for output_name, from_symbol in (emit_config.items() if isinstance(emit_config, dict) else []):
-            ct_ir_outputs[output_name] = {"from": from_symbol}
+        atom_stream = lowered["atom_stream"]
+        ct_ir_outputs = lowered["outputs"]
 
     else:
         errors.append(CompilerError(
@@ -335,6 +228,87 @@ def _build_ct_ir(
     }
 
     return ct_ir, errors
+
+
+# A molecule's steps are sealed with everything the runtime runs: an atom step carries its
+# implementation, and a molecule step or a loop carries its body's own lowered stream. Nothing is
+# resolved when an act runs. Self-containment is refused at S4 by INVARIANT_MOLECULE_RUNNABLE_V0;
+# the depth bound here only stops a lowering that S4 was bypassed for.
+_MAX_MOLECULE_DEPTH = 32
+
+
+def _resolve_ct(ref: str, ct_index: dict[str, Node]) -> Node | None:
+    """A step names a transform by FQDN; the index is keyed by artifact code."""
+    return ct_index.get(ref.split("::")[-1]) if ref else None
+
+
+def _lower_molecule(
+    node: Node, ct_index: dict[str, Node], errors: list[CompilerError], depth: int,
+) -> dict[str, Any] | None:
+    """Lower a molecule's declared atom stream and emission into its sealed form."""
+    machine = node.frontmatter.get("machine", {})
+    stream = machine.get("atom_stream", []) if isinstance(machine, dict) else []
+    emit = machine.get("emit", {}) if isinstance(machine, dict) else {}
+
+    def fail(code, message):
+        errors.append(CompilerError(code=code, message=message, phase="S5_CONSTRUCT", fqdn_id=node.fqdn))
+
+    if depth > _MAX_MOLECULE_DEPTH:
+        fail(ErrorCode.E205_CT_VALIDATION_FAILED, "Molecule nesting exceeds the lowering bound")
+        return None
+    if not stream:
+        fail(ErrorCode.E205_CT_VALIDATION_FAILED, "Molecule CT missing atom_stream")
+        return None
+
+    lowered: list[dict[str, Any]] = []
+    for step in stream:
+        step_kind = step.get("kind")
+        ref = step.get("atom") if step_kind == "atom" else step.get("molecule")
+        target = _resolve_ct(ref, ct_index)
+        if target is None:
+            fail(ErrorCode.E201_MISSING_REFERENCE, f"Unresolved {step_kind} reference: {ref}")
+            continue
+        t_machine = target.frontmatter.get("machine", {})
+        t_core = target.frontmatter.get("core", {})
+        sealed: dict[str, Any] = {
+            "atom": target.fqdn,
+            "out": step.get("as"),
+            "purity": t_machine.get("ct_purity") if isinstance(t_machine, dict) else None,
+            "input_types": _extract_input_types(
+                t_core.get("inputs", {}) if isinstance(t_core, dict) else {}
+            ),
+        }
+
+        if step_kind == "atom":
+            impl = t_machine.get("implementation", {}) if isinstance(t_machine, dict) else {}
+            if not impl.get("module") or not impl.get("callable"):
+                fail(ErrorCode.E205_CT_VALIDATION_FAILED,
+                     f"Atom '{ref}' has no implementation — cannot embed handler_ref")
+                continue
+            sealed["args"] = step.get("with", {})
+            sealed["handler_ref"] = {"module": impl["module"], "callable": impl["callable"]}
+        elif step_kind in ("molecule", "loop"):
+            body = _lower_molecule(target, ct_index, errors, depth + 1)
+            if body is None:
+                continue
+            sealed["molecule"] = body
+            if step_kind == "molecule":
+                sealed["args"] = step.get("with", {})
+            else:
+                sealed["loop"] = {
+                    "over": step.get("over"),
+                    "iterator": step.get("iterator"),
+                    "accumulator": step.get("accumulator", {}),
+                    "inputs": step.get("inputs", {}),
+                    "update_accumulator": step.get("update_accumulator", {}),
+                }
+        else:
+            fail(ErrorCode.E205_CT_VALIDATION_FAILED, f"Unknown molecule step kind: {step_kind}")
+            continue
+        lowered.append(sealed)
+
+    outputs = {name: {"from": symbol} for name, symbol in (emit.items() if isinstance(emit, dict) else [])}
+    return {"atom_stream": lowered, "outputs": outputs}
 
 
 def _build_cs_ir(node: Node) -> tuple[dict[str, Any] | None, list[CompilerError]]:
