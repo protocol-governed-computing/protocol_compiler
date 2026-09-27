@@ -106,6 +106,11 @@ def s8_verify(state: State) -> State:
         ref_errors = _verify_canonical_references(canonical, state.graph, imported)
         errors.extend(ref_errors)
 
+    # --- Check 9: Dispatch routing fidelity ---
+    dispatch = state.get_projection(ProjectionType.DISPATCH.value)
+    if dispatch is not None:
+        errors.extend(_verify_dispatch_routing(dispatch.content, state.graph))
+
     trace.append(TraceEvent.create(
         stage="S8_VERIFY",
         operation="verification_complete",
@@ -640,4 +645,85 @@ def _verify_evidence_graph_integrity(path: Path) -> list[CompilerError]:
             phase="S8_VERIFY",
         ))
 
+    return errors
+
+
+def _declared_transitions(graph: Graph):
+    """Every transition a workflow declares: (wf_fqdn, wf_addr, node_key, condition, target_key, nodes)."""
+    for wf_fqdn, wf_node in graph.nodes.items():
+        if wf_node.kind != NodeKind.WF or wf_node.address < 0:
+            continue
+        core = wf_node.frontmatter.get("core", {})
+        nodes = core.get("nodes", {}) if hasattr(core, "get") else {}
+        if not hasattr(nodes, "items"):
+            continue
+        for node_key, node in nodes.items():
+            next_map = node.get("next", {}) if hasattr(node, "get") else {}
+            if not hasattr(next_map, "items"):
+                continue
+            for condition, target_key in next_map.items():
+                yield wf_fqdn, wf_node.address, node_key, str(condition), target_key, nodes
+
+
+def _verify_dispatch_routing(content: Any, graph: Graph) -> list[CompilerError]:
+    """
+    The sealed dispatch realizes every transition each workflow declares, at the node that declares
+    it, and nothing else.
+
+    Routing, endings and announcements were once indexed by the contract a node runs. A contract run
+    at several places kept only the last place's continuation, and every phase check and every
+    earlier verification passed over it: they read the declarations, and the declarations were right.
+    Only the sealed tables were wrong. So this reads the sealed tables against the declarations —
+    a transition the runtime would take differently from the one declared refuses the build.
+    """
+    from compiler.projections.dispatch import _resolve_condition_address
+
+    errors: list[CompilerError] = []
+
+    def refuse(message: str) -> None:
+        errors.append(CompilerError(code=ErrorCode.E403_OUTPUT_MISMATCH, message=message,
+                                    phase="S8_VERIFY"))
+
+    routing = content.get("routing", {}) or {}
+    terminal = content.get("terminal", {}) or {}
+    emits = content.get("emits", {}) or {}
+    realized: set[tuple[str, str, str, str]] = set()   # (table, wf, node_key, condition key)
+
+    for wf_fqdn, wf_addr, node_key, condition, target_key, nodes in _declared_transitions(graph):
+        wf_s = str(wf_addr)
+        where = f"{wf_fqdn} node {node_key!r} on {condition}"
+        condition_addr = _resolve_condition_address(graph, condition)
+        if condition_addr < 0:
+            refuse(f"{where}: the outcome has no address, so the transition was never sealed")
+            continue
+        target = nodes.get(target_key)
+        if not hasattr(target, "get"):
+            refuse(f"{where}: routes to {target_key!r}, which the workflow does not declare")
+            continue
+        cond_s = str(condition_addr)
+        if target.get("type") == "EXIT":
+            sealed = terminal.get(wf_s, {}).get(node_key, {}).get(cond_s)
+            realized.add(("terminal", wf_s, node_key, cond_s))
+            if not sealed or sealed.get("exit") != target_key:
+                refuse(f"{where}: declared to end at {target_key!r}; sealed ending is {sealed!r}")
+            declared_emit = target.get("emit")
+            if declared_emit:
+                want = [declared_emit] if isinstance(declared_emit, str) else list(declared_emit)
+                got = emits.get(wf_s, {}).get(node_key, {}).get(condition)
+                realized.add(("emits", wf_s, node_key, condition))
+                if got != want:
+                    refuse(f"{where}: declared to announce {want}; sealed announcement is {got!r}")
+        else:
+            sealed = routing.get(wf_s, {}).get(node_key, {}).get(cond_s)
+            realized.add(("routing", wf_s, node_key, cond_s))
+            if not sealed or sealed.get("key") != target_key:
+                refuse(f"{where}: declared to continue at {target_key!r}; sealed routing is {sealed!r}")
+
+    for table_name, table in (("routing", routing), ("terminal", terminal), ("emits", emits)):
+        for wf_s, node_map in table.items():
+            for node_key, cond_map in node_map.items():
+                for cond in cond_map:
+                    if (table_name, wf_s, node_key, cond) not in realized:
+                        refuse(f"sealed {table_name} for workflow {wf_s} node {node_key!r} on {cond} "
+                               f"answers to no declared transition")
     return errors
