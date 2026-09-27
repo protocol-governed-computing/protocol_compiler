@@ -55,7 +55,7 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
 
     Content shape:
         {
-            "routing":  {"WF_addr": {"CC_addr": {"condition_addr": next_CC_addr}}},
+            "routing":  {"WF_addr": {"node_key": {"condition_addr": {"addr": next_addr, "key": next_node_key}}}},
             "pipeline": {"CC_addr": [<step>, ...]},
             "entry":    {"WF_addr": {"start": CC_addr, "rb": RB_addr, "in": IN_addr}},
             "bindings": {"WF_addr": {"CC_addr": {"input_name": path_or_literal}}},
@@ -89,10 +89,11 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     """
     trace: list[TraceEvent] = []
 
-    # --- Pre-pass: build node_key routing annotation tables from WF frontmatter ---
-    # wf_node_next_keys[wf_addr][src_CC_addr][condition_str] = target_node_key
-    # Needed to annotate routing values with target_node_key so the scheduler can
-    # distinguish different WF usages of the same CC (e.g. four denial audit nodes).
+    # --- Pre-pass: build node_key routing tables from WF frontmatter ---
+    # wf_node_next_keys[wf_addr][src_node_key][condition_str] = target_node_key
+    # Routing, endings and announcements are keyed by the node, not the CC it runs: one CC may run
+    # at several nodes of a workflow (four denial audit nodes), each with its own continuation.
+    # Keyed by CC, the last such node's continuation silently stood for all of them.
     wf_node_next_keys: dict[str, dict[str, dict[str, str]]] = {}
     # wf_start_keys[wf_addr] = start_node_key (from core.start_node)
     wf_start_keys: dict[int, str] = {}
@@ -135,37 +136,27 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             if _nd.get("type") == "EXIT" and _nd.get("emit"):
                 _em = _nd.get("emit")
                 wf_emits.setdefault(_wf_s, {})[_nk] = [_em] if isinstance(_em, str) else list(_em)
-            _fqdn_id = _nd.get("fqdn_id", "")
-            if not _fqdn_id or _fqdn_id not in graph.nodes:
-                continue
-            _cc_n = graph.nodes[_fqdn_id]
-            if _cc_n.address < 0:
-                continue
             _next_map = _nd.get("next", {})
             if not isinstance(_next_map, dict) or not _next_map:
                 continue
-            _src_s = str(_cc_n.address)
-            if _src_s not in _src_map:
-                _src_map[_src_s] = {}
-            for _cond_str, _tgt_nk in _next_map.items():
-                _src_map[_src_s][_cond_str] = _tgt_nk
+            _src_map[_nk] = {str(_cond): _tgt_nk for _cond, _tgt_nk in _next_map.items()}
         wf_node_next_keys[_wf_s] = _src_map
 
     # Observation: resolve exit-node emits to the (source_CC, outcome) transition that routes there,
     # so the runtime emits the domain event when the CC produces that outcome (exits carry no address).
-    # emit_map[str(wf_addr)][str(cc_addr)][outcome_str] = [EV_FQDN, ...] in announced order
+    # emit_map[str(wf_addr)][node_key][outcome_str] = [EV_FQDN, ...] in announced order
     emit_map: dict[str, dict[str, dict[str, list[str]]]] = {}
     for _wf_s, _src_map in wf_node_next_keys.items():
         _exits = wf_emits.get(_wf_s, {})
         if not _exits:
             continue
-        for _cc_s, _cond_map in _src_map.items():
+        for _src_nk, _cond_map in _src_map.items():
             for _cond_str, _tgt_nk in _cond_map.items():
                 if _tgt_nk in _exits:
-                    emit_map.setdefault(_wf_s, {}).setdefault(_cc_s, {})[_cond_str] = _exits[_tgt_nk]
+                    emit_map.setdefault(_wf_s, {}).setdefault(_src_nk, {})[_cond_str] = _exits[_tgt_nk]
 
     # Termination, declared rather than inferred from absence.
-    # terminal[str(wf_addr)][str(cc_addr)][str(condition_addr)] = {"exit": node_key, "type": "EXIT"}
+    # terminal[str(wf_addr)][node_key][str(condition_addr)] = {"exit": node_key, "type": "EXIT"}
     #
     # The scheduler consults routing first, then this. An outcome in neither is an outcome the
     # declarations do not answer for, and `3a` EX-5 and `3c` RT-9 both require refusal there. Ending
@@ -176,18 +167,18 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         _exits = wf_exit_keys.get(_wf_s, {})
         if not _exits:
             continue
-        for _cc_s, _cond_map in _src_map.items():
+        for _src_nk, _cond_map in _src_map.items():
             for _cond_str, _tgt_nk in _cond_map.items():
                 if _tgt_nk not in _exits:
                     continue
                 _cond_addr = _resolve_condition_address(graph, _cond_str)
                 if _cond_addr < 0:
                     continue
-                terminal.setdefault(_wf_s, {}).setdefault(_cc_s, {})[str(_cond_addr)] = {
+                terminal.setdefault(_wf_s, {}).setdefault(_src_nk, {})[str(_cond_addr)] = {
                     "exit": _tgt_nk, "type": _exits[_tgt_nk],
                 }
 
-    # --- Routing: WF_addr → {CC_addr → {condition_addr: {"addr": next_CC_addr, "key": next_node_key}}} ---
+    # --- Routing: WF_addr → {node_key → {condition_addr: {"addr": next_addr, "key": next_node_key}}} ---
     # Source: NODE_NEXT edges (each carries wf_fqdn in metadata from S2).
     # Keyed by WF so shared CCs have correct per-WF continuations.
     # Values carry both address and node_key so the scheduler can distinguish
@@ -211,14 +202,16 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
             continue  # Edge has no valid WF context — skip
 
         wf_key = str(wf_node.address)
-        src = str(edge.source_address)
-        if wf_key not in routing:
-            routing[wf_key] = {}
-        if src not in routing[wf_key]:
-            routing[wf_key][src] = {}
-        condition_str = edge.metadata.get("condition", "")
-        target_nk = wf_node_next_keys.get(wf_key, {}).get(src, {}).get(condition_str, "")
-        routing[wf_key][src][str(condition_addr)] = {"addr": edge.target_address, "key": target_nk}
+        src_nk = edge.metadata.get("source_key", "")
+        target_nk = edge.metadata.get("target_key", "")
+        if not src_nk or not target_nk:
+            raise ValueError(
+                f"NODE_NEXT edge in {wf_fqdn_meta!r} carries no node keys — routing is keyed by "
+                f"node, and a CC run at several nodes cannot be routed by the CC alone."
+            )
+        routing.setdefault(wf_key, {}).setdefault(src_nk, {})[str(condition_addr)] = {
+            "addr": edge.target_address, "key": target_nk,
+        }
 
     # --- Pipeline: CC_addr → [<step_dict>, ...] ---
     # Source: CC_BINDS_CT and CC_BINDS_CS edges, sorted by pipeline_index.
@@ -404,7 +397,7 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
         "pipeline": pipeline,
         "entry":    entry,
         "bindings": bindings,
-        "emits":    emit_map,   # Observation: {wf_addr: {cc_addr: {outcome: EV_FQDN}}}
+        "emits":    emit_map,   # Observation: {wf_addr: {node_key: {outcome: EV_FQDN}}}
     }
 
     projection_hash = compute_projection_hash(content)

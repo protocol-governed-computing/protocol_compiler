@@ -319,7 +319,10 @@ def _build_wf_topology_edges(
                         source_fqdn=source_resolved,
                         target_fqdn=target_resolved,
                         kind=EdgeKind.NODE_NEXT,
-                        metadata={"condition": condition, "wf_fqdn": fqdn},
+                        # The node keys, not only the artifacts they run: one CC may run at several
+                        # nodes of a workflow, each with its own continuation.
+                        metadata={"condition": condition, "wf_fqdn": fqdn,
+                                  "source_key": key, "target_key": target_key},
                     ))
 
         # NODE_NEXT edges from explicit transitions[] (FQDN-based)
@@ -361,7 +364,8 @@ def _build_wf_topology_edges(
                 source_fqdn=from_resolved,
                 target_fqdn=to_resolved,
                 kind=EdgeKind.NODE_NEXT,
-                metadata={"condition": condition, "wf_fqdn": fqdn},
+                metadata={"condition": condition, "wf_fqdn": fqdn,
+                          "source_key": from_node, "target_key": to_node},
             ))
 
 
