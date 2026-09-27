@@ -40,7 +40,9 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         violations.append({
             "fqdn": "execution_topology::ASSERT_TOPOLOGY_ACYCLIC_V0",
             "rule": "execution_topology::INVARIANT_TOPOLOGY_ACYCLIC_V0",
-            "message": "Circular dependency detected in compiled topology graph",
+            "message": ("Circular dependency detected in compiled topology graph"
+                        + (f" — routing returns to a node it left in {', '.join(cycle_analysis['cyclic_workflows'])}"
+                           if cycle_analysis.get("cyclic_workflows") else "")),
             "fix": "Remove circular dependency between artifacts"
         })
 

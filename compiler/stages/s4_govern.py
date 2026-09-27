@@ -351,6 +351,36 @@ def _build_layer_category_map(structure_config: dict[str, Any]) -> dict[str, str
     }
 
 
+def _workflows_with_routing_cycles(graph: Graph) -> list[str]:
+    """The workflows whose routing, read over their own node keys, returns to a node it left."""
+    out: list[str] = []
+    for fqdn, node in graph.nodes.items():
+        if node.kind != NodeKind.WF:
+            continue
+        core = node.frontmatter.get("core", {})
+        nodes = core.get("nodes", {}) if hasattr(core, "get") else {}
+        if not hasattr(nodes, "items"):
+            continue
+        edges = {
+            key: [t for t in (spec.get("next") or {}).values() if isinstance(t, str) and t in nodes]
+            for key, spec in nodes.items()
+            if hasattr(spec, "get") and hasattr(spec.get("next") or {}, "values")
+        }
+        state: dict[str, int] = {}
+
+        def cyclic(key: str) -> bool:
+            state[key] = 1
+            for target in edges.get(key, ()):
+                if state.get(target) == 1 or (target not in state and cyclic(target)):
+                    return True
+            state[key] = 2
+            return False
+
+        if any(key not in state and cyclic(key) for key in edges):
+            out.append(fqdn)
+    return sorted(out)
+
+
 def _precompute_structural_analysis(
     graph: Graph,
     artifacts: list[dict[str, Any]],
@@ -367,10 +397,14 @@ def _precompute_structural_analysis(
     query = Query(graph)
 
     # --- Topology-level analysis ---
+    # Routing is not in the contract dependency graph. A `NODE_NEXT` edge joins the contracts two
+    # places run, not the places, so two places running one contract in sequence — a keyed node
+    # chain — read as a contract depending on itself, and two workflows reusing contracts in opposite
+    # orders read as a loop neither of them has. Routing is acyclic per workflow, over its own node
+    # keys, and is checked there.
     dependency_edge_kinds = [
         EdgeKind.WF_CONTAINS_NODE,
         EdgeKind.WF_START,
-        EdgeKind.NODE_NEXT,
         EdgeKind.CC_BINDS_CT,
         EdgeKind.CC_BINDS_CS,
         EdgeKind.RB_MAPS,
@@ -379,8 +413,10 @@ def _precompute_structural_analysis(
         EdgeKind.TI_INVOKES_WF,
         EdgeKind.MOLECULE_COMPOSES_ATOM,
     ]
+    cyclic_workflows = _workflows_with_routing_cycles(graph)
     topology_cycle_analysis = {
-        "has_cycle": query.has_cycle(dependency_edge_kinds),
+        "has_cycle": query.has_cycle(dependency_edge_kinds) or bool(cyclic_workflows),
+        "cyclic_workflows": cyclic_workflows,
         "node_count": len(graph.nodes),
     }
 

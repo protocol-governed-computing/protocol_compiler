@@ -1,5 +1,5 @@
 """
-ASSERT_CT_SURFACE_DERIVED_CLOSED_V0 Handler
+ASSERT_CT_SURFACE_DERIVED_CLOSED_V1 Handler
 
 Closes a domain's capability-transform surface by derivation: `declared == invoked`, within the
 domain, with neither side a list anyone maintains.
@@ -14,7 +14,13 @@ constitution, and nothing would have refused a third transform being added there
 So the closure is stated once, by the platform, in a form that names no domain:
 
   declared   the transforms this domain's registry carries
-  invoked    the transforms named by the pipeline steps of this domain's capability contracts
+  invoked    the transforms named by the pipeline steps of this domain's capability contracts, and
+             every transform a molecule among them runs, however deeply
+
+V0 read the pipelines alone, which was complete for as long as no domain declared a molecule. A
+molecule's steps are transforms too, reached through the molecule and never named by a contract, so
+the first domain with one had its offer, its choice and its pass refused as unreached while every one
+of them runs on every response.
 
 The platform's own surface is exempt and not by special-casing a name: platform transforms are
 invoked by the domains that import them, so the equality is false there by construction. The build
@@ -24,7 +30,7 @@ CONSTITUTIONAL: Pure rule checker — no side effects
 """
 from typing import Any
 
-RULE = "capability_transforms::INVARIANT_CT_SURFACE_DERIVED_CLOSED_V0"
+RULE = "capability_transforms::INVARIANT_CT_SURFACE_DERIVED_CLOSED_V1"
 
 
 def _frontmatter(artifact: dict) -> dict:
@@ -49,6 +55,31 @@ def _invoked(artifact: dict) -> set[str]:
     return out
 
 
+def _steps(artifact: dict) -> set[str]:
+    """The transforms a molecule's steps run: an atom by name, a nested molecule or a loop's body."""
+    machine = _frontmatter(artifact).get("machine") or {}
+    out: set[str] = set()
+    for step in machine.get("atom_stream") or []:
+        if not isinstance(step, dict):
+            continue
+        for key in ("atom", "molecule"):
+            value = step.get(key)
+            if isinstance(value, str) and "::CT_" in value:
+                out.add(value)
+    return out
+
+
+def _reached(invoked: set[str], molecules: dict[str, set[str]]) -> set[str]:
+    """Close the invoked set over molecule steps, so a transform reached only through one counts."""
+    reached, frontier = set(invoked), list(invoked)
+    while frontier:
+        for step in molecules.get(frontier.pop(), ()):
+            if step not in reached:
+                reached.add(step)
+                frontier.append(step)
+    return reached
+
+
 def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
     """Refuse a domain surface where a declared transform is unreached, or an invoked one unresolved.
 
@@ -71,6 +102,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
 
     declared: set[str] = set()
     invoked: set[str] = set()
+    molecules: dict[str, set[str]] = {}
     for artifact in artifacts:
         fqdn = artifact.get("fqdn_id")
         if not fqdn:
@@ -78,8 +110,11 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
         kind = _frontmatter(artifact).get("artifact_kind")
         if kind == "CAPABILITY_TRANSFORM":
             declared.add(fqdn)
+            molecules[fqdn] = _steps(artifact)
         elif kind == "CAPABILITY_CONTRACT":
             invoked |= _invoked(artifact)
+
+    invoked = _reached(invoked, molecules)
 
     for ct_fqdn in sorted(declared - invoked):
         violations.append({
