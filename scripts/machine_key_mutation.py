@@ -128,7 +128,7 @@ def main() -> int:
     ap.add_argument("--artifact", required=True, type=Path)
     ap.add_argument("--key", action="append", required=True,
                     help="dotted Machine-block key path to delete; repeatable")
-    ap.add_argument("--structure", default="STRUCTURE_BUILD_PLATFORM_CONFIG_V1")
+    ap.add_argument("--structure", default="STRUCTURE_BUILD_PLATFORM_CONFIG_V2")
     ap.add_argument("--snapshot", type=Path,
                     default=WORKSPACE / "software_governance" / "snapshot")
     args = ap.parse_args()

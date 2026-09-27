@@ -948,7 +948,7 @@ def _conformance_cases(
     """The runnable cases one vector declares, each bound to its target as sealed.
 
     Pure, so the binding can be judged without a build. Cases are governed content and are read from
-    the vector's Machine block (`SCHEMA_TEST_DATA_V0`). A vector whose target does not resolve, or
+    the vector's Machine block (`SCHEMA_TEST_DATA_V1`). A vector whose target does not resolve, or
     resolves to a transform with no sealed form, is a build failure: skipping it would report a domain
     as having run its vectors when one of them was never run.
     """

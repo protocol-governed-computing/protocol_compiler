@@ -5,7 +5,7 @@ Every case of every vector declares its expected outcome: SUCCESS, or VIOLATION 
 expected to refuse. The compiler never defaults an absent outcome to SUCCESS — that would mask every
 case written to exercise a refusal.
 
-Cases are read from the vector's Machine block, where `SCHEMA_TEST_DATA_V0` places them; this check
+Cases are read from the vector's Machine block, where `SCHEMA_TEST_DATA_V1` places them; this check
 once read them from prose by pattern.
 
 CONSTITUTIONAL: Pure rule checker - reads pre-computed structure from context

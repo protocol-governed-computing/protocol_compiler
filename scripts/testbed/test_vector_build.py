@@ -33,7 +33,7 @@ CLEAN = '''# TEST_DATA_CT_PURE_COLLATZ_STEP_V0
 fqdn: workload::TEST_DATA_CT_PURE_COLLATZ_STEP_V0
 artifact_kind: TEST_DATA
 version: V0
-governed_by: conformance::CONSTITUTION_TEST_DATA_V1
+governed_by: conformance::CONSTITUTION_TEST_DATA_V2
 authority: pgc.platform
 concern: workload
 core:

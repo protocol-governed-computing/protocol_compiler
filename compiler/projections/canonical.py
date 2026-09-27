@@ -49,7 +49,8 @@ def project_canonical(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     """
     Generate the canonical projection from Graph.
 
-    Produces {fqdn: artifact_dict} for all non-TEST_DATA nodes.
+    Produces {fqdn: artifact_dict} for every node, vectors included: a vector is a declaration like
+    any other, and what a transform was proven to do is part of the composition a reader inspects.
     This is the projection that becomes protocol_snapshot/.
 
     Args:
@@ -64,9 +65,6 @@ def project_canonical(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     for fqdn in sorted(graph.nodes.keys()):
         node = graph.nodes[fqdn]
 
-        # Skip TEST_DATA — used only for conformance, not materialized
-        if node.kind == NodeKind.TEST_DATA:
-            continue
         # Imported governance is dropped from the graph after S4 (_strip_imported_governance), so it
         # never reaches any projection — no per-projection filter is needed here.
 

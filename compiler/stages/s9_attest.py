@@ -143,6 +143,17 @@ def s9_attest(state: State) -> State:
     if governance_closure:
         attestation["imported_governance"] = governance_closure
 
+    # The capabilities this build carried in from the surface it imports: executable here, supplied
+    # there. Recorded because a carried copy is byte-identical to its supplier's and no name tells the
+    # two apart; conformance reads this to judge only what the build supplies
+    # (conformance::CONSTITUTION_TEST_DATA_V2 §4). Present only when the build carried something.
+    imported_capabilities = sorted(
+        node.fqdn for node in state.graph.nodes.values()
+        if (node.metadata or {}).get("import_role") == "execution"
+    )
+    if imported_capabilities:
+        attestation["imported_capabilities"] = imported_capabilities
+
     output_path = structure_dir / "structure_attestation.json"
     try:
         json_content = json.dumps(attestation, indent=2, sort_keys=True)

@@ -1,7 +1,7 @@
 """
 Shared reading of test vectors for the conformance assertions.
 
-A vector's cases are governed content and live in its Machine block (`SCHEMA_TEST_DATA_V0`): the
+A vector's cases are governed content and live in its Machine block (`SCHEMA_TEST_DATA_V1`): the
 transform it tests as `target`, and `cases`. One reading, so every assertion over vectors agrees on
 where a case is — three readers once read three formats and none of them agreed.
 """

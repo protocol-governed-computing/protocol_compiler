@@ -62,7 +62,7 @@ echo
 "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}
 
 # Conformance, after a successful compile and before the domain can be assembled
-# (conformance::CONSTITUTION_TEST_DATA_V1). A transform's implementation belongs to this domain, so its
+# (conformance::CONSTITUTION_TEST_DATA_V2). A transform's implementation belongs to this domain, so its
 # vectors run in this domain's build — on every build, because the composition seals a declaration and
 # not the code behind it. The compiler never imports the runtime; this script composes the two tools.
 # A refused transform fails the build; an unproven one is reported by name.
