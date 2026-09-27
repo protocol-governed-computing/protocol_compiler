@@ -59,7 +59,8 @@ from compiler.governance_engine.assertions.handlers.assert_transport_canonical_n
 from compiler.governance_engine.assertions.handlers.assert_transport_operation_identity_independence_v0 import execute as assert_transport_operation_identity_independence_v0
 from compiler.governance_engine.assertions.handlers.assert_transport_result_class_protocol_independence_v0 import execute as assert_transport_result_class_protocol_independence_v0
 from compiler.governance_engine.assertions.handlers.assert_transport_response_projection_external_v0 import execute as assert_transport_response_projection_external_v0
-from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v0 import execute as assert_conformance_assertion_mode_valid_v0
+from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v1 import execute as assert_conformance_assertion_mode_valid_v1
+from compiler.governance_engine.assertions.handlers.assert_test_data_records_match_purity_v0 import execute as assert_test_data_records_match_purity_v0
 from compiler.governance_engine.assertions.handlers.assert_ev_schema_required_v0 import execute as assert_ev_schema_required_v0
 from compiler.governance_engine.assertions.handlers.assert_ev_append_only_v0 import execute as assert_ev_append_only_v0
 from compiler.governance_engine.assertions.handlers.assert_rb_cs_only_v0 import execute as assert_rb_cs_only_v0
@@ -148,7 +149,8 @@ HANDLER_REGISTRY = {
     "pgs_governance.registry.handlers.assert_transport_operation_identity_independence_v0": assert_transport_operation_identity_independence_v0,
     "pgs_governance.registry.handlers.assert_transport_result_class_protocol_independence_v0": assert_transport_result_class_protocol_independence_v0,
     "pgs_governance.registry.handlers.assert_transport_response_projection_external_v0": assert_transport_response_projection_external_v0,
-    "pgs_governance.registry.handlers.assert_conformance_assertion_mode_valid_v0": assert_conformance_assertion_mode_valid_v0,
+    "pgs_governance.registry.handlers.assert_conformance_assertion_mode_valid_v1": assert_conformance_assertion_mode_valid_v1,
+    "pgs_governance.registry.handlers.assert_test_data_records_match_purity_v0": assert_test_data_records_match_purity_v0,
     "pgs_governance.registry.handlers.assert_ev_schema_required_v0": assert_ev_schema_required_v0,
     "pgs_governance.registry.handlers.assert_ev_append_only_v0": assert_ev_append_only_v0,
     "pgs_governance.registry.handlers.assert_rb_cs_only_v0": assert_rb_cs_only_v0,
