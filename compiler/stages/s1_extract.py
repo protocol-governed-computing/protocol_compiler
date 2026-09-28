@@ -25,6 +25,7 @@ from compiler.graph.trace import TraceEvent
 from compiler.graph.evidence import EventFamily
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
+from compiler.atoms.force import in_force
 from compiler.structure_loader import (
     load_structure_artifact,
     get_bootstrap_search_roots,
@@ -463,7 +464,7 @@ def _declared_mode(source_path: str, field: str) -> str | None:
         block = yaml.safe_load(m.group("machine_yaml").rstrip())
     except yaml.YAMLError:
         return None
-    if not isinstance(block, dict) or block.get("superseded_by"):
+    if not isinstance(block, dict) or not in_force(block):
         return None
     mode = block.get(field)
     return mode if isinstance(mode, str) else None

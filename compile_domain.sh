@@ -50,13 +50,12 @@ fi
 export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 export PGC_PLATFORM_ROOT
 export PGC_DOMAIN_ROOTS="$DOMAIN_ROOT"
-export PGC_SNAPSHOT_ROOT="$DOMAIN_ROOT/snapshot"
 
 echo "PGC compile-domain"
 echo "  domain   : $DOMAIN_ROOT"
 echo "  structure: $STRUCTURE"
 echo "  platform : $PGC_PLATFORM_ROOT (import surface)"
-echo "  out      : $PGC_SNAPSHOT_ROOT"
+echo "  out      : $("$PYTHON" -m compiler.cli output-root --structure "$STRUCTURE")"
 echo
 
 "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}

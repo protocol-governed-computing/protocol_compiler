@@ -25,6 +25,7 @@ from compiler.graph.trace import TraceEvent
 from compiler.graph.evidence import EventFamily
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
+from compiler.atoms.force import in_force
 
 
 def s4_govern(state: State) -> State:
@@ -97,7 +98,7 @@ def _strip_imported_governance(state: State) -> State:
 
 # ASSERT is the compiler-derived executable projection of an INVARIANT.
 # It is NOT a hand-authored artifact: INVARIANT_X ⇒ ASSERT_X, transparently, every compile.
-_HANDLER_MODULE_PREFIX = "pgs_governance.registry.handlers"
+_HANDLER_MODULE_PREFIX = "pgc_governance.handlers"
 # Obsolete under derivation: assert↔invariant parity is guaranteed by construction
 # (exactly one derived assert per invariant), and "every invariant resolves to a
 # handler" is enforced by the synthesis loop itself (E702_UNKNOWN_ASSERT).
@@ -191,9 +192,11 @@ def _execute_assertions(
 
     # ASSERTERS: native invariants plus imported platform governance. Imported governance is the
     # whole point of a domain build being checked — it asserts the domain graph (design §2).
+    # A superseded invariant is present and not in force: it derives no assertion, or both it and
+    # its successor would be enforced (`INVARIANT_SUPERSEDED_NOT_IN_FORCE_V0`).
     invariant_nodes = [
         node for node in graph.nodes.values()
-        if node.frontmatter.get("artifact_kind") == "INVARIANT"
+        if node.frontmatter.get("artifact_kind") == "INVARIANT" and in_force(node.frontmatter)
     ]
     if not invariant_nodes:
         return errors, warnings

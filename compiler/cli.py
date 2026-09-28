@@ -3,6 +3,7 @@ CLI entry point for PGC compiler.
 
 Subcommands:
   compile           — compile one or more STRUCTURE artifacts (S1–S9 pipeline)
+  output-root       — print where a build configuration writes
   inspect           — query evidence_graph.json for a compiled structure
 
 Pipeline: S1 EXTRACT → S2 CANONICALIZE → S3 SEMANTIC_ADDRESSING →
@@ -221,6 +222,22 @@ def inspect(
 # ---------------------------------------------------------------------------
 # Build pipeline helpers
 # ---------------------------------------------------------------------------
+
+@cli.command("output-root")
+@click.option("--structure", required=True, help="The build configuration whose output root to print")
+def output_root_command(structure: str) -> None:
+    """Print where a build configuration writes, as its declaration resolves.
+
+    For scripts that follow a build with a step reading its output: they ask the compiler rather
+    than restate the path, so the declaration stays the only place it is written.
+    """
+    from compiler.structure_loader import load_structure_artifact, get_bootstrap_search_roots
+    from compiler.governance_engine.platform_root import output_root
+
+    config = load_structure_artifact(structure, get_bootstrap_search_roots())
+    config["structure_artifact_code"] = structure
+    click.echo(output_root(config))
+
 
 def _run_compile(structure: str, verbose: bool) -> None:
     """

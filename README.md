@@ -84,8 +84,8 @@ protocol_compiler inspect --structure <CODE> --upstream <fqdn>     # walk causal
 ```
 
 A domain is **self-describing**: its build manifest declares its own layer and namespace rule, so
-adding one requires no compiler edit. `PGC_PLATFORM_ROOT` and `PGC_SNAPSHOT_ROOT` override the
-default sibling paths.
+adding one requires no compiler edit. `PGC_PLATFORM_ROOT` overrides the default sibling path. Where a
+build writes is declared by its configuration, not by the environment.
 
 ## How compilation works
 
@@ -160,13 +160,17 @@ pgc            # reports what is installed and whether the anchor resolves
 
 `PGC_DOMAIN_ROOTS` names an additional domain contributing its own `registry/structures` — the
 directory that *directly contains* it, not the repository above it; pointing one level too high is a
-silent no-op. `PGC_SNAPSHOT_ROOT` is where compiled output is written, and each domain build needs
-its own: every layer's output consolidates into one root, and verification rejects any file in that
-root the current build did not declare. `PGC_SNAPSHOT_PROFILES` is the directory holding snapshot
-profiles, required by the assembler and the runtime alike.
+silent no-op. `PGC_SNAPSHOT_PROFILES` is the directory holding snapshot profiles, required by the
+assembler and the runtime alike.
 
-`PGC_BUILD_ROOT` is accepted and reported and **nothing reads it** — `PGC_SNAPSHOT_ROOT` is the
-anchor that controls output.
+**Where a build writes is declared, not supplied.** Each build configuration names its root in
+`output_configuration.root`, resolved inside the repository that declares it, and every layer's
+output consolidates there. Two in-force configurations of one repository naming the same root are
+refused, and a configuration naming none cannot be built. `python -m compiler.cli output-root
+--structure <code>` prints the resolved root. The compiler does not read `PGC_SNAPSHOT_ROOT`; the
+runtime does, with its own meaning — the assembled snapshot to execute.
+
+`PGC_BUILD_ROOT` is accepted and reported and **nothing reads it**.
 
 The full sequence, with the repositories it needs, is in
 [`pgc_install`](https://github.com/protocol-governed-computing/pgc_install).

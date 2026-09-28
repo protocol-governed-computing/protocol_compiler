@@ -16,6 +16,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import yaml
+
 _PLATFORM_ENV = "PGC_PLATFORM_ROOT"
 _BUILD_ENV = "PGC_BUILD_ROOT"
 
@@ -68,18 +70,60 @@ def domain_root() -> Path:
     return p
 
 
-_SNAPSHOT_ENV = "PGC_SNAPSHOT_ROOT"
+def output_root(structure: dict) -> Path:
+    """Where a build writes: `output_configuration.root`, under the repository declaring the build.
 
+    The root is declared by the build configuration, never supplied by the invocation. Two
+    compositions from one surface were once written wherever `PGC_SNAPSHOT_ROOT` pointed, and
+    nothing refused one written over the other: both builds succeeded, and the directory named for
+    one held the other. A root the configuration declares is checkable, so two in-force
+    configurations of one repository naming the same root are refused here.
 
-def snapshot_root() -> Path:
-    """Single consolidated output root for the compiled PGC Platform Snapshot.
-
-    All layers write here (no RI-0 federated scatter). Defaults to <platform>/snapshot;
-    override with PGC_SNAPSHOT_ROOT. The snapshot is generated output — gitignored, and
-    regenerable from the platform source at any time (warm reboot).
+    It resolves against the repository declaring the configuration — the directory holding its
+    `registry/` — so a platform build and a domain build each write inside their own repository.
     """
-    v = os.environ.get(_SNAPSHOT_ENV)
-    p = Path(v).expanduser().resolve() if v else (platform_root() / "snapshot")
+    from compiler.atoms.force import in_force
+    from compiler.structure_loader import (
+        extract_yaml_from_machine_section,
+        get_bootstrap_search_roots,
+        locate_structure_artifact,
+    )
+
+    code = structure.get("structure_artifact_code")
+    if not code:
+        raise RuntimeError("output_root needs the build configuration's structure_artifact_code")
+    declared = (structure.get("output_configuration") or {}).get("root")
+    if not isinstance(declared, str) or not declared:
+        raise RuntimeError(
+            f"{code} declares no output_configuration.root. A build writes only where its "
+            f"configuration says, so a configuration naming no root cannot be built."
+        )
+    if Path(declared).is_absolute() or ".." in Path(declared).parts:
+        raise RuntimeError(f"{code} declares output root {declared!r}; it must be a path inside "
+                           f"the repository declaring the configuration.")
+
+    source = locate_structure_artifact(code, get_bootstrap_search_roots())
+    registry = next((p for p in source.parents if p.name == "registry"), None)
+    if registry is None:
+        raise RuntimeError(f"{code} is not declared under a registry/ directory: {source}")
+    repo = registry.parent
+
+    for other in sorted(registry.rglob("STRUCTURE_BUILD_*_CONFIG_*.md")):
+        if other == source:
+            continue
+        try:
+            block = yaml.safe_load(extract_yaml_from_machine_section(other.read_text(encoding="utf-8")))
+        except (ValueError, yaml.YAMLError):
+            continue
+        if not isinstance(block, dict) or not in_force(block):
+            continue
+        if (block.get("output_configuration") or {}).get("root") == declared:
+            raise RuntimeError(
+                f"{code} and {other.stem} both declare output root {declared!r} in {repo}. Two "
+                f"compositions written to one root overwrite each other; each declares its own."
+            )
+
+    p = repo / declared
     p.mkdir(parents=True, exist_ok=True)
     return p
 

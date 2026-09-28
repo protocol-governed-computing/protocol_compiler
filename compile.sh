@@ -14,7 +14,6 @@
 #
 # Env overrides:
 #   PGC_PLATFORM_ROOT   (default: sibling ../software_governance)
-#   PGC_SNAPSHOT_ROOT   (default: <platform>/snapshot)
 #   PYTHON              (default: python)
 #
 set -euo pipefail
@@ -47,8 +46,9 @@ export PGC_PLATFORM_ROOT
 echo "PGC compile"
 echo "  compiler : $SCRIPT_DIR (package: compiler)"
 echo "  platform : $PGC_PLATFORM_ROOT"
-export PGC_SNAPSHOT_ROOT="${PGC_SNAPSHOT_ROOT:-$PGC_PLATFORM_ROOT/snapshot}"
-echo "  snapshot : $PGC_SNAPSHOT_ROOT"
+# The build configuration declares where it writes (output_configuration.root); nothing overrides it.
+OUT="$("$PYTHON" -m compiler.cli output-root --structure "$STRUCTURE")"
+echo "  snapshot : $OUT"
 echo "  structure: $STRUCTURE"
 echo
 
@@ -57,4 +57,4 @@ echo
 # The platform supplies transforms of its own, so its build proves them, as a domain's build proves
 # a domain's (conformance::CONSTITUTION_TEST_DATA_V2 §4). A placement build writes to its own root,
 # so the runner is told where this build wrote, and which of the platform's build declarations it built.
-exec "$SCRIPT_DIR/../protocol_runtime/run.sh" conformance "$PGC_PLATFORM_ROOT" --snapshot-root "$PGC_SNAPSHOT_ROOT" --structure "$STRUCTURE"
+exec "$SCRIPT_DIR/../protocol_runtime/run.sh" conformance "$PGC_PLATFORM_ROOT" --snapshot-root "$OUT" --structure "$STRUCTURE"

@@ -87,6 +87,18 @@ def extract_yaml_from_machine_section(content: str) -> str:
     return match.group(1)
 
 
+def locate_structure_artifact(artifact_code: str, search_roots: list[Path]) -> Path:
+    """The file declaring a STRUCTURE artifact, searched for in the given roots."""
+    for root in search_roots:
+        candidate = root / f"{artifact_code}.md"
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        f"STRUCTURE artifact not found: {artifact_code}\n"
+        f"Searched: {[str(r) for r in search_roots]}"
+    )
+
+
 def load_structure_artifact(artifact_code: str, search_roots: list[Path] = None) -> dict[str, Any]:
     """
     Load STRUCTURE artifact from filesystem with HARD FAIL GUARD for legacy artifacts.
@@ -107,19 +119,7 @@ def load_structure_artifact(artifact_code: str, search_roots: list[Path] = None)
             f"No fallback defaults allowed. Artifact: {artifact_code}"
         )
 
-    # Search for artifact file
-    artifact_path = None
-    for root in search_roots:
-        candidate = root / f"{artifact_code}.md"
-        if candidate.exists():
-            artifact_path = candidate
-            break
-
-    if artifact_path is None:
-        raise FileNotFoundError(
-            f"STRUCTURE artifact not found: {artifact_code}\n"
-            f"Searched: {[str(r) for r in search_roots]}"
-        )
+    artifact_path = locate_structure_artifact(artifact_code, search_roots)
 
     # Read and parse
     content = artifact_path.read_text(encoding="utf-8")

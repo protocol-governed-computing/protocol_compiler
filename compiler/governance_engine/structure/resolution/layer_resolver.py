@@ -403,48 +403,9 @@ class LayerResolver:
                 f"STRUCTURE artifacts must not use '..' traversals."
             )
 
-        # PGC: consolidate every layer's output into one snapshot root — no RI-0 federated
-        # scatter. Output location is single; discovery/govern already validated layers.
-        from compiler.governance_engine.platform_root import snapshot_root
-        return snapshot_root() / subpath
-
-    def resolve_artifact_output_path(
-        self,
-        layer: str,
-        output_type: str,
-        domain: str = None,
-    ) -> Path:
-        """
-        Resolve output path for artifact with domain federation support.
-
-        INVARIANT O1 (Output Determinism):
-        All artifact output paths MUST be derived from STRUCTURE declarations.
-
-        Args:
-            layer: Layer code (e.g., "GOVERNANCE", "BLOCKCHAIN")
-            output_type: Output type (e.g., "artifacts", "conformance")
-            domain: Optional domain name (e.g., "identity", "transaction")
-
-        Returns:
-            Absolute Path to output location
-        """
-        # PGC: single consolidated snapshot root (no federated scatter).
-        from compiler.governance_engine.platform_root import snapshot_root
-        repo_root = snapshot_root()
-        compiled_root = self._get_layer_directory("compiled_root", "compiled")
-
-        federation_config = self._get_domain_federation_config(layer)
-
-        if domain and federation_config:
-            output_rules = federation_config.get("output_rules", {})
-            output_rule = output_rules.get(output_type, {})
-            if output_rule.get("per_domain", False):
-                pattern = federation_config.get("pattern", "domains/{domain}/{subpath}")
-                subpath = output_rule.get("subpath", f"{compiled_root}/{output_type}")
-                path_str = pattern.replace("{domain}", domain).replace("{subpath}", subpath)
-                return repo_root / path_str
-
-        return repo_root / compiled_root / output_type
+        # One output root per composition, declared by the build configuration that builds it.
+        from compiler.governance_engine.platform_root import output_root
+        return output_root(structure) / subpath
 
     def resolve_layer_root(self, layer: str, domain: str = None) -> Path:
         """

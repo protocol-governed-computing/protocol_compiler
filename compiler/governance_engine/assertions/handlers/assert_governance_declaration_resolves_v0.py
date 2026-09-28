@@ -23,7 +23,7 @@ RULE = "governance::INVARIANT_GOVERNANCE_DECLARATION_RESOLVES_V0"
 # admissibility against core.enforcement_model is governed by SCHEMA_CONSTITUTION_V0.
 _SENTINELS = frozenset({"PROCESS_ENFORCED", "RUNTIME_ENFORCED"})
 
-_HANDLER_MODULE_PREFIX = "pgs_governance.registry.handlers"
+_HANDLER_MODULE_PREFIX = "pgc_governance.handlers"
 
 # Enforcement stages whose mechanism is NOT the compiler. An invariant declaring one of these has
 # no derived compile-time ASSERT to register, and requiring one would force a vacuous handler into

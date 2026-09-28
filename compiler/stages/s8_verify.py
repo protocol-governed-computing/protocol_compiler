@@ -24,6 +24,7 @@ from compiler.graph.evidence import EventFamily
 from compiler.graph.hashing import compute_projection_hash
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
+from compiler.atoms.force import in_force
 from compiler.atoms.sorting import ensure_deterministic_output
 from compiler.graph.graph import Graph
 from compiler.graph.types import NodeKind
@@ -110,6 +111,13 @@ def s8_verify(state: State) -> State:
     dispatch = state.get_projection(ProjectionType.DISPATCH.value)
     if dispatch is not None:
         errors.extend(_verify_dispatch_routing(dispatch.content, state.graph))
+
+    # --- Check 10: Nothing superseded is in force ---
+    errors.extend(_verify_superseded_not_in_force(
+        dispatch.content if dispatch is not None else {},
+        dict(state.stage_metadata).get("assertion_coverage") or [],
+        state.graph,
+    ))
 
     trace.append(TraceEvent.create(
         stage="S8_VERIFY",
@@ -726,4 +734,41 @@ def _verify_dispatch_routing(content: Any, graph: Graph) -> list[CompilerError]:
                     if (table_name, wf_s, node_key, cond) not in realized:
                         refuse(f"sealed {table_name} for workflow {wf_s} node {node_key!r} on {cond} "
                                f"answers to no declared transition")
+    return errors
+
+
+def _verify_superseded_not_in_force(content: Any, coverage: list, graph: Graph) -> list[CompilerError]:
+    """No superseded artifact confers effect in what the build produced.
+
+    `artifact::INVARIANT_SUPERSEDED_NOT_IN_FORCE_V0`. Checked over the outputs rather than the code
+    paths: a superseded workflow with a dispatch entry, a superseded intent with an admission
+    contract, or a superseded invariant that ran an assertion is refused, whichever path let it
+    through. A new path that forgets `in_force` fails here rather than leaving both a predecessor and
+    its successor in force.
+    """
+    errors: list[CompilerError] = []
+    entry = (content or {}).get("entry") or {}
+    admission = (content or {}).get("admission") or {}
+    ran = {c.get("fqdn_id") for c in coverage}
+    for fqdn, node in graph.nodes.items():
+        if in_force(node.frontmatter):
+            continue
+        reason = None
+        if node.kind == NodeKind.WF and str(node.address) in entry:
+            reason = "has a dispatch entry, so execution can start there"
+        elif node.kind == NodeKind.IN and str(node.address) in admission:
+            reason = "has an admission contract, so the gate admits through it"
+        elif node.frontmatter.get("artifact_kind") == "INVARIANT":
+            code = node.frontmatter.get("invariant_code") or node.artifact_code or ""
+            if f"{node.namespace}::ASSERT_{code[len('INVARIANT_'):]}" in ran:
+                reason = "derived an assertion that ran, so it is still enforced"
+        if reason:
+            errors.append(CompilerError(
+                code=ErrorCode.E901_INTERNAL_ERROR,
+                message=(f"{fqdn} is superseded and {reason}. A superseded artifact is present and "
+                         f"not in force (INVARIANT_SUPERSEDED_NOT_IN_FORCE_V0); the path that put it "
+                         f"there does not ask compiler.atoms.force.in_force."),
+                phase="S8_VERIFY",
+                fqdn_id=fqdn,
+            ))
     return errors
