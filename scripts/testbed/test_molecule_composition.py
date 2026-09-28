@@ -138,6 +138,16 @@ def test_a_loop_over_a_molecule_is_sealed_whole():
     assert loop["molecule"]["outputs"] == {"result": {"from": "chosen"}}
 
 
+def test_an_atom_run_directly_is_sealed_with_its_purity():
+    # Sealed without it, a contract running a non-deterministic atom directly had the atom's
+    # results neither recorded nor substituted on replay: the sealed step alone decides that.
+    for artifact, purity in ((OFFER, "ct_impure"), (CHOOSE, "ct_pure")):
+        ir, errors = s5._build_ct_ir(_node(artifact), {})
+        assert errors == [], errors
+        (step,) = ir["atom_stream"]
+        assert step["purity"] == purity, step
+
+
 def test_an_unresolved_step_is_a_lowering_error():
     index = {"CT_M_V0": _node(molecule("CT_M_V0", [{"kind": "atom", "atom": f"{NS}::CT_ABSENT_V0",
                                                    "as": "x"}], {"r": "x"}))}

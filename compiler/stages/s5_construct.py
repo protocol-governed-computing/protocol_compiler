@@ -187,6 +187,10 @@ def _build_ct_ir(
         result_symbol = "__atom_result__"
         atom_stream = [{
             "atom": node.fqdn,
+            # Sealed as a molecule's steps seal it. Without it an atom a contract runs directly was
+            # recorded with no purity, and one declared not deterministic had its results neither
+            # recorded nor substituted on replay — the step alone decides that, and it was silent.
+            "purity": machine.get("ct_purity"),
             "handler_ref": {
                 "module": impl_module,
                 "callable": impl_callable,
