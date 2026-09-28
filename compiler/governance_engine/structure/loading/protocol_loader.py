@@ -217,7 +217,7 @@ def load_bootstrap_artifact(artifact_code: str) -> Dict[str, Any]:
         )
 
         # For platform builds, compiled artifacts are centralized at protocol root
-        # (not in layer repo root) per STRUCTURE_BUILD_PLATFORM_CONFIG_V0
+        # (not in layer repo root) per STRUCTURE_BUILD_PLATFORM_CONFIG_V2
         protocol_root = resolver._project_root
 
         # Construct artifact path

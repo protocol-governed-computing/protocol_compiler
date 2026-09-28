@@ -78,7 +78,6 @@ Both wrap the same CLI, which is also installed as a console script:
 
 ```bash
 protocol_compiler compile --structure STRUCTURE_BUILD_PLATFORM_CONFIG_V2
-protocol_compiler compile --all-structures
 protocol_compiler inspect --structure <CODE> --artifact <fqdn>     # identity + causality chain
 protocol_compiler inspect --structure <CODE> --upstream <fqdn>     # walk causality upstream
 ```

@@ -6,7 +6,7 @@ Generates first-class graph artifacts from compiled workflows:
 - PNG: Visual diagram (if graphviz available)
 - Markdown: Human-readable summary
 
-Governed by: STRUCTURE_BUILD_PLATFORM_CONFIG_V0
+Governed by: STRUCTURE_BUILD_PLATFORM_CONFIG_V2
 
 This is NOT debug-only output - graphs are first-class compiled artifacts
 used for:

@@ -61,12 +61,7 @@ def cli() -> None:
     "--structure",
     type=str,
     multiple=True,
-    help="STRUCTURE artifact code(s) (e.g. STRUCTURE_BUILD_PLATFORM_CONFIG_V0)",
-)
-@click.option(
-    "--all-structures",
-    is_flag=True,
-    help="Compile all standard structures (Platform, Blockchain, AI Governance)",
+    help="STRUCTURE artifact code(s) (e.g. STRUCTURE_BUILD_PLATFORM_CONFIG_V2)",
 )
 @click.option(
     "--verbose",
@@ -76,7 +71,6 @@ def cli() -> None:
 )
 def compile(
     structure: tuple,
-    all_structures: bool,
     verbose: bool,
 ) -> None:
     """
@@ -86,15 +80,11 @@ def compile(
     GOVERN → CONSTRUCT → PROJECT → MATERIALIZE → VERIFY.
     """
     structures = list(structure)
-
-    if all_structures:
-        structures = [
-            "STRUCTURE_BUILD_PLATFORM_CONFIG_V0",
-            "STRUCTURE_BUILD_BLOCKCHAIN_CONFIG_V0",
-            "STRUCTURE_BUILD_AI_GOVERNANCE_CONFIG_V0",
-        ]
-    elif not structures:
-        structures = ["STRUCTURE_BUILD_PLATFORM_CONFIG_V0"]
+    # No default and no "all": a platform is whatever a build configuration declares, and none is
+    # minimal by nature (6a §8). Both defaults named a configuration that no longer builds, and the
+    # "all" list named domain builds a platform invocation cannot reach.
+    if not structures:
+        raise click.UsageError("name the build configuration: --structure STRUCTURE_BUILD_<...>_CONFIG_V<n>")
 
     click.echo(f"Starting PGC build for {len(structures)} structure(s)")
     click.echo()
