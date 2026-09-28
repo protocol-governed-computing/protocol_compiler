@@ -32,8 +32,6 @@ def family_concern(path: Path) -> tuple[str, str]:
     family = parts[0]
     if family == "meta_governance":
         return family, "(kernel)"
-    if family == "execution":                 # execution/<envelope|semantics>/<concern>/...
-        return "execution", parts[2] if len(parts) > 2 else parts[1]
     if family == "declaration" and parts[1] == "schema":
         return "declaration", "schema"
     return family, parts[1]
