@@ -124,6 +124,12 @@ output, because a partially admissible system is not a meaningful thing.
 **S8 exists because writing is not the same as building.** Verifying the output against the model
 catches the case where construction was right and materialization was wrong.
 
+S8 also checks the dispatch it seals. A workflow may run one contract at several places, each a node
+key, and every transition the workflow declares must be realized at the node that declares it. This
+check exists because the compiler once sealed such a contract's routing once, for whichever place
+came last, and every phase check passed. It also refuses output in which a superseded artifact still
+confers effect: a superseded workflow that can be dispatched, or a superseded intent that still admits.
+
 ## 6. What it produces
 
 The compiler builds one semantic model and derives several **projections** from it. They are views

@@ -100,7 +100,7 @@ output, and `S7` performs the only side effect in the pipeline.
 | S5 | Construct | Assembles the full graph — CT-IR, CS-IR, contract projection, workflow enrichment |
 | S6 | Project | Derives the deterministic execution projections |
 | S7 | Materialize | Writes projections to disk — the pipeline's only side effect |
-| S8 | Verify | Roundtrip validation, determinism check, hash and conformance verification |
+| S8 | Verify | Roundtrip validation, determinism and hash checks; the sealed dispatch realizes every declared transition at its own node; no superseded artifact is in force |
 | S9 | Attest | Computes the trust attestation binding the verified projections |
 
 ## What makes it different
@@ -115,8 +115,10 @@ execution time.
 **Closure is proven before anything is written.** Routing, bindings, input paths and output mappings
 are all resolved and validated ahead of materialization.
 
-**Conformance runs at compile time.** Capability-transform implementations are tested against their
-declared `TEST_DATA` during every build; one that fails blocks snapshot validation.
+**A transform's cases are compiled beside it.** A domain that declares `TEST_DATA` has each vector
+checked against its target at S7 and written as runnable cases. `protocol_runtime conformance` runs
+them and reports each transform proven, unproven or refused; the workspace regression does so for
+every domain on every build.
 
 ## Purity rules
 
