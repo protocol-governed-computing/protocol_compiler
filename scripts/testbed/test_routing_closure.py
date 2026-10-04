@@ -11,11 +11,24 @@ GC-15). A superseded workflow and an unreachable node are not checked, because e
 reach them.
 """
 import sys
+from types import SimpleNamespace
 
 from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import (
     execute as routing_complete)
 from compiler.governance_engine.assertions.handlers.assert_wf_routing_closed_v0 import (
-    execute as routing_closed)
+    execute as checked_routing_closed)
+from compiler.stages.s4_govern import _analyze_wf_routing
+
+
+def routing_closed(workflows, ctx):
+    """Run the GC-15 check over the routing the compiler precomputes, with S2's own resolver."""
+    known = {**ctx.get("artifacts_by_fqdn", {}), **ctx.get("imported_frontmatter", {})}
+    graph = SimpleNamespace(nodes={f: SimpleNamespace(artifact_code=f.split("::")[-1]) for f in known})
+    code_to_fqdn = {f.split("::")[-1]: f for f in known}
+    routing = {w["fqdn_id"]: _analyze_wf_routing(
+        SimpleNamespace(namespace=w["namespace"], frontmatter=w["frontmatter"]), graph, code_to_fqdn)
+        for w in workflows}
+    return checked_routing_closed(workflows, {**ctx, "wf_routing": routing})
 
 CS = "capability_side_effects::CS_PROBE_V0"
 CT_REFUSING = "probe::CT_REFUSING_V0"
@@ -128,6 +141,11 @@ def test_a_node_no_path_reaches_is_not_checked():
     n = nodes({"SUCCESS": "EXIT_DONE", "BACKEND_ERROR": "EXIT_REJECTED"})
     n["CC_ORPHAN"] = {"type": "CC", "code": "CC_V0", "next": {"SUCCESS": "EXIT_DONE"}}
     assert routing_closed([wf(n)], context(c, INTENT))["status"] == "PASSED"
+
+
+def test_a_check_without_precomputed_routing_refuses():
+    result = checked_routing_closed([], {})
+    assert result["status"] == "FAILED" and "wf_routing" in result["violations"][0]["message"], result
 
 
 def test_a_contract_from_the_imported_surface_is_read_there():

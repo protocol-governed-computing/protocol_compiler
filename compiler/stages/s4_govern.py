@@ -446,6 +446,10 @@ def _precompute_structural_analysis(
 
     # --- Per-artifact analysis ---
     wf_execution_graphs: dict[str, dict] = {}
+    # Each workflow's nodes resolved to what they run, with the keys execution can reach; read by
+    # the routing-closure check (`4a` GC-15) rather than resolved again there.
+    wf_routing: dict[str, dict] = {}
+    code_to_fqdn = {n.artifact_code: f for f, n in graph.nodes.items()}
     cc_bindings: dict[str, dict] = {}
     cc_chaining: dict[str, dict] = {}
     cc_dependencies: dict[str, dict] = {}
@@ -458,6 +462,7 @@ def _precompute_structural_analysis(
     for fqdn, node in graph.nodes.items():
         if node.kind == NodeKind.WF:
             wf_execution_graphs[fqdn] = _analyze_wf_execution_graph(fqdn, graph, query)
+            wf_routing[fqdn] = _analyze_wf_routing(node, graph, code_to_fqdn)
             wf_binding_surface[fqdn] = _analyze_wf_binding_surface(fqdn, graph, query)
             # These are WF-level analyses (handler iterates WF artifacts)
             cc_dependencies[fqdn] = {"status": "PASSED", "violations": []}
@@ -483,7 +488,39 @@ def _precompute_structural_analysis(
         "cc_inputs_satisfied": cc_inputs_satisfied,
         "wf_binding_surface": wf_binding_surface,
         "cc_op_conformance": cc_op_conformance,
+        "wf_routing": wf_routing,
     }
+
+
+def _analyze_wf_routing(node, graph: Graph, code_to_fqdn: dict[str, str]) -> dict:
+    """A workflow's nodes, each with the artifact it runs and its routes, and the keys reachable from
+    its start.
+
+    The artifact is resolved by S2's resolver, so a check reads the same identity the topology edges
+    were built from. Reach is traversal over the node keys of `next`, which is where both routes and
+    endings are declared.
+    """
+    from compiler.stages.s2_canonicalize import resolve_wf_node_keys
+
+    core = node.frontmatter.get("core", {}) or {}
+    wf_nodes = core.get("nodes", {}) or {}
+    if not isinstance(wf_nodes, dict):
+        return {"nodes": {}, "reachable": []}
+    resolved = resolve_wf_node_keys(graph, node.namespace, wf_nodes, code_to_fqdn)
+    nodes = {
+        key: {"type": spec.get("type"), "runs": resolved.get(key),
+              "next": dict(spec.get("next") or {}) if isinstance(spec.get("next"), dict) else {}}
+        for key, spec in wf_nodes.items() if isinstance(spec, dict)
+    }
+    reachable: list[str] = []
+    queue = [core.get("start_node")] if isinstance(core.get("start_node"), str) else []
+    while queue:
+        key = queue.pop(0)
+        if key in reachable or key not in nodes:
+            continue
+        reachable.append(key)
+        queue.extend(v for v in nodes[key]["next"].values() if isinstance(v, str))
+    return {"nodes": nodes, "reachable": reachable}
 
 
 def _analyze_wf_execution_graph(fqdn: str, graph: Graph, query: Query) -> dict:

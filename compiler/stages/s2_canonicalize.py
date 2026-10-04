@@ -253,6 +253,40 @@ def _classify_edge(source: Node, target: Node) -> EdgeKind:
     return EdgeKind.REFERENCES
 
 
+def resolve_wf_node_keys(
+    graph: Graph,
+    namespace: str,
+    wf_nodes: dict,
+    code_to_fqdn: dict[str, str],
+) -> dict[str, str | None]:
+    """Each local node key of a workflow → the FQDN of the artifact it runs, or None.
+
+    The one place a node's `code` or `fqdn_id` is resolved. S2 builds the topology edges from it,
+    and S4 publishes it to the checks that need a node's artifact; a second resolver in a check
+    would be a second rule for one identity.
+    """
+    key_to_fqdn: dict[str, str | None] = {}
+    for key, node_spec in wf_nodes.items():
+        if not isinstance(node_spec, dict):
+            key_to_fqdn[key] = None
+            continue
+        ref = node_spec.get("fqdn_id") or node_spec.get("code")
+        if ref and "::" in ref and ref in graph.nodes:
+            key_to_fqdn[key] = ref
+        elif ref and "::" not in ref:
+            # Short code — resolve via namespace prefix or artifact_code lookup
+            ns_fqdn = f"{namespace}::{ref}"
+            if ns_fqdn in graph.nodes:
+                key_to_fqdn[key] = ns_fqdn
+            elif ref in code_to_fqdn:
+                key_to_fqdn[key] = code_to_fqdn[ref]
+            else:
+                key_to_fqdn[key] = None
+        else:
+            key_to_fqdn[key] = None
+    return key_to_fqdn
+
+
 def _build_wf_topology_edges(
     graph: Graph,
     builder: GraphBuilder,
@@ -288,25 +322,7 @@ def _build_wf_topology_edges(
             continue
 
         # Build local-key → FQDN resolution map
-        key_to_fqdn: dict[str, str | None] = {}
-        for key, node_spec in wf_nodes.items():
-            if not isinstance(node_spec, dict):
-                key_to_fqdn[key] = None
-                continue
-            ref = node_spec.get("fqdn_id") or node_spec.get("code")
-            if ref and "::" in ref and ref in graph.nodes:
-                key_to_fqdn[key] = ref
-            elif ref and "::" not in ref:
-                # Short code — resolve via namespace prefix or artifact_code lookup
-                ns_fqdn = f"{node.namespace}::{ref}"
-                if ns_fqdn in graph.nodes:
-                    key_to_fqdn[key] = ns_fqdn
-                elif ref in code_to_fqdn:
-                    key_to_fqdn[key] = code_to_fqdn[ref]
-                else:
-                    key_to_fqdn[key] = None
-            else:
-                key_to_fqdn[key] = None
+        key_to_fqdn = resolve_wf_node_keys(graph, node.namespace, wf_nodes, code_to_fqdn)
 
         # WF_START edge
         start_node = core.get("start_node")

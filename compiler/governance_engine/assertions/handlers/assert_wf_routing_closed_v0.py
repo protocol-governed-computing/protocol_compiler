@@ -10,9 +10,10 @@ outcome absent from `next` has neither, and execution would refuse there (`3a` E
 refuses it first, so that a sealed workflow cannot present itself as complete while it carries the
 gap.
 
-Reach is traversal from `start_node` over `next`. A superseded workflow is not in force and has no
-dispatch entry (`4e` SU-7), so execution cannot reach any of its nodes and it is not checked. A
-node whose contract or intent this build cannot see is left to the reference checks.
+Reach and what each node runs are precomputed by the compiler from S2's resolution (`wf_routing`);
+this handler only checks. A superseded workflow is not in force and has no dispatch entry (`4e`
+SU-7), so execution cannot reach any of its nodes and it is not checked. A node whose contract or
+intent this build cannot see is left to the reference checks.
 """
 
 from compiler.atoms.force import in_force
@@ -27,25 +28,10 @@ def _frontmatter(fqdn: str, compilation_context: dict) -> dict | None:
     return (compilation_context.get("imported_frontmatter", {}) or {}).get(fqdn)
 
 
-def _reachable(nodes: dict, start: str) -> list[str]:
-    seen: list[str] = []
-    queue = [start]
-    while queue:
-        key = queue.pop(0)
-        if key in seen or key not in nodes:
-            continue
-        seen.append(key)
-        nxt = nodes[key].get("next", {}) if isinstance(nodes[key], dict) else {}
-        queue.extend(v for v in (nxt or {}).values() if isinstance(v, str))
-    return seen
-
-
-def _declared(node: dict, namespace: str, compilation_context: dict) -> set[str] | None:
-    code = node.get("code")
-    if not isinstance(code, str):
-        return None
-    fqdn = code if "::" in code else f"{namespace}::{code}"
-    fm = _frontmatter(fqdn, compilation_context)
+def _declared(node: dict, compilation_context: dict) -> set[str] | None:
+    """The outcomes of what a node runs, read from the artifact S2 resolved it to."""
+    runs = node.get("runs")
+    fm = _frontmatter(runs, compilation_context) if runs else None
     if fm is None:
         return None
     core = fm.get("core", {}) or {}
@@ -58,36 +44,42 @@ def _declared(node: dict, namespace: str, compilation_context: dict) -> set[str]
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
+    # A pure rule checker: what each node runs and which nodes execution can reach are resolved
+    # by the compiler (`wf_routing`, from S2's resolver), never again here.
+    wf_routing = compilation_context.get("wf_routing")
+    if wf_routing is None:
+        return {
+            "assert_count": 0,
+            "violations": [{
+                "fqdn": "workflow::ASSERT_WF_ROUTING_CLOSED_V0",
+                "rule": "COMPILATION_CONTEXT_COMPLETE",
+                "message": "Compilation context missing wf_routing",
+                "fix": "Compiler must pre-compute workflow routing before the assert phase",
+            }],
+            "status": "FAILED",
+        }
+
     violations = []
     wf_count = 0
-
     for artifact in artifacts:
         if artifact.get("artifact_type") != "WF":
             continue
-        frontmatter = artifact.get("frontmatter", {}) or {}
-        if not in_force(frontmatter):
+        if not in_force(artifact.get("frontmatter", {}) or {}):
             continue
         wf_count += 1
         fqdn = artifact.get("fqdn_id", "unknown")
-        namespace = artifact.get("namespace") or fqdn.split("::")[0]
-        core = frontmatter.get("core", {}) or {}
-        nodes = core.get("nodes", {}) or {}
-        start = core.get("start_node")
-        if not isinstance(nodes, dict) or not isinstance(start, str):
-            continue
-
-        for key in _reachable(nodes, start):
-            node = nodes[key]
-            declared = _declared(node, namespace, compilation_context)
+        routing = wf_routing.get(fqdn) or {"nodes": {}, "reachable": []}
+        for key in routing["reachable"]:
+            node = routing["nodes"][key]
+            declared = _declared(node, compilation_context)
             if not declared:
                 continue
-            routed = set((node.get("next", {}) or {}).keys())
-            for code in sorted(declared - routed):
+            for code in sorted(declared - set(node["next"])):
                 violations.append({
                     "fqdn": fqdn,
                     "rule": RULE,
                     "message": (
-                        f"Node '{key}' is reachable and runs {node.get('code')}, which can end with "
+                        f"Node '{key}' is reachable and runs {node['runs']}, which can end with "
                         f"'{code}'; the node declares neither a route nor an ending for it (4a GC-15)"
                     ),
                     "fix": f"Add '{code}: <node or EXIT_*>' to node '{key}' next",
