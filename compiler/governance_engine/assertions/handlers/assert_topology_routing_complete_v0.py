@@ -12,9 +12,42 @@ Validation is step-local: each step's on_result is validated against that
 step's own result_surface, NOT against the CC-level result_status_contract.allowed.
 CC-level contract closure is enforced by ASSERT_TOPOLOGY_CONTRACT_CLOSED_V0.
 
+A step's result_surface is the author's statement, and it cannot narrow what the capability it
+dispatches declares (`3d` CP-13). So the surface must also hold every outcome the capability
+declares: a side effect's operation declares its `result_status_values`; a transform declares
+SUCCESS, and VIOLATION unless its `refusal` is `never`. A capability this build cannot see is left
+to the reference checks, which refuse it.
+
 Validation scope: step routing completeness against declared step result surface.
 Execution topology validation is structural, not semantic.
 """
+
+
+def _declared(step: dict, compilation_context: dict) -> set[str] | None:
+    """The outcomes the capability a step dispatches declares, or None if it is not visible."""
+    local = compilation_context.get("artifacts_by_fqdn", {}) or {}
+    imported = compilation_context.get("imported_frontmatter", {}) or {}
+
+    def frontmatter(fqdn: str) -> dict | None:
+        if fqdn in local:
+            return local[fqdn].get("frontmatter", {}) or {}
+        return imported.get(fqdn)
+
+    if step.get("side_effect"):
+        fm = frontmatter(step["side_effect"])
+        if fm is None:
+            return None
+        operation = ((fm.get("core", {}) or {}).get("operations", {}) or {}).get(step.get("op"))
+        if not isinstance(operation, dict):
+            return None
+        return set(operation.get("result_status_values", []) or [])
+    if step.get("transform"):
+        fm = frontmatter(step["transform"])
+        if fm is None:
+            return None
+        refusal = (fm.get("core", {}) or {}).get("refusal")
+        return {"SUCCESS"} if refusal == "never" else {"SUCCESS", "VIOLATION"}
+    return None
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -45,6 +78,20 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
             surface = set(step.get("result_surface", []))
             routed_codes = set(on_result.keys())
+
+            # Narrowed: declared by the dispatched capability but absent from the surface (CP-13)
+            declared = _declared(step, compilation_context)
+            for code in sorted((declared or set()) - surface):
+                violations.append({
+                    "fqdn": fqdn,
+                    "rule": "execution_topology::INVARIANT_TOPOLOGY_ROUTING_COMPLETE_V0",
+                    "message": (
+                        f"Step '{step_id}' result_surface omits '{code}', which "
+                        f"{step.get('side_effect') or step.get('transform')} declares — a surface "
+                        f"cannot narrow what the dispatched capability can answer (3d CP-13)"
+                    ),
+                    "fix": f"Add '{code}' to step '{step_id}' result_surface and route it in on_result",
+                })
 
             # Unrouted: declared in result_surface but absent from on_result
             unrouted = surface - routed_codes

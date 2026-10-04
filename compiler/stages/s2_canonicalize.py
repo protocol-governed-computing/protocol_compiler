@@ -167,6 +167,33 @@ def _import_surface_fqdns(structure_config) -> set[str]:
     return set(json.loads(vocab.read_text(encoding="utf-8")).keys())
 
 
+def _import_surface_frontmatter(structure_config) -> dict[str, dict]:
+    """The machine block of every artifact an already-compiled platform surface provides.
+
+    `_import_surface_fqdns` answers whether an identity resolves externally; this answers what it
+    declares. A check that compares a domain step with the capability it dispatches needs the
+    capability's declaration, and in a domain build that declaration is in the imported surface,
+    not in this graph. Empty when no import_surface is declared (e.g. the platform build).
+    """
+    import json
+    imp = (structure_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    if not imp.get("domain"):
+        return {}
+    from compiler.governance_engine.platform_root import platform_root
+    canonical = platform_root() / "snapshot" / "compiled" / "canonical"
+    if not canonical.is_dir():
+        raise FileNotFoundError(
+            f"import_surface: compiled canonical surface not found at {canonical}. "
+            f"Compile the '{imp['domain']}' structure before compiling this domain against it."
+        )
+    out: dict[str, dict] = {}
+    for path in sorted(canonical.rglob("*.json")):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(record, dict) and "fqdn_id" in record:
+            out[record["fqdn_id"]] = record.get("frontmatter", {}) or {}
+    return out
+
+
 def _classify_edge(source: Node, target: Node) -> EdgeKind:
     """
     Determine the correct edge kind based on source and target node kinds.

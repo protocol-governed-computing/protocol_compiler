@@ -224,8 +224,11 @@ def _execute_assertions(
 
     # References from domain artifacts into the imported platform surface resolve externally, not in
     # this graph. Reference-closure handlers count them as resolved via this set (design §3).
-    from compiler.stages.s2_canonicalize import _import_surface_fqdns
+    from compiler.stages.s2_canonicalize import _import_surface_fqdns, _import_surface_frontmatter
     imported_surface_fqdns = _import_surface_fqdns(structure_config)
+    # What those imported identities declare, for checks that compare a domain step with the
+    # platform capability it dispatches (`3d` CP-13).
+    imported_frontmatter = _import_surface_frontmatter(structure_config)
 
     compilation_context = {
         "artifacts_by_fqdn": {a["fqdn_id"]: a for a in artifacts_for_handlers},
@@ -234,6 +237,7 @@ def _execute_assertions(
         "layer_category_map": layer_category_map,
         "is_domain_build": is_domain_build,
         "imported_surface_fqdns": imported_surface_fqdns,
+        "imported_frontmatter": imported_frontmatter,
         "authorized_namespaces": list(dict(state.stage_metadata).get("authorized_namespaces", []) or []),
         **structural_ctx,
     }

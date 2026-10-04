@@ -42,6 +42,7 @@ from compiler.governance_engine.assertions.handlers.assert_unique_artifact_id_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_execution_path_valid_v0 import execute as assert_wf_execution_path_valid_v0
 from compiler.governance_engine.assertions.handlers.assert_binding_surface_closed_v0 import execute as assert_binding_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_announcement_distinct_v0 import execute as assert_wf_announcement_distinct_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_routing_closed_v0 import execute as assert_wf_routing_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_governed_by_kind_v0 import execute as assert_ct_governed_by_kind_v0
 from compiler.governance_engine.assertions.handlers.assert_molecule_runnable_v0 import execute as assert_molecule_runnable_v0
 from compiler.governance_engine.assertions.handlers.assert_molecule_purity_consistent_v0 import execute as assert_molecule_purity_consistent_v0
@@ -132,6 +133,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_wf_execution_path_valid_v0": assert_wf_execution_path_valid_v0,
     "pgc_governance.handlers.assert_binding_surface_closed_v0": assert_binding_surface_closed_v0,
     "pgc_governance.handlers.assert_wf_announcement_distinct_v0": assert_wf_announcement_distinct_v0,
+    "pgc_governance.handlers.assert_wf_routing_closed_v0": assert_wf_routing_closed_v0,
     "pgc_governance.handlers.assert_ct_governed_by_kind_v0": assert_ct_governed_by_kind_v0,
     "pgc_governance.handlers.assert_molecule_runnable_v0": assert_molecule_runnable_v0,
     "pgc_governance.handlers.assert_molecule_purity_consistent_v0": assert_molecule_purity_consistent_v0,
