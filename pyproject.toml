@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "pgc-compiler"
-version = "4.0.0"
+version = "5.0.0"
 description = "PGC protocol compiler — compiles governed declarations into sealed, verified projections (import package: compiler)"
 readme = "README.md"
 requires-python = ">=3.10"
