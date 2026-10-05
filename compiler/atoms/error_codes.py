@@ -61,6 +61,9 @@ class ErrorCode(Enum):
     E104_INVALID_FQDN = "E104_INVALID_FQDN"
     """Invalid FQDN format."""
 
+    E105_UNDECLARED_REFERENCE = "E105_UNDECLARED_REFERENCE"
+    """A full name written in a part the platform does not declare a reference."""
+
     # ==================
     # Validation (E2xx)
     # ==================
@@ -144,6 +147,7 @@ ERROR_SUGGESTIONS: dict[ErrorCode, str] = {
     ErrorCode.E101_INVALID_YAML: "Check YAML syntax, ensure proper indentation",
     ErrorCode.E102_MISSING_FIELD: "Add required field to artifact frontmatter",
     ErrorCode.E104_INVALID_FQDN: "FQDN format: {namespace}::{artifact_code}",
+    ErrorCode.E105_UNDECLARED_REFERENCE: "Move the name into a declared reference part, or declare the part in artifact::VOCAB_DECLARATION_REPRESENTATION_V1",
     ErrorCode.E201_MISSING_REFERENCE: "Add referenced artifact or remove reference",
     ErrorCode.E202_CIRCULAR_DEPENDENCY: "Break dependency cycle between artifacts",
     ErrorCode.E204_INVALID_RB_BINDING: "Ensure RB references valid CS artifact",

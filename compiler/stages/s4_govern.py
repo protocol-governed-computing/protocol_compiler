@@ -128,6 +128,12 @@ _NON_COMPILER_STAGES = frozenset({
 })
 
 
+def _representation(state):
+    from compiler.atoms.representation import Representation
+    recorded = dict(state.stage_metadata).get("representation")
+    return Representation.from_dict(recorded) if recorded else None
+
+
 def _derive_assert(inv_node) -> dict[str, Any] | None:
     """Synthesize an ASSERT descriptor from an INVARIANT node (transparent, automatic).
 
@@ -239,6 +245,9 @@ def _execute_assertions(
         "imported_surface_fqdns": imported_surface_fqdns,
         "imported_frontmatter": imported_frontmatter,
         "authorized_namespaces": list(dict(state.stage_metadata).get("authorized_namespaces", []) or []),
+        # What a reference is, as S1 read it from the platform's declaration. Every check that finds
+        # a reference reads this and keeps no list of its own.
+        "representation": _representation(state),
         **structural_ctx,
     }
 
