@@ -87,6 +87,7 @@ from compiler.governance_engine.assertions.handlers.assert_topology_step_id_uniq
 from compiler.governance_engine.assertions.handlers.assert_topology_authority_orthogonal_v0 import execute as assert_topology_authority_orthogonal_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_transport_orthogonal_v0 import execute as assert_topology_transport_orthogonal_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v0 import execute as assert_topology_contract_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v1 import execute as assert_topology_contract_closed_v1
 from compiler.governance_engine.assertions.handlers.assert_topology_surface_canonical_v0 import execute as assert_topology_surface_canonical_v0
 from compiler.governance_engine.assertions.handlers.assert_execution_placement_declared_v1 import execute as assert_execution_placement_declared_v1
 from compiler.governance_engine.assertions.handlers.assert_execution_scheduling_declared_v0 import execute as assert_execution_scheduling_declared_v0
@@ -178,6 +179,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_topology_authority_orthogonal_v0": assert_topology_authority_orthogonal_v0,
     "pgc_governance.handlers.assert_topology_transport_orthogonal_v0": assert_topology_transport_orthogonal_v0,
     "pgc_governance.handlers.assert_topology_contract_closed_v0": assert_topology_contract_closed_v0,
+    "pgc_governance.handlers.assert_topology_contract_closed_v1": assert_topology_contract_closed_v1,
     "pgc_governance.handlers.assert_topology_surface_canonical_v0": assert_topology_surface_canonical_v0,
     "pgc_governance.handlers.assert_execution_placement_declared_v1": assert_execution_placement_declared_v1,
     "pgc_governance.handlers.assert_execution_scheduling_declared_v0": assert_execution_scheduling_declared_v0,
