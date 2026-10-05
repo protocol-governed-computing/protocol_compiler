@@ -61,18 +61,27 @@ def _reached(frontmatter: dict, own: str, representation) -> set:
     """
     found, _ = representation.references(frontmatter, own)
 
-    def walk(value):
+    # A workflow labels its places and routes between them by those labels, conventionally spelled
+    # as the code each place runs. A label is local, not a reference: after a contract is replaced
+    # and the place re-pointed, its `code` names the successor while its label and the routes to it
+    # keep the old spelling. Outside a declared reference part, a value naming one of the
+    # workflow's own places is that label.
+    nodes = (frontmatter.get("core") or {}).get("nodes") if isinstance(
+        frontmatter.get("core"), dict) else None
+    labels = set(nodes) if isinstance(nodes, dict) else set()
+
+    def walk(value, under):
         if isinstance(value, dict):
             for key, item in value.items():
                 if key not in representation.supersession:
-                    walk(item)
+                    walk(item, under or key in representation.reference)
         elif isinstance(value, (list, tuple)):
             for item in value:
-                walk(item)
-        elif isinstance(value, str) and "::" not in value:
+                walk(item, under)
+        elif isinstance(value, str) and "::" not in value and (under or value not in labels):
             found.add(value)
 
-    walk(frontmatter)
+    walk(frontmatter, False)
     return found
 
 

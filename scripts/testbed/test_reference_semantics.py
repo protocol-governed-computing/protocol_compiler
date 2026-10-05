@@ -143,6 +143,18 @@ def test_a_short_code_reaching_a_stood_down_artifact_is_still_refused():
     assert len(found) == 1 and found[0]["fqdn"] == "probe::IN_V0", found
 
 
+def test_a_place_label_is_not_a_reach_and_a_stale_code_is():
+    # Re-pointed: the place keeps its label and the route to it; its code names the successor.
+    nodes = {"CC_OLD_V0": {"type": "CC", "code": "CC_NEW_V0", "next": {"SUCCESS": "EXIT_DONE"}},
+             "IN_V0": {"type": "IN", "next": {"ACK": "CC_OLD_V0"}}}
+    wf = artifact("probe::WF_V0", kind="WF", core={"nodes": nodes})
+    assert not_referenced([RETIRED, SUCCESSOR, wf], {"representation": REP})["status"] == "PASSED"
+    stale = artifact("probe::WF_V0", kind="WF", core={"nodes": {
+        "CC_OLD_V0": {"type": "CC", "code": "CC_OLD_V0", "next": {"SUCCESS": "EXIT_DONE"}}}})
+    found = not_referenced([RETIRED, SUCCESSOR, stale], {"representation": REP})["violations"]
+    assert len(found) == 1 and found[0]["fqdn"] == "probe::WF_V0", found
+
+
 def test_naming_what_you_stand_in_for_is_not_a_reach():
     assert not_referenced([RETIRED, SUCCESSOR], {"representation": REP})["status"] == "PASSED"
 
