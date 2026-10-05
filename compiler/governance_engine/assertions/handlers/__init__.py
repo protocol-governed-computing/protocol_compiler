@@ -81,6 +81,7 @@ from compiler.governance_engine.assertions.handlers.assert_topology_step_declare
 from compiler.governance_engine.assertions.handlers.assert_topology_capability_reference_unique_v0 import execute as assert_topology_capability_reference_unique_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_input_reference_declared_v0 import execute as assert_topology_input_reference_declared_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import execute as assert_topology_routing_complete_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v1 import execute as assert_topology_routing_complete_v1
 from compiler.governance_engine.assertions.handlers.assert_topology_immutable_after_compilation_v0 import execute as assert_topology_immutable_after_compilation_v0
 from compiler.governance_engine.assertions.handlers.assert_no_runtime_topology_synthesis_v0 import execute as assert_no_runtime_topology_synthesis_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_step_id_unique_v0 import execute as assert_topology_step_id_unique_v0
@@ -173,6 +174,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_topology_capability_reference_unique_v0": assert_topology_capability_reference_unique_v0,
     "pgc_governance.handlers.assert_topology_input_reference_declared_v0": assert_topology_input_reference_declared_v0,
     "pgc_governance.handlers.assert_topology_routing_complete_v0": assert_topology_routing_complete_v0,
+    "pgc_governance.handlers.assert_topology_routing_complete_v1": assert_topology_routing_complete_v1,
     "pgc_governance.handlers.assert_topology_immutable_after_compilation_v0": assert_topology_immutable_after_compilation_v0,
     "pgc_governance.handlers.assert_no_runtime_topology_synthesis_v0": assert_no_runtime_topology_synthesis_v0,
     "pgc_governance.handlers.assert_topology_step_id_unique_v0": assert_topology_step_id_unique_v0,
