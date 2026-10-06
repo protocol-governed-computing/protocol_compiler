@@ -10,7 +10,7 @@ result_surface) are governance noise.
 
 Validation is step-local: each step's on_result is validated against that
 step's own result_surface, NOT against the CC-level result_status_contract.allowed.
-CC-level contract closure is enforced by ASSERT_TOPOLOGY_CONTRACT_CLOSED_V0.
+CC-level contract closure is enforced by ASSERT_TOPOLOGY_CONTRACT_CLOSED_V1.
 
 A step's result_surface is the author's statement, and it cannot narrow what the capability it
 dispatches declares (`3d` CP-13). So the surface must also hold every outcome the capability

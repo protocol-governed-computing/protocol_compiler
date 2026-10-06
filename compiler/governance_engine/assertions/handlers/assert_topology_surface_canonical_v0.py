@@ -24,7 +24,7 @@ Skipped steps:
   surface validation does not apply to remapped steps.
 
 Validation scope: semantic surface legitimacy.
-Structural routing coverage is enforced by ASSERT_TOPOLOGY_ROUTING_COMPLETE_V0.
+Structural routing coverage is enforced by ASSERT_TOPOLOGY_ROUTING_COMPLETE_V1.
 """
 
 
