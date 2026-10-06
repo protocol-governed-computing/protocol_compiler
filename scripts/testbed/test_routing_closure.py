@@ -4,8 +4,8 @@ of what it runs.
 
 `ASSERT_TOPOLOGY_ROUTING_COMPLETE_V0` checked a step's routing against the step's own
 `result_surface`, which the author declares. A surface narrower than the capability passed, and the
-runtime proceeded past the outcome it left out. It now also checks the surface against the
-capability (`3d` CP-13). `ASSERT_WF_ROUTING_CLOSED_V0` is new: a workflow node that execution can
+runtime proceeded past the outcome it left out. `ASSERT_TOPOLOGY_ROUTING_COMPLETE_V1` also checks the
+surface against the capability (`3d` CP-13). `ASSERT_WF_ROUTING_CLOSED_V0` is new: a workflow node that execution can
 reach declares a route or an ending for every outcome of the contract or intent it runs (`4a`
 GC-15). A superseded workflow and an unreachable node are not checked, because execution cannot
 reach them.
@@ -13,7 +13,7 @@ reach them.
 import sys
 from types import SimpleNamespace
 
-from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import (
+from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v1 import (
     execute as routing_complete)
 from compiler.governance_engine.assertions.handlers.assert_wf_routing_closed_v0 import (
     execute as checked_routing_closed)
