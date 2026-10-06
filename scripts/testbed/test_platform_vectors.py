@@ -25,7 +25,7 @@ SURFACE = W / "software_governance"
 PLATFORM = "STRUCTURE_BUILD_PLATFORM_CONFIG_V2"
 VECTOR = "capability_transforms/registry/test_data/TEST_DATA_CT_PURE_LOOKUP_V0.md"
 DOMAIN = W / "business_domains" / "ai_governance"
-PLATFORM_TRANSFORMS = 12
+PLATFORM_TRANSFORMS = 13
 
 # tamper -> (text substitution in the lookup vector, the assertion that must refuse it)
 TAMPERS = {

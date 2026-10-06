@@ -21,6 +21,7 @@ from compiler.governance_engine.assertions.handlers.assert_cc_no_missing_depende
 from compiler.governance_engine.assertions.handlers.assert_cc_no_unused_outputs_v0 import execute as assert_cc_no_unused_outputs_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_surface_closed_v0 import execute as assert_cs_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_output_contract_match_v0 import execute as assert_ct_output_contract_match_v0
+from compiler.governance_engine.assertions.handlers.assert_ct_input_typed_v0 import execute as assert_ct_input_typed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_closed_v0 import execute as assert_ct_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_derived_closed_v1 import execute as assert_ct_surface_derived_closed_v1
 from compiler.governance_engine.assertions.handlers.assert_fqdn_only_references_v0 import execute as assert_fqdn_only_references_v0
@@ -123,6 +124,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_cc_no_unused_outputs_v0": assert_cc_no_unused_outputs_v0,
     "pgc_governance.handlers.assert_cs_surface_closed_v0": assert_cs_surface_closed_v0,
     "pgc_governance.handlers.assert_ct_output_contract_match_v0": assert_ct_output_contract_match_v0,
+    "pgc_governance.handlers.assert_ct_input_typed_v0": assert_ct_input_typed_v0,
     "pgc_governance.handlers.assert_ct_surface_closed_v0": assert_ct_surface_closed_v0,
     "pgc_governance.handlers.assert_ct_surface_derived_closed_v1": assert_ct_surface_derived_closed_v1,
     "pgc_governance.handlers.assert_fqdn_only_references_v0": assert_fqdn_only_references_v0,
