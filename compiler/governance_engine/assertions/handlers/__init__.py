@@ -42,6 +42,7 @@ from compiler.governance_engine.assertions.handlers.assert_unique_artifact_id_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_execution_path_valid_v0 import execute as assert_wf_execution_path_valid_v0
 from compiler.governance_engine.assertions.handlers.assert_binding_surface_closed_v0 import execute as assert_binding_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_wf_announcement_distinct_v0 import execute as assert_wf_announcement_distinct_v0
+from compiler.governance_engine.assertions.handlers.assert_wf_routing_closed_v0 import execute as assert_wf_routing_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_governed_by_kind_v0 import execute as assert_ct_governed_by_kind_v0
 from compiler.governance_engine.assertions.handlers.assert_molecule_runnable_v0 import execute as assert_molecule_runnable_v0
 from compiler.governance_engine.assertions.handlers.assert_molecule_purity_consistent_v0 import execute as assert_molecule_purity_consistent_v0
@@ -80,12 +81,14 @@ from compiler.governance_engine.assertions.handlers.assert_topology_step_declare
 from compiler.governance_engine.assertions.handlers.assert_topology_capability_reference_unique_v0 import execute as assert_topology_capability_reference_unique_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_input_reference_declared_v0 import execute as assert_topology_input_reference_declared_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import execute as assert_topology_routing_complete_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v1 import execute as assert_topology_routing_complete_v1
 from compiler.governance_engine.assertions.handlers.assert_topology_immutable_after_compilation_v0 import execute as assert_topology_immutable_after_compilation_v0
 from compiler.governance_engine.assertions.handlers.assert_no_runtime_topology_synthesis_v0 import execute as assert_no_runtime_topology_synthesis_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_step_id_unique_v0 import execute as assert_topology_step_id_unique_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_authority_orthogonal_v0 import execute as assert_topology_authority_orthogonal_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_transport_orthogonal_v0 import execute as assert_topology_transport_orthogonal_v0
 from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v0 import execute as assert_topology_contract_closed_v0
+from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v1 import execute as assert_topology_contract_closed_v1
 from compiler.governance_engine.assertions.handlers.assert_topology_surface_canonical_v0 import execute as assert_topology_surface_canonical_v0
 from compiler.governance_engine.assertions.handlers.assert_execution_placement_declared_v1 import execute as assert_execution_placement_declared_v1
 from compiler.governance_engine.assertions.handlers.assert_execution_scheduling_declared_v0 import execute as assert_execution_scheduling_declared_v0
@@ -132,6 +135,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_wf_execution_path_valid_v0": assert_wf_execution_path_valid_v0,
     "pgc_governance.handlers.assert_binding_surface_closed_v0": assert_binding_surface_closed_v0,
     "pgc_governance.handlers.assert_wf_announcement_distinct_v0": assert_wf_announcement_distinct_v0,
+    "pgc_governance.handlers.assert_wf_routing_closed_v0": assert_wf_routing_closed_v0,
     "pgc_governance.handlers.assert_ct_governed_by_kind_v0": assert_ct_governed_by_kind_v0,
     "pgc_governance.handlers.assert_molecule_runnable_v0": assert_molecule_runnable_v0,
     "pgc_governance.handlers.assert_molecule_purity_consistent_v0": assert_molecule_purity_consistent_v0,
@@ -170,12 +174,14 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_topology_capability_reference_unique_v0": assert_topology_capability_reference_unique_v0,
     "pgc_governance.handlers.assert_topology_input_reference_declared_v0": assert_topology_input_reference_declared_v0,
     "pgc_governance.handlers.assert_topology_routing_complete_v0": assert_topology_routing_complete_v0,
+    "pgc_governance.handlers.assert_topology_routing_complete_v1": assert_topology_routing_complete_v1,
     "pgc_governance.handlers.assert_topology_immutable_after_compilation_v0": assert_topology_immutable_after_compilation_v0,
     "pgc_governance.handlers.assert_no_runtime_topology_synthesis_v0": assert_no_runtime_topology_synthesis_v0,
     "pgc_governance.handlers.assert_topology_step_id_unique_v0": assert_topology_step_id_unique_v0,
     "pgc_governance.handlers.assert_topology_authority_orthogonal_v0": assert_topology_authority_orthogonal_v0,
     "pgc_governance.handlers.assert_topology_transport_orthogonal_v0": assert_topology_transport_orthogonal_v0,
     "pgc_governance.handlers.assert_topology_contract_closed_v0": assert_topology_contract_closed_v0,
+    "pgc_governance.handlers.assert_topology_contract_closed_v1": assert_topology_contract_closed_v1,
     "pgc_governance.handlers.assert_topology_surface_canonical_v0": assert_topology_surface_canonical_v0,
     "pgc_governance.handlers.assert_execution_placement_declared_v1": assert_execution_placement_declared_v1,
     "pgc_governance.handlers.assert_execution_scheduling_declared_v0": assert_execution_scheduling_declared_v0,

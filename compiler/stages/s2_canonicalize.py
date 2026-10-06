@@ -167,6 +167,33 @@ def _import_surface_fqdns(structure_config) -> set[str]:
     return set(json.loads(vocab.read_text(encoding="utf-8")).keys())
 
 
+def _import_surface_frontmatter(structure_config) -> dict[str, dict]:
+    """The machine block of every artifact an already-compiled platform surface provides.
+
+    `_import_surface_fqdns` answers whether an identity resolves externally; this answers what it
+    declares. A check that compares a domain step with the capability it dispatches needs the
+    capability's declaration, and in a domain build that declaration is in the imported surface,
+    not in this graph. Empty when no import_surface is declared (e.g. the platform build).
+    """
+    import json
+    imp = (structure_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
+    if not imp.get("domain"):
+        return {}
+    from compiler.governance_engine.platform_root import platform_root
+    canonical = platform_root() / "snapshot" / "compiled" / "canonical"
+    if not canonical.is_dir():
+        raise FileNotFoundError(
+            f"import_surface: compiled canonical surface not found at {canonical}. "
+            f"Compile the '{imp['domain']}' structure before compiling this domain against it."
+        )
+    out: dict[str, dict] = {}
+    for path in sorted(canonical.rglob("*.json")):
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(record, dict) and "fqdn_id" in record:
+            out[record["fqdn_id"]] = record.get("frontmatter", {}) or {}
+    return out
+
+
 def _classify_edge(source: Node, target: Node) -> EdgeKind:
     """
     Determine the correct edge kind based on source and target node kinds.
@@ -226,6 +253,40 @@ def _classify_edge(source: Node, target: Node) -> EdgeKind:
     return EdgeKind.REFERENCES
 
 
+def resolve_wf_node_keys(
+    graph: Graph,
+    namespace: str,
+    wf_nodes: dict,
+    code_to_fqdn: dict[str, str],
+) -> dict[str, str | None]:
+    """Each local node key of a workflow → the FQDN of the artifact it runs, or None.
+
+    The one place a node's `code` or `fqdn_id` is resolved. S2 builds the topology edges from it,
+    and S4 publishes it to the checks that need a node's artifact; a second resolver in a check
+    would be a second rule for one identity.
+    """
+    key_to_fqdn: dict[str, str | None] = {}
+    for key, node_spec in wf_nodes.items():
+        if not isinstance(node_spec, dict):
+            key_to_fqdn[key] = None
+            continue
+        ref = node_spec.get("fqdn_id") or node_spec.get("code")
+        if ref and "::" in ref and ref in graph.nodes:
+            key_to_fqdn[key] = ref
+        elif ref and "::" not in ref:
+            # Short code — resolve via namespace prefix or artifact_code lookup
+            ns_fqdn = f"{namespace}::{ref}"
+            if ns_fqdn in graph.nodes:
+                key_to_fqdn[key] = ns_fqdn
+            elif ref in code_to_fqdn:
+                key_to_fqdn[key] = code_to_fqdn[ref]
+            else:
+                key_to_fqdn[key] = None
+        else:
+            key_to_fqdn[key] = None
+    return key_to_fqdn
+
+
 def _build_wf_topology_edges(
     graph: Graph,
     builder: GraphBuilder,
@@ -261,25 +322,7 @@ def _build_wf_topology_edges(
             continue
 
         # Build local-key → FQDN resolution map
-        key_to_fqdn: dict[str, str | None] = {}
-        for key, node_spec in wf_nodes.items():
-            if not isinstance(node_spec, dict):
-                key_to_fqdn[key] = None
-                continue
-            ref = node_spec.get("fqdn_id") or node_spec.get("code")
-            if ref and "::" in ref and ref in graph.nodes:
-                key_to_fqdn[key] = ref
-            elif ref and "::" not in ref:
-                # Short code — resolve via namespace prefix or artifact_code lookup
-                ns_fqdn = f"{node.namespace}::{ref}"
-                if ns_fqdn in graph.nodes:
-                    key_to_fqdn[key] = ns_fqdn
-                elif ref in code_to_fqdn:
-                    key_to_fqdn[key] = code_to_fqdn[ref]
-                else:
-                    key_to_fqdn[key] = None
-            else:
-                key_to_fqdn[key] = None
+        key_to_fqdn = resolve_wf_node_keys(graph, node.namespace, wf_nodes, code_to_fqdn)
 
         # WF_START edge
         start_node = core.get("start_node")
