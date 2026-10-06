@@ -32,8 +32,8 @@ def _frontmatter(artifact: dict) -> dict:
 
 # The supersession declaration is not a reference to what it replaces. Naming the artifact you stand
 # in place of is the whole point of the relation; counting it as a reach would make every correct
-# supersession its own violation.
-DECLARATION_KEYS = {"supersedes", "superseded_by"}
+# supersession its own violation. Which parts declare supersession is the platform's declaration
+# (`supersession` in artifact::VOCAB_DECLARATION_REPRESENTATION_V0), not a list kept here.
 
 def _successors(frontmatter: dict) -> list:
     """The successors an artifact names, however it names them.
@@ -51,27 +51,53 @@ def _successors(frontmatter: dict) -> list:
 
 
 
-def _references(value, found: set) -> set:
-    """Every string an artifact carries, anywhere in its machine block.
+def _reached(frontmatter: dict, own: str, representation) -> set:
+    """Every identity a live declaration reaches, by full name or by short code.
 
-    Walked whole rather than read at known keys. A reference is a reference wherever it sits, and a
-    handler that looked only where references are *expected* would miss the one place a design put
-    an identity nobody anticipated — which is exactly the reference that survives a retirement.
+    A full name is a reference only in a part the platform declares one, and S1 refuses a full name
+    anywhere else, so the declaration finds every full name there is. A short code is not declared
+    anywhere yet, and nothing else guards one, so every string outside a supersession part is still
+    read for one. This check must see no less than it did before references were declared.
     """
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if key in DECLARATION_KEYS:
-                continue
-            _references(item, found)
-    elif isinstance(value, (list, tuple)):
-        for item in value:
-            _references(item, found)
-    elif isinstance(value, str):
-        found.add(value)
+    found, _ = representation.references(frontmatter, own)
+
+    # A workflow labels its places and routes between them by those labels, conventionally spelled
+    # as the code each place runs. A label is local, not a reference: after a contract is replaced
+    # and the place re-pointed, its `code` names the successor while its label and the routes to it
+    # keep the old spelling. Outside a declared reference part, a value naming one of the
+    # workflow's own places is that label.
+    nodes = (frontmatter.get("core") or {}).get("nodes") if isinstance(
+        frontmatter.get("core"), dict) else None
+    labels = set(nodes) if isinstance(nodes, dict) else set()
+
+    def walk(value, under):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key not in representation.supersession:
+                    walk(item, under or key in representation.reference)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item, under)
+        elif isinstance(value, str) and "::" not in value and (under or value not in labels):
+            found.add(value)
+
+    walk(frontmatter, False)
     return found
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
+    representation = compilation_context.get("representation")
+    if representation is None:
+        return {
+            "assert_count": 0,
+            "violations": [{
+                "fqdn": "artifact::ASSERT_SUPERSEDED_NOT_REFERENCED_V0",
+                "rule": "COMPILATION_CONTEXT_COMPLETE",
+                "message": "Compilation context missing representation",
+                "fix": "S1 must read the platform's declaration of what a reference is",
+            }],
+            "status": "FAILED",
+        }
     violations = []
 
     superseded: dict[str, dict] = {}      # fqdn -> the artifact standing down
@@ -114,7 +140,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         # reach, and nothing reaches either of these.
         if not fqdn or fqdn in superseded:
             continue
-        for value in _references(_frontmatter(artifact), set()):
+        for value in _reached(_frontmatter(artifact), fqdn, representation):
             target = by_identity.get(value)
             if target and target in superseded and target != fqdn:
                 successors = ", ".join(_successors(_frontmatter(superseded[target])))

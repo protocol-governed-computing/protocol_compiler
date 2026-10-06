@@ -71,9 +71,11 @@ TAMPERS = {
         ("  expected_outcome: VIOLATION\n",
          "  expected_outcome: VIOLATION\n  recorded:\n    offered: {x: 1}\n"),
         "ASSERT_TEST_DATA_RECORDS_MATCH_PURITY_V0"),
+    # A test's target is a declared reference, so a target nothing declares is a dangling reference,
+    # refused when references are resolved, before any assertion reads it.
     "a target the build does not declare": (
         ("target: workload::CT_PURE_COLLATZ_STEP_V0", "target: workload::CT_PURE_NONE_V0"),
-        "ASSERT_TEST_DATA_MATCH_CT_OUTPUT_V0"),
+        "Dangling reference: workload::TEST_DATA_CT_PURE_COLLATZ_STEP_V0 → workload::CT_PURE_NONE_V0"),
     "a field outside the schema": (
         ("target:", "test_cases: []\ntarget:"), "ASSERT_SCHEMA_CONFORMANCE_V0"),
 }

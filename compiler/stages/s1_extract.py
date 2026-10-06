@@ -190,20 +190,24 @@ def s1_extract(state: State) -> State:
     # --- Step 5: Parse and build graph ---
     builder = GraphBuilder()
 
-    # Build artifact registry for reference validation
-    artifact_registry: dict[str, list[str]] = {}
-    for artifact in discovered:
-        code = artifact["artifact_code"]
-        ns = artifact["namespace"]
-        if code not in artifact_registry:
-            artifact_registry[code] = []
-        if ns not in artifact_registry[code]:
-            artifact_registry[code].append(ns)
+    # What a reference is, read from the platform's declaration before any is recorded.
+    from compiler.atoms.representation import DECLARATION, RepresentationUnavailable, locate
+    try:
+        representation = locate(
+            {a["fqdn"]: _machine_block(Path(a["source_path"]))
+             for a in discovered if a.get("fqdn") == DECLARATION},
+            build_config)
+    except (RepresentationUnavailable, OSError, yaml.YAMLError) as e:
+        return state.with_errors(CompilerError(
+            code=ErrorCode.E901_INTERNAL_ERROR,
+            message=f"Cannot read what a reference is: {e}",
+            phase="S1_EXTRACT",
+        ))
 
     all_refs: set[str] = set()
     for artifact in discovered:
         node, refs, parse_errors, parse_warnings = _parse_artifact_to_node(
-            artifact, artifact_registry
+            artifact, representation
         )
         errors.extend(parse_errors)
         warnings.extend(parse_warnings)
@@ -257,6 +261,7 @@ def s1_extract(state: State) -> State:
     state = state.with_metadata("node_count", len(graph.nodes))
     state = state.with_metadata("edge_count", len(graph.edges))
     state = state.with_metadata("authorized_namespaces", authorized_namespaces)
+    state = state.with_metadata("representation", representation.as_dict())
     if governance_closure is not None:
         state = state.with_metadata("governance_closure", governance_closure)
 
@@ -770,7 +775,7 @@ def _inject_closure_node(
 
 def _parse_artifact_to_node(
     artifact: dict[str, Any],
-    artifact_registry: dict[str, list[str]],
+    representation,
 ) -> tuple[Node | None, list[str], list[CompilerError], list[CompilerError]]:
     """
     Parse a single artifact file into a Node + reference list.
@@ -889,10 +894,17 @@ def _parse_artifact_to_node(
         return None, [], errors, warnings
 
     # Extract references
-    references, ref_errors = _extract_references(
-        frontmatter, fqdn, artifact_code, artifact_registry
-    )
-    errors.extend(ref_errors)
+    found, undeclared = representation.references(frontmatter, fqdn)
+    references = sorted(found)
+    for place in undeclared:
+        errors.append(CompilerError(
+            code=ErrorCode.E105_UNDECLARED_REFERENCE,
+            message=(f"A full name is written at '{place}', which the platform does not declare a "
+                     f"reference. What names another artifact is declared, never inferred."),
+            phase="S1_EXTRACT",
+            fqdn_id=fqdn,
+            artifact_code=artifact_code,
+        ))
 
     # Create Node
     node = Node.create(
@@ -916,81 +928,7 @@ def _parse_artifact_to_node(
     return node, references, errors, warnings
 
 
-def _extract_references(
-    frontmatter: dict[str, Any],
-    source_fqdn: str,
-    artifact_code: str,
-    artifact_registry: dict[str, list[str]],
-) -> tuple[list[str], list[CompilerError]]:
-    """
-    Extract FQDN references from artifact frontmatter.
-
-    CONSTITUTIONAL: FQDN-only enforcement — bare codes are rejected.
-    """
-    references: set[str] = set()
-    errors: list[CompilerError] = []
-
-    def validate_ref(ref_value: str) -> str | None:
-        if "::" not in ref_value:
-            errors.append(CompilerError(
-                code=ErrorCode.E104_INVALID_FQDN,
-                message=f"Bare code forbidden: '{ref_value}'. Use FQDN (namespace::code)",
-                phase="S1_EXTRACT",
-                fqdn_id=source_fqdn,
-                artifact_code=artifact_code,
-            ))
-            return None
-
-        # Self-reference filter
-        if ref_value == source_fqdn:
-            return None
-
-        return ref_value
-
-    # Singular reference fields
-    singular_fields = ["vocabulary_id", "governed_by", "structure", "runtime_binding", "transform"]
-    # Plural reference fields. `consults` is an act's declared reach — the bindings it reads and
-    # never writes. Extracted as references so an unresolvable one is refused by surface closure;
-    # which of the named bindings is owned and which is consulted is read from the declaration
-    # itself, never from the resulting edges, because an edge kind is derived from the two node
-    # kinds and cannot tell one WF→RB reference from another.
-    plural_fields = ["transforms", "side_effects", "consults"]
-
-    # RB bindings: keys are artifact FQDNs
-    core = frontmatter.get("core", {})
-    if isinstance(core, dict) and "bindings" in core:
-        bindings = core["bindings"]
-        if isinstance(bindings, dict):
-            for binding_key in bindings.keys():
-                resolved = validate_ref(binding_key)
-                if resolved:
-                    references.add(resolved)
-
-    def scan_recursive(data: Any) -> None:
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if k in singular_fields:
-                    # A singular reference field is usually a scalar FQDN, but `governed_by` (and
-                    # potentially others) may be authored as a list of FQDNs. Both must become
-                    # REFERENCES edges — otherwise a list-valued governed_by is silently dropped and
-                    # its GOVERNED_BY edge never emitted (CSI Finding #001).
-                    for item in ([v] if isinstance(v, str) else (v if isinstance(v, list) else [])):
-                        if isinstance(item, str):
-                            resolved = validate_ref(item)
-                            if resolved:
-                                references.add(resolved)
-                elif k in plural_fields and isinstance(v, list):
-                    for item in v:
-                        if isinstance(item, str):
-                            resolved = validate_ref(item)
-                            if resolved:
-                                references.add(resolved)
-                else:
-                    scan_recursive(v)
-        elif isinstance(data, list):
-            for item in data:
-                scan_recursive(item)
-
-    scan_recursive(frontmatter)
-
-    return sorted(references), errors
+def _machine_block(path: Path) -> dict:
+    """The parsed Machine block of one source artifact."""
+    match = _MACHINE_BLOCK_PATTERN.search(path.read_text(encoding="utf-8"))
+    return (yaml.safe_load(match.group("machine_yaml").rstrip()) or {}) if match else {}
