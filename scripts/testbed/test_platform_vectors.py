@@ -1,6 +1,6 @@
 """
 The platform's own test vectors through a real platform build — the compiler's half of
-software_governance/dossiers/platform_test_data.
+software_governance/dossiers/platform_test_data (held at the v5 tag).
 
 The platform supplies transforms of its own, so its build compiles their vectors and proves them
 (conformance::CONSTITUTION_TEST_DATA_V2 §4). Shown here, against a copy of the governance surface
