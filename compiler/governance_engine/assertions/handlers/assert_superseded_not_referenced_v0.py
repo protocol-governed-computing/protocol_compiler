@@ -33,7 +33,7 @@ def _frontmatter(artifact: dict) -> dict:
 # The supersession declaration is not a reference to what it replaces. Naming the artifact you stand
 # in place of is the whole point of the relation; counting it as a reach would make every correct
 # supersession its own violation. Which parts declare supersession is the platform's declaration
-# (`supersession` in artifact::VOCAB_DECLARATION_REPRESENTATION_V0), not a list kept here.
+# (`supersession` in artifact::VOCAB_DECLARATION_REPRESENTATION_V1), not a list kept here.
 
 def _successors(frontmatter: dict) -> list:
     """The successors an artifact names, however it names them.

@@ -66,7 +66,7 @@ def _extract_fqdn_references(artifact: dict) -> set[str]:
     The full names the artifact refers to: what S1 read from its declared reference parts.
 
     What names another artifact is declared, never inferred
-    (artifact::VOCAB_DECLARATION_REPRESENTATION_V0). A full name anywhere else is refused at S1
+    (artifact::VOCAB_DECLARATION_REPRESENTATION_V1). A full name anywhere else is refused at S1
     (E105), so nothing undeclared reaches here. A supersession part — `supersedes`, `superseded_by`
     — names an artifact without reaching it: it records history, so a predecessor deleted by record
     leaves it standing, and `supersession_agreement` checks it against the ledger instead.

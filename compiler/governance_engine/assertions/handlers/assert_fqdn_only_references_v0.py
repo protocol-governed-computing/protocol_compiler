@@ -4,7 +4,7 @@ ASSERT_FQDN_ONLY_REFERENCES_V0 Handler
 Validates that a reference part requiring a full name holds one (`namespace::artifact_code`).
 
 Which parts require a full name is the platform's declaration, `full_name_required` in
-`artifact::VOCAB_DECLARATION_REPRESENTATION_V0`. This handler kept its own list of four, and the
+`artifact::VOCAB_DECLARATION_REPRESENTATION_V1`. This handler kept its own list of four, and the
 record of references refused short codes in a list of nine; one rule was enforced twice, from two
 lists. It is enforced here, once, from the declaration, and the record only records.
 

@@ -1,7 +1,7 @@
 """
 What a declaration's parts are: which name another artifact, and which carry no meaning.
 
-The platform declares it once, in `artifact::VOCAB_DECLARATION_REPRESENTATION_V0`. Every place that
+The platform declares it once, in `artifact::VOCAB_DECLARATION_REPRESENTATION_V1`. Every place that
 finds a reference reads it from here: the record of references S1 builds, the check that nothing
 reaches a stood-down artifact, and the check that a reference is written in full. Before it was
 declared, four places each kept a list of their own, and they disagreed about what a reference is.
@@ -19,12 +19,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V0"
+DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V1"
 
 FULL_NAME = re.compile(r"^[a-z_][a-z0-9_]*::[A-Z][A-Z0-9_]*$")
 
 GROUPS = ("documentation", "unordered", "reference", "reference_keyed", "full_name_required",
-          "supersession", "sameness_rules")
+          "supersession", "data", "sameness_rules")
 
 
 class RepresentationUnavailable(ValueError):
@@ -39,6 +39,7 @@ class Representation:
     reference_keyed: frozenset[str]
     full_name_required: frozenset[str]
     supersession: frozenset[str]
+    data: frozenset[str]
     sameness_rules: frozenset[str]
 
     @classmethod
@@ -67,8 +68,8 @@ class Representation:
         """The full names a declaration refers to, and where it writes a full name undeclared.
 
         A full name at or beneath a reference part is a reference, and so is a full-name key of a
-        keyed reference part. A supersession part names an artifact without reaching it. The
-        artifact's own identity is not a reference. Any other full name is undeclared.
+        keyed reference part. A supersession part names an artifact without reaching it, and a data
+        part holds values, so neither is read for references. The artifact's own identity is not a reference. Any other full name is undeclared.
         """
         found: set[str] = set()
         undeclared: list[str] = []
@@ -76,7 +77,7 @@ class Representation:
         def walk(value: Any, path: str, under: bool) -> None:
             if isinstance(value, dict):
                 for key, item in value.items():
-                    if key in self.supersession:
+                    if key in self.supersession or key in self.data:
                         continue
                     if key in self.reference_keyed and isinstance(item, dict):
                         for name, inner in item.items():

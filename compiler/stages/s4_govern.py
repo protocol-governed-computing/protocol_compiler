@@ -344,7 +344,7 @@ def _project_single_node(node) -> dict[str, Any]:
         "module_path": node.metadata.get("module_path", "") if node.metadata else "",
         "content": node.metadata.get("content", "") if node.metadata else "",
         # The full names the declaration refers to, as S1 read them from the parts the platform
-        # declares references (artifact::VOCAB_DECLARATION_REPRESENTATION_V0). Carried so a closure
+        # declares references (artifact::VOCAB_DECLARATION_REPRESENTATION_V1). Carried so a closure
         # check resolves what the declaration refers to, and never re-infers it from the text.
         "references": list(node.metadata.get("references", [])) if node.metadata else [],
     }

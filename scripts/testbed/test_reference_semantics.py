@@ -3,8 +3,9 @@ One declaration says what a reference is, and every place that finds one reads i
 
 The record of references read a fixed list of nine parts, the reach check read every value, the
 FQDN-only check kept a list of four, and nothing compared two declarations at all. The platform now
-declares the parts in `artifact::VOCAB_DECLARATION_REPRESENTATION_V0`: the reference parts, the
-keyed ones, the ones that require a full name, and the ones that declare supersession. S1 records
+declares the parts in `artifact::VOCAB_DECLARATION_REPRESENTATION_V1`: the reference parts, the
+keyed ones, the ones that require a full name, the ones that declare supersession, and the ones
+that hold data. S1 records
 from it and refuses a full name written anywhere else; both reference checks read it.
 """
 import re
@@ -22,7 +23,7 @@ from compiler.governance_engine.assertions.handlers.assert_superseded_not_refere
 
 WORKSPACE = Path(__file__).resolve().parents[3]
 SOURCE = (WORKSPACE / "software_governance" / "registry" / "artifact" / "vocabulary"
-          / "VOCAB_DECLARATION_REPRESENTATION_V0.md")
+          / "VOCAB_DECLARATION_REPRESENTATION_V1.md")
 
 
 def declared() -> dict:
@@ -101,6 +102,19 @@ def test_full_name_keys_of_a_binding_are_references_and_field_names_are_not():
     assert found == {"capability_side_effects::CS_REGISTRY_V0", "probe::STRUCTURE_STORE_V0"} \
         and not undeclared, (found, undeclared)
 
+
+
+def test_a_full_name_in_a_vectors_cases_is_a_value_not_a_reference():
+    fm = {"cases": [{"case_id": "c1", "bindings": {"design": {"actor": "probe::AC_READER_V0"}},
+                     "expected": {"rendered": [{"governed_by": "governance::CONSTITUTION_X_V0"}]}}]}
+    assert REP.references(fm, "probe::TEST_DATA_CT_V0") == (set(), [])
+
+
+def test_the_transform_a_vector_tests_is_still_a_reference():
+    fm = {"target": "probe::CT_PURE_RENDER_V0",
+          "cases": [{"case_id": "c1", "bindings": {"code": "probe::CT_PURE_RENDER_V0"}}]}
+    found, undeclared = REP.references(fm, "probe::TEST_DATA_CT_V0")
+    assert found == {"probe::CT_PURE_RENDER_V0"} and not undeclared, (found, undeclared)
 
 # --- a short code where a full name is required -------------------------------------------------
 

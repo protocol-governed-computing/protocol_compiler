@@ -42,7 +42,9 @@ for arg in "$@"; do
 done
 
 if [[ -z "$STRUCTURE" ]]; then
-  manifest="$(ls "$DOMAIN_ROOT"/registry/structures/STRUCTURE_BUILD_*_CONFIG_V*.md 2>/dev/null | head -1 || true)"
+  # The live manifest: a superseded one stays in the registry as history until it is deleted, and
+  # building from it would build the domain as it was.
+  manifest="$(grep -L '^superseded_by:' "$DOMAIN_ROOT"/registry/structures/STRUCTURE_BUILD_*_CONFIG_V*.md 2>/dev/null | head -1 || true)"
   [[ -n "$manifest" ]] || { echo "No STRUCTURE_BUILD_*_CONFIG manifest under $DOMAIN_ROOT/registry/structures" >&2; exit 1; }
   STRUCTURE="$(basename "$manifest" .md)"
 fi
@@ -66,4 +68,5 @@ echo
 # not the code behind it. The compiler never imports the runtime; this script composes the two tools.
 # A refused transform fails the build; an unproven one is reported by name.
 echo
-exec "$UMBRELLA/protocol_runtime/run.sh" conformance "$DOMAIN_ROOT"
+# Named, because a domain whose manifest was superseded compiles both until the old one is deleted.
+exec "$UMBRELLA/protocol_runtime/run.sh" conformance "$DOMAIN_ROOT" --structure "$STRUCTURE"
