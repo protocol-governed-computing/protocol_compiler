@@ -28,6 +28,7 @@ from compiler.graph.evidence import EventFamily, EvidenceGraph
 from compiler.graph.hashing import compute_projection_hash
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
+from compiler.governance_engine.platform_root import output_root
 from compiler.projections import (
     COMPILER_VERSION,
     EVIDENCE_GRAPH_SCHEMA_VERSION,
@@ -36,6 +37,17 @@ from compiler.projections import (
     Projection,
     get_structure_scope,
 )
+
+
+def _recorded(path: Path, structure_config: dict[str, Any]) -> str:
+    """A written path as the evidence records it: relative to the build's declared output root.
+
+    The evidence is sealed into the snapshot, so an absolute path made the snapshot's identity
+    depend on the directory the build ran in: one declaration built in two places sealed two
+    identities. Relative to the root the configuration declares, the record is the same wherever
+    the build runs. A path outside that root is a defect, and raises.
+    """
+    return Path(path).relative_to(output_root(structure_config)).as_posix()
 
 
 def s7_materialize(state: State) -> State:
@@ -155,7 +167,7 @@ def s7_materialize(state: State) -> State:
             stage="S7_MATERIALIZE",
             operation="artifact_written",
             subject_fqdn=fqdn,
-            detail={"output_path": str(output_path), "artifact_type": artifact_type},
+            detail={"output_path": _recorded(output_path, structure_config), "artifact_type": artifact_type},
             family=EventFamily.MATERIALIZATION.value,
         ))
 
@@ -416,7 +428,7 @@ def _materialize_vocabulary(
             operation="vocabulary_materialized",
             detail={
                 "structure_id": structure_id,
-                "output_dir": str(structure_dir),
+                "output_dir": _recorded(structure_dir, structure_config),
                 "files_written": len(written),
             },
             family=EventFamily.MATERIALIZATION.value,
@@ -531,7 +543,7 @@ def _materialize_tokenized(
             operation="tokenized_materialized",
             detail={
                 "structure_id": structure_id,
-                "output_dir": str(structure_dir),
+                "output_dir": _recorded(structure_dir, structure_config),
                 "files_written": len(written),
                 "node_count": len(nodes),
                 "edge_count": len(edges),
@@ -644,8 +656,8 @@ def _materialize_dispatch_and_handlers(
             operation="dispatch_handlers_materialized",
             detail={
                 "structure_id": structure_id,
-                "output_dir": str(structure_dir),
-                "files_written": written,
+                "output_dir": _recorded(structure_dir, structure_config),
+                "files_written": [_recorded(path, structure_config) for path in written],
             },
             family=EventFamily.MATERIALIZATION.value,
         ))
@@ -762,7 +774,7 @@ def _materialize_evidence(
             operation="evidence_materialized",
             detail={
                 "structure_id": structure_id,
-                "output_dir": str(structure_dir),
+                "output_dir": _recorded(structure_dir, structure_config),
                 "files_written": len(written),
                 "node_count": len(nodes),
                 "edge_count": len(edges),
@@ -873,7 +885,7 @@ def _materialize_evidence_graph(
         operation="evidence_graph_materialized",
         detail={
             "structure_id": structure_id,
-            "output_dir": str(structure_dir),
+            "output_dir": _recorded(structure_dir, structure_config),
             "event_count": eg.event_count,
             "edge_count": eg.edge_count,
             "evidence_graph_hash": evidence_graph_hash,
@@ -1065,7 +1077,7 @@ def _generate_conformance_tests(
                 stage="S7_MATERIALIZE",
                 operation="conformance_written",
                 subject_fqdn=runnable["fqdn"],
-                detail={"output_path": str(output_path), "test_data_source": td_node.fqdn},
+                detail={"output_path": _recorded(output_path, structure_config), "test_data_source": td_node.fqdn},
                 family=EventFamily.MATERIALIZATION.value,
             ))
 
