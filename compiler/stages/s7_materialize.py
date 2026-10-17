@@ -79,7 +79,11 @@ def s7_materialize(state: State) -> State:
         artifact = projections[fqdn]
         artifact_type = artifact.get("artifact_type", "")
         artifact_code = artifact.get("artifact_code", "")
-        layer_code = artifact.get("layer_code", "")
+        # Where an artifact is written is its node's layer in this build. For an artifact this
+        # domain authors that is also the layer its record states; a capability carried from the
+        # platform records the platform's layer and is written under this domain's.
+        node = state.graph.get_node(fqdn)
+        layer_code = node.layer_code if node is not None else artifact.get("layer_code", "")
         domain_name = artifact.get("domain_name")
 
         if not layer_code:

@@ -602,7 +602,12 @@ def _inject_imported_capabilities(
     them. But a capability the domain *invokes* in a CC pipeline must be executable here: its compiled
     node is loaded from the imported domain's canonical snapshot (bringing its machine.implementation),
     added to this graph, and then addressed + wired + emitted like a native node. The capability's
-    governance/authoring stays platform-owned; the consumer carries only its execution binding.
+    governance/authoring stays platform-owned.
+
+    The consumer's copy is the same artifact, so its canonical record is the platform's record: the
+    same version, content, references and layer. Only where it is written differs. The node's
+    `layer_code` is that placement, this domain's own layer; the record's layer travels in
+    `metadata.recorded_layer_code`, and the canonical projection writes it.
     """
     import json
 
@@ -636,13 +641,12 @@ def _inject_imported_capabilities(
         kind = _type_to_kind(raw.get("artifact_type"))
         if kind is None:
             continue
-        m = re.search(r"_V(\d+)$", artifact_code)
         builder.add_node(Node.create(
             fqdn=fqdn,
             kind=kind,
             namespace=namespace,
             artifact_code=artifact_code,
-            version=f"V{m.group(1)}" if m else "V0",
+            version=raw["version"],
             layer_code=domain_layer,
             content_hash=raw.get("content_hash", ""),
             frontmatter=raw.get("frontmatter", {}),   # carries machine.implementation → cs_ir/ct_ir in S5
@@ -652,6 +656,9 @@ def _inject_imported_capabilities(
                 "import_role": "execution",   # linked into the domain runtime AND emitted
                 "import_domain": domain,
                 "module_path": raw.get("module_path", ""),
+                "content": raw["content"],
+                "references": list(raw["references"]),
+                "recorded_layer_code": raw["layer_code"],
             },
         ))
 
