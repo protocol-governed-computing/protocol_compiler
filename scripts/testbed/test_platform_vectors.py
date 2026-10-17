@@ -74,7 +74,7 @@ def test_the_platform_materializes_its_vectors_and_writes_their_cases():
         vectors = sorted(json.loads(p.read_text())["frontmatter"]["target"]
                          for p in (compiled / "canonical" / "test_data").glob("*.json"))
         declared = sorted((surface / "capability_transforms/registry/test_data").glob("*.md"))
-        assert len(vectors) == len(declared) == PLATFORM_TRANSFORMS - 1, vectors
+        assert len(vectors) == len(declared) == PLATFORM_TRANSFORMS, vectors
         cases = [json.loads(p.read_text()) for p in (compiled / "transform_conformance").glob("*.json")]
         assert cases and {c["ct_fqdn"] for c in cases} == set(vectors), sorted({c["ct_fqdn"] for c in cases})
 

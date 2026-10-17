@@ -129,7 +129,9 @@ def _project_node(node: Node) -> dict[str, Any] | None:
         "artifact_type": _resolve_artifact_type(node),
         "namespace": node.namespace,
         "version": node.version,
-        "layer_code": node.layer_code,
+        # A capability carried from the platform records the platform's layer; its node's
+        # `layer_code` is only where this build writes it (s1 `_inject_imported_capabilities`).
+        "layer_code": metadata.get("recorded_layer_code", node.layer_code),
         # `module_path` is deliberately NOT projected. It is where the source file sat, which is a
         # property of the file and not of the semantic object (MB-3, `4c` §2.2). Carrying it into a
         # projection the snapshot identity covers made a pure relocation change the composite

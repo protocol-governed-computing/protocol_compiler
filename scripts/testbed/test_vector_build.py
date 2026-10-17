@@ -3,7 +3,7 @@ Test vectors through a real domain build — the compiler's half of transform_co
 
 The assertion tests judge each check in isolation, and all of them passed while the build could not
 parse a vector at all and silently skipped two of the rules written for vectors. So this builds a real
-domain: a copy of the reference workload, given one vector, compiled against the platform surface
+domain: a copy of the reference workload, its step transform's vector replaced by the one below, compiled against the platform surface
 exactly as `compile_domain.sh` builds any domain: compile, then conformance. The clean vector must compile,
 write its runnable cases and prove its transform; each declaration defect must stop the compile on the
 rule that names it, before conformance runs; a transform that does not do what its vector says must
@@ -84,14 +84,9 @@ TAMPERS = {
 def _domain(root: Path, vector: str) -> Path:
     domain = root / "collatz"
     shutil.copytree(COLLATZ, domain, ignore=shutil.ignore_patterns("snapshot", "__pycache__"))
-    manifest = domain / MANIFEST
-    text = manifest.read_text()
-    text = text.replace("  - TI\n  - TE\noutput_configuration:\n",
-                        "  - TI\n  - TE\n  - TEST_DATA\noutput_configuration:\n"
-                        "  conformance:\n    layer: GOVERNANCE\n    subpath: compiled/transform_conformance\n")
-    assert "TEST_DATA" in text, "the reference workload's manifest changed shape; update this test"
-    manifest.write_text(text)
-    (domain / VECTOR).parent.mkdir(parents=True, exist_ok=True)
+    text = (domain / MANIFEST).read_text()
+    assert "  - TEST_DATA\n" in text and "transform_conformance" in text, \
+        "the reference workload's manifest no longer builds vectors; update this test"
     (domain / VECTOR).write_text(vector)
     return domain
 
@@ -102,7 +97,7 @@ def _build(vector: str) -> tuple[int, str, list[str]]:
         run = subprocess.run([str(W / "protocol_compiler" / "compile_domain.sh"), str(domain)],
                              capture_output=True, text=True)
         cases = sorted(p.name for p in (domain / "snapshot/compiled/transform_conformance").glob("*.json")
-                       if p.name != "result.json")
+                       if p.name.startswith("workload__CT_PURE_COLLATZ_STEP_V0__"))
         if cases:
             first = json.loads((domain / "snapshot/compiled/transform_conformance" / cases[0]).read_text())
             assert first["ct_fqdn"] == "workload::CT_PURE_COLLATZ_STEP_V0", first
@@ -128,8 +123,7 @@ def test_each_defect_stops_the_build_on_its_own_rule():
 def test_the_build_proves_the_vector_after_compiling():
     code, out, _ = _build(CLEAN)
     assert code == 0, out[-1500:]
-    assert "[conformance] workload: 1 proven, 1 unproven, 0 refused" in out, out[-800:]
-    assert "UNPROVEN  workload::CT_PURE_TERMINATION_CHECK_V0" in out, out[-800:]
+    assert "[conformance] workload: 2 proven, 0 unproven, 0 refused" in out, out[-800:]
 
 
 def test_a_transform_that_does_not_do_what_its_vector_says_fails_the_build():
