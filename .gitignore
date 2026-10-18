@@ -12,5 +12,3 @@ dist/
 # never a second declaration of the composition ordinal
 compiler/VERSION
 
-# local agent guidance — not committed
-CLAUDE.md

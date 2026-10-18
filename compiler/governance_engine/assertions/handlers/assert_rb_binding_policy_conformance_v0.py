@@ -19,9 +19,7 @@ CONSTITUTIONAL: Pure rule checker — reads artifact frontmatter only.
 
 # CS types whose runtime implementations call policy['path'] directly.
 # These must declare a non-empty policy.path in every RB binding.
-# Currently empty: all current CS types use STRUCTURE-based or entity-based resolution.
-# CS_REGISTRY_V0 was removed when it migrated to entity-based __store_entity__
-# resolution (same pattern as CS_APPENDONLY_JSONL_V0).
+# Empty: every CS type resolves through a STRUCTURE or through an entity (`__store_entity__`).
 _FILE_PATH_CS_TYPES = frozenset()
 
 

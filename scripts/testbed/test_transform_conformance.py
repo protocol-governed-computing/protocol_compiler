@@ -1,5 +1,5 @@
 """
-Transform conformance — the compiler's half of software_governance/dossiers/transform_conformance (held at the v5 tag).
+Transform conformance, in the compiler.
 
 Each refusal the vector assertions declare is shown to fire on a vector built to trip it, and to stay
 silent on one that keeps the rule: a check that has only ever been seen green has not been seen to
