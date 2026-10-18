@@ -21,10 +21,9 @@ def _frontmatter(artifact: dict) -> dict:
 def _owning_subdomain(artifact: dict) -> str | None:
     """The owning subdomain, read from the artifact's declared `concern`.
 
-    Declared, never derived. This previously split `module_path` — the artifact's source directory —
-    which made a governance determination follow filesystem position and put a determining fact
-    outside the declaration surface (MB-1, `4c` §4.1, `2e` CA-8). The value is unchanged: `concern`
-    was migrated from exactly what the path derived.
+    Declared, never derived. Splitting `module_path` — the artifact's source directory — would make a
+    governance determination follow filesystem position and put a determining fact outside the
+    declaration surface (MB-1, `4c` §4.1, `2e` CA-8).
     """
     return _frontmatter(artifact).get("concern") or None
 

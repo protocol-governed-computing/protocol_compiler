@@ -4,12 +4,11 @@
 which rules that closure supplied, what each predicate yielded, what the dominant consequence was,
 and that the resulting state is what that consequence permitted.
 
-Construction previously produced none. A refused build wrote a diagnostic to stderr and exited 1, so
-the determination *this candidate set is inadmissible under this closure* — the exact subject of
-`3e` §3.3 — left no checkable record anywhere. Admissions were evidenced by their output; refusals
-by nothing, which is EV-3 and EN-12 breached in the direction that matters, since a system recording
-what it permitted and not what it refused has a record of its work proceeding rather than of its
-governance operating.
+A refused build records its refusal here. Without the record, the determination *this candidate set
+is inadmissible under this closure* — the exact subject of `3e` §3.3 — leaves only a diagnostic on
+stderr and exit 1. Admissions are evidenced by their output, and refusals would be evidenced by
+nothing: EV-3 and EN-12 breached in the direction that matters. A system recording what it permitted
+and not what it refused has a record of its work proceeding rather than of its governance operating.
 
 **A record is not usable output.** `4a` GC-6 forbids a refused construction producing usable output,
 and `1c` AI-8 states the boundary exactly: after refusal the governed state is as though the proposal

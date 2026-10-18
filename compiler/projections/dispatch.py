@@ -105,9 +105,9 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     # order is normative, so what is sealed is a list even where the declaration names one, and the
     # runtime never has to know which form the author wrote.
     wf_emits: dict[str, dict[str, list[str]]] = {}
-    # Every declared ending, by node key. An EXIT carries no address, so the sealed representation
-    # previously carried no trace of it — and a transition to a declared ending was indistinguishable
-    # at runtime from an outcome nobody routed. `3a` EX-5 requires an outcome with no declared
+    # Every declared ending, by node key. An EXIT carries no address, so without this the sealed
+    # representation carries no trace of it — and a transition to a declared ending is
+    # indistinguishable at runtime from an outcome nobody routed. `3a` EX-5 requires an outcome with no declared
     # routing to REFUSE, which is unenforceable while the two look the same.
     wf_exit_keys: dict[str, dict[str, str]] = {}
 

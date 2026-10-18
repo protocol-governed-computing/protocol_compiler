@@ -125,8 +125,8 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     # No need to check for runtime.py files
     # (CT are resolved via direct code import, not RB bindings)
 
-    # (Legacy artifact_code presence validation retired: identity is carried by fqdn and the kind by
-    # artifact_kind (Kind Vocabulary); artifact_code is no longer a machine-block field.)
+    # (Identity is carried by fqdn and the kind by artifact_kind (Kind Vocabulary); there is no
+    # artifact_code machine-block field to validate.)
 
     # Return result
     if violations:

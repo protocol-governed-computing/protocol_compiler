@@ -81,8 +81,8 @@ def compile(
     """
     structures = list(structure)
     # No default and no "all": a platform is whatever a build configuration declares, and none is
-    # minimal by nature (6a §8). Both defaults named a configuration that no longer builds, and the
-    # "all" list named domain builds a platform invocation cannot reach.
+    # minimal by nature (6a §8). A default would name one configuration as the platform, and an
+    # "all" list would name domain builds a platform invocation cannot reach.
     if not structures:
         raise click.UsageError("name the build configuration: --structure STRUCTURE_BUILD_<...>_CONFIG_V<n>")
 
