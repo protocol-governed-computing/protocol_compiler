@@ -413,7 +413,6 @@ class LayerResolver:
         EXPLICIT BOOTSTRAP BOUNDARY
         This method should ONLY be used during:
         - Domain discovery (ct_scan_artifacts._discover_domains)
-        - Protocol loader bootstrap (protocol_loader discovery phase)
 
         DO NOT USE for runtime path resolution — use resolve_layer_root() instead.
 

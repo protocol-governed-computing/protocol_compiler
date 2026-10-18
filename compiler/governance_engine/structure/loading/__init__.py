@@ -3,7 +3,6 @@ structure.loading — Protocol artifact loading runtime
 
 This package provides all runtime functionality for loading protocol artifacts:
 - Filesystem reading (fs_reader)
-- Protocol orchestration (protocol_loader)
 - Trace loading (trace_reader)
 - Test case loading (test_case_provider)
 - Markdown parsing (markdown_parser)
@@ -14,13 +13,11 @@ ARCHITECTURAL BOUNDARY:
 - Structure layer: Provides runtime loading/parsing (this package)
 - Governance layer: Uses structure for loading, adds validation/schemas
 - Builder/Authoring: Uses structure for artifact discovery
-- Execution: Uses structure for protocol loading
 
 No component should implement file I/O or parsing outside this package.
 """
 
 from compiler.governance_engine.structure.loading.fs_reader import ProtocolFSReader
-from compiler.governance_engine.structure.loading.protocol_loader import ProtocolLoader
 from compiler.governance_engine.structure.loading.trace_reader import (
     TraceLoadError,
     load_trace,
@@ -57,7 +54,6 @@ from compiler.governance_engine.structure.loading.vocabulary_loader import (
 __all__ = [
     # Existing
     "ProtocolFSReader",
-    "ProtocolLoader",
     # Trace loading
     "TraceLoadError",
     "load_trace",

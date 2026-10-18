@@ -171,7 +171,7 @@ class BuiltInArtifactRegistry:
         return d.node_kind if d else None
 
     def directory(self, prefix: str) -> str:
-        """Output directory for a type prefix. Raises ValueError (legacy contract) if unmapped."""
+        """Output directory for a type prefix. Raises ValueError if unmapped."""
         d = self._by_prefix.get(prefix)
         if d is None or d.materialization_directory is None:
             valid = sorted(p for p, x in self._by_prefix.items() if x.materialization_directory)

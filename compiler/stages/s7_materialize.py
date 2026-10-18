@@ -18,7 +18,7 @@ from typing import Any
 
 
 from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
-from compiler.governance_engine.structure.loading.protocol_loader import _get_artifact_type_dir_from_prefix
+from compiler.governance_engine.artifact_kinds import REGISTRY
 
 from compiler.graph.types import NodeKind
 from compiler.graph.graph import Graph
@@ -115,7 +115,7 @@ def s7_materialize(state: State) -> State:
         # Build output path
         encoded_fqdn = fqdn.replace("::", "__")
         try:
-            type_dir_name = _get_artifact_type_dir_from_prefix(artifact_type)
+            type_dir_name = REGISTRY.directory(artifact_type)
         except ValueError as e:
             errors.append(CompilerError(
                 code=ErrorCode.E301_WRITE_FAILED,

@@ -15,7 +15,6 @@ Quick imports for common use:
 from compiler.governance_engine.structure.resolution import LayerResolver
 from compiler.governance_engine.structure.loading import (
     ProtocolFSReader,
-    ProtocolLoader,
     load_trace,
     TestCase,
     load_test_cases,
@@ -34,7 +33,6 @@ __all__ = [
     "LayerResolver",
     # Loading (commonly used)
     "ProtocolFSReader",
-    "ProtocolLoader",
     "load_trace",
     "TestCase",
     "load_test_cases",

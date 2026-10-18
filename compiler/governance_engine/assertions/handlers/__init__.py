@@ -13,14 +13,12 @@ Any handler not in this registry MUST cause compile failure.
 
 # Explicit static imports (no dynamic discovery)
 from compiler.governance_engine.assertions.handlers.assert_assert_parity_v0 import execute as assert_assert_parity_v0
-from compiler.governance_engine.assertions.handlers.assert_atom_output_purity_v0 import execute as assert_atom_output_purity_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_capability_binding_valid_v0 import execute as assert_cc_capability_binding_valid_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_inputs_satisfied_v0 import execute as assert_cc_inputs_satisfied_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_no_implicit_chaining_v0 import execute as assert_cc_no_implicit_chaining_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_no_missing_dependencies_v0 import execute as assert_cc_no_missing_dependencies_v0
 from compiler.governance_engine.assertions.handlers.assert_cc_no_unused_outputs_v0 import execute as assert_cc_no_unused_outputs_v0
 from compiler.governance_engine.assertions.handlers.assert_cs_surface_closed_v0 import execute as assert_cs_surface_closed_v0
-from compiler.governance_engine.assertions.handlers.assert_ct_output_contract_match_v0 import execute as assert_ct_output_contract_match_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_input_typed_v0 import execute as assert_ct_input_typed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_closed_v0 import execute as assert_ct_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_ct_surface_derived_closed_v1 import execute as assert_ct_surface_derived_closed_v1
@@ -35,7 +33,6 @@ from compiler.governance_engine.assertions.handlers.assert_vocabulary_symbols_we
 from compiler.governance_engine.assertions.handlers.assert_assert_not_runtime_referenced_v0 import execute as assert_assert_not_runtime_referenced_v0
 from compiler.governance_engine.assertions.handlers.assert_governance_declaration_resolves_v0 import execute as assert_governance_declaration_resolves_v0
 from compiler.governance_engine.assertions.handlers.assert_identity_fqdn_consistency import execute as assert_identity_fqdn_consistency
-from compiler.governance_engine.assertions.handlers.assert_no_smart_execution_v0 import execute as assert_no_smart_execution_v0
 from compiler.governance_engine.assertions.handlers.assert_no_undeclared_behavior_surface_v0 import execute as assert_no_undeclared_behavior_surface_v0
 from compiler.governance_engine.assertions.handlers.assert_protocol_surface_closed_v0 import execute as assert_protocol_surface_closed_v0
 from compiler.governance_engine.assertions.handlers.assert_test_data_match_ct_output_v0 import execute as assert_test_data_match_ct_output_v0
@@ -116,20 +113,17 @@ from compiler.governance_engine.assertions.handlers.assert_runtime_invariant_wir
 # Any handler not in this dict MUST cause compile failure
 HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_assert_parity_v0": assert_assert_parity_v0,
-    "pgc_governance.handlers.assert_atom_output_purity_v0": assert_atom_output_purity_v0,
     "pgc_governance.handlers.assert_cc_capability_binding_valid_v0": assert_cc_capability_binding_valid_v0,
     "pgc_governance.handlers.assert_cc_inputs_satisfied_v0": assert_cc_inputs_satisfied_v0,
     "pgc_governance.handlers.assert_cc_no_implicit_chaining_v0": assert_cc_no_implicit_chaining_v0,
     "pgc_governance.handlers.assert_cc_no_missing_dependencies_v0": assert_cc_no_missing_dependencies_v0,
     "pgc_governance.handlers.assert_cc_no_unused_outputs_v0": assert_cc_no_unused_outputs_v0,
     "pgc_governance.handlers.assert_cs_surface_closed_v0": assert_cs_surface_closed_v0,
-    "pgc_governance.handlers.assert_ct_output_contract_match_v0": assert_ct_output_contract_match_v0,
     "pgc_governance.handlers.assert_ct_input_typed_v0": assert_ct_input_typed_v0,
     "pgc_governance.handlers.assert_ct_surface_closed_v0": assert_ct_surface_closed_v0,
     "pgc_governance.handlers.assert_ct_surface_derived_closed_v1": assert_ct_surface_derived_closed_v1,
     "pgc_governance.handlers.assert_fqdn_only_references_v0": assert_fqdn_only_references_v0,
     "pgc_governance.handlers.assert_identity_fqdn_consistency": assert_identity_fqdn_consistency,
-    "pgc_governance.handlers.assert_no_smart_execution_v0": assert_no_smart_execution_v0,
     "pgc_governance.handlers.assert_no_undeclared_behavior_surface_v0": assert_no_undeclared_behavior_surface_v0,
     "pgc_governance.handlers.assert_protocol_surface_closed_v0": assert_protocol_surface_closed_v0,
     "pgc_governance.handlers.assert_test_data_match_ct_output_v0": assert_test_data_match_ct_output_v0,
