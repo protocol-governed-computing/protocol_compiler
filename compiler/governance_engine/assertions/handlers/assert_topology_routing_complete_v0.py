@@ -25,7 +25,7 @@ Validation scope: step routing completeness against declared step result surface
 Execution topology validation is structural, not semantic.
 """
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded_in
 
 
 def _declared(step: dict, compilation_context: dict) -> set[str] | None:
@@ -59,10 +59,11 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     violations = []
     cc_count = 0
 
+    retired = superseded_in(artifacts, compilation_context)
     for artifact in artifacts:
         if artifact.get("artifact_type") != "CC":
             continue
-        if not in_force(artifact.get("frontmatter", {}) or {}):
+        if not in_force(artifact.get("fqdn_id", ""), retired):
             continue
 
         cc_count += 1

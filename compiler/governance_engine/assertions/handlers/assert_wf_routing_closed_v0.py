@@ -16,7 +16,7 @@ SU-7), so execution cannot reach any of its nodes and it is not checked. A node 
 intent this build cannot see is left to the reference checks.
 """
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded_in
 
 RULE = "workflow::INVARIANT_WF_ROUTING_CLOSED_V0"
 
@@ -61,10 +61,11 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
     violations = []
     wf_count = 0
+    retired = superseded_in(artifacts, compilation_context)
     for artifact in artifacts:
         if artifact.get("artifact_type") != "WF":
             continue
-        if not in_force(artifact.get("frontmatter", {}) or {}):
+        if not in_force(artifact.get("fqdn_id", ""), retired):
             continue
         wf_count += 1
         fqdn = artifact.get("fqdn_id", "unknown")

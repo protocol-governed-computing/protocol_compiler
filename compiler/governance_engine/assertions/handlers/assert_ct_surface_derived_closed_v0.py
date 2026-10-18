@@ -30,6 +30,8 @@ CONSTITUTIONAL: Pure rule checker — no side effects
 """
 from typing import Any
 
+from compiler.atoms.force import superseded_in
+
 RULE = "capability_transforms::INVARIANT_CT_SURFACE_DERIVED_CLOSED_V0"
 
 
@@ -101,10 +103,9 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
     imported = set(compilation_context.get("imported_surface_fqdns") or ())
 
     declared: set[str] = set()
-    # A superseded transform is history: unreachable from the executable projections by the
-    # platform's own declaration of `superseded_by`. It still resolves a reference to it, so it stays
-    # declared, but nothing is required to reach it.
-    superseded: set[str] = set()
+    # A superseded transform is history: an artifact in the composition names it in `supersedes`.
+    # It still resolves a reference to it, so it stays declared, but nothing is required to reach it.
+    retired = superseded_in(artifacts, compilation_context)
     invoked: set[str] = set()
     molecules: dict[str, set[str]] = {}
     for artifact in artifacts:
@@ -114,15 +115,13 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
         kind = _frontmatter(artifact).get("artifact_kind")
         if kind == "CAPABILITY_TRANSFORM":
             declared.add(fqdn)
-            if _frontmatter(artifact).get("superseded_by"):
-                superseded.add(fqdn)
             molecules[fqdn] = _steps(artifact)
         elif kind == "CAPABILITY_CONTRACT":
             invoked |= _invoked(artifact)
 
     invoked = _reached(invoked, molecules)
 
-    for ct_fqdn in sorted(declared - superseded - invoked):
+    for ct_fqdn in sorted(declared - retired - invoked):
         violations.append({
             "fqdn": ct_fqdn,
             "rule": RULE,

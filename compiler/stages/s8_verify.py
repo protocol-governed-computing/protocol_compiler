@@ -24,7 +24,7 @@ from compiler.graph.evidence import EventFamily
 from compiler.graph.hashing import compute_projection_hash
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded
 from compiler.atoms.sorting import ensure_deterministic_output
 from compiler.graph.graph import Graph
 from compiler.graph.types import NodeKind
@@ -750,8 +750,9 @@ def _verify_superseded_not_in_force(content: Any, coverage: list, graph: Graph) 
     entry = (content or {}).get("entry") or {}
     admission = (content or {}).get("admission") or {}
     ran = {c.get("fqdn_id") for c in coverage}
+    retired = superseded(node.frontmatter for node in graph.nodes.values())
     for fqdn, node in graph.nodes.items():
-        if in_force(node.frontmatter):
+        if in_force(fqdn, retired):
             continue
         reason = None
         if node.kind == NodeKind.WF and str(node.address) in entry:

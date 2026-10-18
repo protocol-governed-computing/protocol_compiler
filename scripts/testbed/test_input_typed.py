@@ -22,10 +22,8 @@ CONTEXT = {"imported_frontmatter": {"p::CT_CHECK": CHECK, "p::CT_REQUIRE_TRUE": 
                                     "p::CT_MEMBERSHIP": MEMBERSHIP, "p::CT_RATIO": RATIO}}
 
 
-def cc(pipeline, inputs=None, superseded=False):
+def cc(pipeline, inputs=None):
     frontmatter = {"core": {"inputs": inputs or {"sequences": {"type": "object"}}, "pipeline": pipeline}}
-    if superseded:
-        frontmatter["superseded_by"] = ["probe::CC_GATE_V1"]
     return {"artifact_type": "CC", "fqdn_id": "probe::CC_GATE_V0", "frontmatter": frontmatter}
 
 
@@ -74,9 +72,10 @@ def test_an_unseen_transform_or_undeclared_source_is_not_compared():
 
 
 def test_a_contract_not_in_force_is_not_checked():
-    gate = cc([{"step": "decide", "transform": "p::CT_REQUIRE_TRUE", "inputs": {"value": "yes"}}],
-              superseded=True)
-    assert found(gate) == []
+    gate = cc([{"step": "decide", "transform": "p::CT_REQUIRE_TRUE", "inputs": {"value": "yes"}}])
+    successor = {"probe::CC_GATE_V1": {"fqdn": "probe::CC_GATE_V1", "supersedes": "probe::CC_GATE_V0"}}
+    context = {**CONTEXT, "imported_frontmatter": {**CONTEXT["imported_frontmatter"], **successor}}
+    assert typed([gate], context)["violations"] == []
 
 
 if __name__ == "__main__":

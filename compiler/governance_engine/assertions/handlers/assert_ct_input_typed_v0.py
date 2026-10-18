@@ -21,7 +21,7 @@ it. A stood-down contract is not checked: it is present and not in force, and it
 
 from typing import Any
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded_in
 
 RULE = "capability_transforms::INVARIANT_CT_INPUT_TYPED_V0"
 
@@ -59,11 +59,12 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     violations: list[dict] = []
     checked = 0
 
+    retired = superseded_in(artifacts, compilation_context)
     for artifact in artifacts:
         if artifact.get("artifact_type") != "CC":
             continue
         cc = artifact.get("frontmatter", {}) or {}
-        if not in_force(cc):
+        if not in_force(artifact.get("fqdn_id", ""), retired):
             continue
         fqdn = artifact.get("fqdn_id", "unknown")
         contract_inputs = _types(cc, "inputs")

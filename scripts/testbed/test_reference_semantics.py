@@ -44,9 +44,11 @@ def test_the_declaration_names_both_rules_a_comparison_applies():
     assert REP.sameness_rules == {"explanation_only_as_text", "reference_to_declared_successor"}
 
 
-def test_a_stood_down_declaration_is_refused():
+def test_a_superseded_declaration_is_refused():
+    local = {DECLARATION: declared(),
+             "artifact::X_V2": {"fqdn": "artifact::X_V2", "supersedes": DECLARATION}}
     try:
-        Representation.from_frontmatter({**declared(), "superseded_by": ["artifact::X_V2"]})
+        locate(local, {})
     except RepresentationUnavailable as exc:
         assert "re-pointed" in str(exc)
     else:
@@ -90,7 +92,7 @@ def test_a_full_name_outside_every_declared_part_is_undeclared():
 
 
 def test_supersession_names_without_reaching_and_the_own_identity_is_not_a_reference():
-    fm = {"fqdn": "probe::CC_V1", "supersedes": "probe::CC_V0", "superseded_by": ["probe::CC_V2"]}
+    fm = {"fqdn": "probe::CC_V1", "supersedes": "probe::CC_V0"}
     assert REP.references(fm, "probe::CC_V1") == (set(), [])
 
 
@@ -127,7 +129,7 @@ def test_a_short_code_in_a_part_requiring_a_full_name_is_refused():
 def test_binding_keys_are_not_held_to_a_full_name():
     # A workflow's admission keys its bindings by short code, as its requires and forbids do, and a
     # test case keys them by field name. Short-code references are parked; none is refused here.
-    wf = artifact("probe::WF_V0", kind="WF", core={"admission": {"bindings": {"EV_DONE_V0": {}}}},
+    wf = artifact("probe::WF_V0", kind="WF", core={"bindings": {"EV_DONE_V0": {}}},
                   cases=[{"bindings": {"timestamp": 1}}])
     assert fqdn_only([wf], {"representation": REP})["status"] == "PASSED"
 
@@ -141,8 +143,14 @@ def test_a_reference_check_without_the_declaration_refuses():
 
 # --- nothing reaches a stood-down artifact ------------------------------------------------------
 
-RETIRED = artifact("probe::CC_OLD_V0", superseded_by=["probe::CC_NEW_V0"])
+RETIRED = artifact("probe::CC_OLD_V0")
 SUCCESSOR = artifact("probe::CC_NEW_V0", supersedes="probe::CC_OLD_V0")
+
+
+def test_a_successor_naming_an_absent_predecessor_is_not_refused():
+    # A predecessor the composition no longer holds was deleted; the retirement ledger answers for it.
+    successor = artifact("probe::CC_NEW_V0", supersedes="probe::CC_GONE_V0")
+    assert not_referenced([successor], {"representation": REP})["status"] == "PASSED"
 
 
 def test_a_full_name_reaching_a_stood_down_artifact_is_refused():

@@ -25,7 +25,7 @@ from compiler.graph.trace import TraceEvent
 from compiler.graph.evidence import EventFamily
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded
 from compiler.structure_loader import (
     load_structure_artifact,
     get_bootstrap_search_roots,
@@ -445,7 +445,7 @@ def _read_declared_fqdn(source_path: str) -> str | None:
     return None
 
 
-def _declared_mode(source_path: str, field: str) -> str | None:
+def _declared_mode(block: dict, field: str, retired: frozenset[str]) -> str | None:
     """The mode a boundary structure declares, if it is available to select.
 
     Read from the artifact rather than inferred from its name. The two agree today and a name is
@@ -458,18 +458,7 @@ def _declared_mode(source_path: str, field: str) -> str | None:
     by a successor would resolve to both it and its predecessor, and the arrangement would be
     undetermined between two artifacts that agree.
     """
-    try:
-        content = Path(source_path).read_text(encoding="utf-8")
-    except Exception:
-        return None
-    m = _MACHINE_BLOCK_PATTERN.search(content)
-    if not m:
-        return None
-    try:
-        block = yaml.safe_load(m.group("machine_yaml").rstrip())
-    except yaml.YAMLError:
-        return None
-    if not isinstance(block, dict) or not in_force(block):
+    if not isinstance(block, dict) or not in_force(str(block.get("fqdn") or ""), retired):
         return None
     mode = block.get(field)
     return mode if isinstance(mode, str) else None
@@ -537,8 +526,10 @@ def _select_boundary_modes(
             ))
             continue
 
+        blocks = {id(a): _machine_block(Path(a["source_path"])) for a in candidates}
+        retired = superseded(blocks.values())
         selected = [a for a in candidates
-                    if _declared_mode(a["source_path"], declares_in) == named]
+                    if _declared_mode(blocks[id(a)], declares_in, retired) == named]
         if len(selected) != 1:
             found = sorted(a.get("artifact_code", "?") for a in selected)
             errors.append(CompilerError(

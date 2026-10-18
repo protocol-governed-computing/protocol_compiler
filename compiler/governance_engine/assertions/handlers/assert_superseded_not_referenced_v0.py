@@ -1,10 +1,13 @@
 """
 ASSERT_SUPERSEDED_NOT_REFERENCED_V0 Handler
 
-Validates that:
-1. Every artifact declaring `superseded_by` names at least one successor
-2. Every named successor resolves to an artifact in the composition
-3. No **live** artifact references a superseded one
+Validates that no **live** artifact references a superseded one.
+
+The relation is declared once, on the successor, as `supersedes` (`4e` SU-3), and an artifact is
+superseded when an artifact present names it there. A predecessor declares nothing about its own
+retirement, so it cannot claim to be superseded by nothing: SU-4 holds by construction. A
+`supersedes` naming an identity the composition no longer holds is a predecessor deleted, and the
+retirement ledger, not this handler, answers for that deletion.
 
 Supersession is a declared relation between two exact identities, never a resolution rule. This
 handler is what makes the declaration mean something: without it a superseded artifact stays
@@ -17,6 +20,7 @@ what it said. Refusing that would oblige a change to rewrite the records it is r
 
 CONSTITUTIONAL: Pure rule checker — reads pre-computed structure from artifacts.
 """
+from compiler.atoms.force import predecessors
 
 
 def _identity(artifact: dict) -> tuple[str, str]:
@@ -35,19 +39,6 @@ def _frontmatter(artifact: dict) -> dict:
 # supersession its own violation. Which parts declare supersession is the platform's declaration
 # (`supersession` in artifact::VOCAB_DECLARATION_REPRESENTATION_V0), not a list kept here.
 
-def _successors(frontmatter: dict) -> list:
-    """The successors an artifact names, however it names them.
-
-    `superseded_by` is written as a list by construction and may be written as one identity by hand,
-    and both are the same declaration. Iterating the scalar form yields its characters: one
-    hand-authored supersession reported fifty-one violations, one per character of the successor's
-    FQDN, each claiming a successor named `t`, `r`, `a`… and the whole of it read as fifty-one
-    references to a retired artifact. Normalizing here is what makes the two spellings one fact.
-    """
-    value = frontmatter.get("superseded_by")
-    if not value:
-        return []
-    return [value] if isinstance(value, str) else list(value)
 
 
 
@@ -100,36 +91,17 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         }
     violations = []
 
-    superseded: dict[str, dict] = {}      # fqdn -> the artifact standing down
     by_identity: dict[str, str] = {}      # fqdn and bare code -> fqdn
+    successors: dict[str, list[str]] = {}  # predecessor fqdn -> the artifacts standing in its place
     for artifact in artifacts:
         fqdn, bare = _identity(artifact)
         if not fqdn:
             continue
         by_identity[fqdn] = fqdn
         by_identity.setdefault(bare, fqdn)
-        if _frontmatter(artifact).get("superseded_by"):
-            superseded[fqdn] = artifact
-
-    for fqdn, artifact in sorted(superseded.items()):
-        successors = _successors(_frontmatter(artifact))
-        if not successors:
-            violations.append({
-                "fqdn": fqdn,
-                "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
-                "message": (f"{fqdn} declares superseded_by with no successor — 'superseded' with "
-                            f"nothing standing in its place is a deletion wearing a softer word"),
-                "fix": "Name the artifact that stands in its place, or delete it deliberately.",
-            })
-        for successor in successors:
-            if str(successor) not in by_identity:
-                violations.append({
-                    "fqdn": fqdn,
-                    "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
-                    "message": (f"{fqdn} is superseded by {successor}, which is not in this "
-                                f"composition — the artifact standing in its place must exist"),
-                    "fix": f"Author {successor}, or correct the successor named.",
-                })
+        for predecessor in predecessors(_frontmatter(artifact)):
+            successors.setdefault(predecessor, []).append(fqdn)
+    superseded = {fqdn for fqdn in successors if fqdn in by_identity}
 
     if not superseded:
         return {"assert_count": len(artifacts), "violations": [], "status": "PASSED"}
@@ -143,14 +115,14 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
         for value in _reached(_frontmatter(artifact), fqdn, representation):
             target = by_identity.get(value)
             if target and target in superseded and target != fqdn:
-                successors = ", ".join(_successors(_frontmatter(superseded[target])))
+                standing = ", ".join(sorted(successors[target]))
                 violations.append({
                     "fqdn": fqdn,
                     "rule": "artifact::INVARIANT_SUPERSEDED_NOT_REFERENCED_V0",
-                    "message": (f"{fqdn} references {target}, which is superseded by {successors}. "
+                    "message": (f"{fqdn} references {target}, which is superseded by {standing}. "
                                 f"A superseded artifact is unreachable — reaching it means the "
                                 f"composition still runs what the design stood down"),
-                    "fix": f"Re-point the reference at one of: {successors}",
+                    "fix": f"Re-point the reference at one of: {standing}",
                 })
 
     return {

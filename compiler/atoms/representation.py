@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from compiler.atoms.force import predecessors
+
 DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V0"
 
 FULL_NAME = re.compile(r"^[a-z_][a-z0-9_]*::[A-Z][A-Z0-9_]*$")
@@ -44,10 +46,6 @@ class Representation:
 
     @classmethod
     def from_frontmatter(cls, frontmatter: dict) -> "Representation":
-        if frontmatter.get("superseded_by"):
-            raise RepresentationUnavailable(
-                f"{DECLARATION} is stood down by {frontmatter['superseded_by']}; the compiler reads "
-                f"it by exact identity and must be re-pointed to its successor")
         groups = {}
         for group in GROUPS:
             entries = (frontmatter.get(group) or {}).get("entries") if isinstance(
@@ -124,9 +122,22 @@ class Representation:
         return [(p.lstrip("."), v) for p, v in out]
 
 
+def _refuse_superseded(frontmatters) -> None:
+    standing = [fm.get("fqdn") for fm in frontmatters if DECLARATION in predecessors(fm)]
+    if standing:
+        raise RepresentationUnavailable(
+            f"{DECLARATION} is superseded by {', '.join(sorted(map(str, standing)))}; the compiler "
+            f"reads it by exact identity and must be re-pointed to its successor")
+
+
 def locate(local: dict[str, dict], build_config: dict) -> Representation:
-    """The declaration this build reads: compiled here, or in the platform surface it imports."""
+    """The declaration this build reads: compiled here, or in the platform surface it imports.
+
+    The compiler reads it by exact identity, so a superseded declaration is refused rather than read:
+    the code must be re-pointed to its successor.
+    """
     if DECLARATION in local:
+        _refuse_superseded(local.values())
         return Representation.from_frontmatter(local[DECLARATION])
     imp = (build_config.get("artifact_discovery", {}) or {}).get("import_surface", {}) or {}
     if not imp.get("domain"):
@@ -134,9 +145,11 @@ def locate(local: dict[str, dict], build_config: dict) -> Representation:
             f"{DECLARATION} is not in this build and the build imports no platform surface")
     from compiler.governance_engine.platform_root import platform_root
     canonical = platform_root() / "snapshot" / "compiled" / "canonical"
-    for path in sorted(Path(canonical).rglob("*.json")):
-        record = json.loads(path.read_text(encoding="utf-8"))
-        if isinstance(record, dict) and record.get("fqdn_id") == DECLARATION:
+    records = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(Path(canonical).rglob("*.json"))]
+    records = [r for r in records if isinstance(r, dict)]
+    _refuse_superseded(r.get("frontmatter") for r in records)
+    for record in records:
+        if record.get("fqdn_id") == DECLARATION:
             return Representation.from_frontmatter(record.get("frontmatter", {}) or {})
     raise RepresentationUnavailable(
         f"{DECLARATION} is not in the imported platform surface at {canonical}")

@@ -52,10 +52,8 @@ def context(*artifacts, imported=None):
             "imported_frontmatter": imported or {}}
 
 
-def wf(nodes, start="IN_PROBE_V0", superseded=False):
+def wf(nodes, start="IN_PROBE_V0"):
     fm = {"core": {"start_node": start, "nodes": nodes}}
-    if superseded:
-        fm["superseded_by"] = ["probe::WF_SUCCESSOR_V0"]
     return {"artifact_type": "WF", "fqdn_id": "probe::WF_PROBE_V0", "namespace": "probe",
             "frontmatter": fm}
 
@@ -130,8 +128,9 @@ def test_an_intent_node_must_answer_every_outcome_its_intent_declares():
 
 def test_a_superseded_workflow_is_not_checked():
     c = cc("probe::CC_V0", [], allowed=("SUCCESS", "BACKEND_ERROR"))
-    w = wf(nodes({"SUCCESS": "EXIT_DONE"}), superseded=True)
-    result = routing_closed([w], context(c, INTENT))
+    w = wf(nodes({"SUCCESS": "EXIT_DONE"}))
+    successor = {"probe::WF_SUCCESSOR_V0": {"fqdn": "probe::WF_SUCCESSOR_V0", "supersedes": "probe::WF_PROBE_V0"}}
+    result = routing_closed([w], context(c, INTENT, imported=successor))
     assert result["status"] == "PASSED" and result["assert_count"] == 0, result
 
 

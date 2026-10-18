@@ -18,14 +18,16 @@ from compiler.governance_engine.assertions.handlers.assert_topology_routing_comp
     execute as routing_complete)
 
 
-def cc(pipeline, allowed=("SUCCESS", "VIOLATION"), evaluation=None, superseded=False):
+def cc(pipeline, allowed=("SUCCESS", "VIOLATION"), evaluation=None):
     core = {"pipeline": pipeline, "result_status_contract": {"allowed": list(allowed)}}
     if evaluation:
         core["evaluation"] = evaluation
     frontmatter = {"core": core}
-    if superseded:
-        frontmatter["superseded_by"] = ["probe::CC_GATE_V1"]
     return {"artifact_type": "CC", "fqdn_id": "probe::CC_GATE_V0", "frontmatter": frontmatter}
+
+
+# The relation is declared on the successor: the probe contract is out of force while this is present.
+SUCCESSOR = {"probe::CC_GATE_V1": {"fqdn": "probe::CC_GATE_V1", "supersedes": "probe::CC_GATE_V0"}}
 
 
 def step(name, routes, surface=("SUCCESS", "VIOLATION")):
@@ -60,9 +62,9 @@ def test_a_condition_no_longer_counts_as_an_exit():
 
 
 def test_a_contract_not_in_force_is_not_checked():
-    gate = cc([step("check", {"SUCCESS": "evaluate_x", "VIOLATION": "exit"})], evaluation=CONDITION,
-              superseded=True)
-    assert contract_closed([gate], {}) == {"assert_count": 0, "violations": [], "status": "PASSED"}
+    gate = cc([step("check", {"SUCCESS": "evaluate_x", "VIOLATION": "exit"})], evaluation=CONDITION)
+    assert contract_closed([gate], {"imported_frontmatter": SUCCESSOR}) == {
+        "assert_count": 0, "violations": [], "status": "PASSED"}
 
 
 def test_routing_completeness_skips_a_contract_not_in_force():
@@ -74,8 +76,8 @@ def test_routing_completeness_skips_a_contract_not_in_force():
     in_force = cc([observe], allowed=("SUCCESS",))
     assert any("omits 'NOT_FOUND'" in v["message"]
                for v in routing_complete([in_force], context)["violations"])
-    stood_down = cc([observe], allowed=("SUCCESS",), superseded=True)
-    assert routing_complete([stood_down], context)["violations"] == []
+    stood_down = {**context, "imported_frontmatter": {**context["imported_frontmatter"], **SUCCESSOR}}
+    assert routing_complete([in_force], stood_down)["violations"] == []
 
 
 def test_uncontracted_and_unreachable_exits_are_still_refused():

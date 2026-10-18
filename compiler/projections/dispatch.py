@@ -32,7 +32,7 @@ Address space:
 from types import MappingProxyType
 from typing import Any
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded
 from compiler.graph.graph import Graph
 from compiler.graph.types import EdgeKind, NodeKind
 from compiler.graph.hashing import compute_projection_hash
@@ -362,8 +362,9 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     # A superseded workflow is present and not in force: compiled and inspectable, never a place
     # execution can start (`INVARIANT_SUPERSEDED_NOT_IN_FORCE_V0`). Its routing stays sealed so the
     # representation still realizes every transition it declares; without an entry nothing reaches it.
+    retired = superseded(n.frontmatter for n in graph.nodes.values())
     superseded_wf = {n.address for n in graph.nodes.values()
-                     if n.kind == NodeKind.WF and n.address >= 0 and not in_force(n.frontmatter)}
+                     if n.kind == NodeKind.WF and n.address >= 0 and not in_force(n.fqdn, retired)}
     entry: dict[str, dict[str, Any]] = {}
     for wf_addr, start_addr in wf_start.items():
         if wf_addr in superseded_wf:
@@ -388,7 +389,7 @@ def project_dispatch(graph: Graph) -> tuple[Projection, list[TraceEvent]]:
     # permits. Projecting the contract makes admission a determination over declared content.
     admission: dict[str, dict[str, Any]] = {}
     for _n in graph.nodes.values():
-        if _n.kind != NodeKind.IN or _n.address < 0 or not in_force(_n.frontmatter):
+        if _n.kind != NodeKind.IN or _n.address < 0 or not in_force(_n.fqdn, retired):
             continue
         _inputs = (_n.frontmatter.get("core", {}) or {}).get("inputs", {}) or {}
         if not hasattr(_inputs, "items"):

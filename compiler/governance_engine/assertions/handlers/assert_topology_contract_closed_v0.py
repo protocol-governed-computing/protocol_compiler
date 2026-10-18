@@ -21,7 +21,7 @@ stays in the record as it was sealed — a stood-down contract may still carry t
 successor replaced.
 """
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, superseded_in
 
 RULE = "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0"
 ROUTING_ANSWERS = ("continue", "exit")
@@ -31,11 +31,12 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     violations = []
     cc_count = 0
 
+    retired = superseded_in(artifacts, compilation_context)
     for artifact in artifacts:
         if artifact.get("artifact_type") != "CC":
             continue
         frontmatter = artifact.get("frontmatter", {}) or {}
-        if not in_force(frontmatter):
+        if not in_force(artifact.get("fqdn_id", ""), retired):
             continue
 
         cc_count += 1

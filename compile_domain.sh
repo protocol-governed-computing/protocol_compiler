@@ -43,8 +43,23 @@ done
 
 if [[ -z "$STRUCTURE" ]]; then
   # The live manifest: a superseded one stays in the registry as history until it is deleted, and
-  # building from it would build the domain as it was.
-  manifest="$(grep -L '^superseded_by:' "$DOMAIN_ROOT"/registry/structures/STRUCTURE_BUILD_*_CONFIG_V*.md 2>/dev/null | head -1 || true)"
+  # building from it would build the domain as it was. A manifest is superseded when another names it
+  # in `supersedes`, so the live one is the manifest no other names.
+  manifest="$(PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" python - "$DOMAIN_ROOT" <<'PY'
+import sys
+from pathlib import Path
+import yaml
+from compiler.atoms.force import in_force, superseded
+from compiler.structure_loader import extract_yaml_from_machine_section
+blocks = {}
+for path in sorted(Path(sys.argv[1], "registry", "structures").glob("STRUCTURE_BUILD_*_CONFIG_V*.md")):
+    block = yaml.safe_load(extract_yaml_from_machine_section(path.read_text(encoding="utf-8")))
+    if isinstance(block, dict):
+        blocks[path] = block
+retired = superseded(blocks.values())
+print(next((str(p) for p, b in blocks.items() if in_force(str(b.get("fqdn") or ""), retired)), ""))
+PY
+)"
   [[ -n "$manifest" ]] || { echo "No STRUCTURE_BUILD_*_CONFIG manifest under $DOMAIN_ROOT/registry/structures" >&2; exit 1; }
   STRUCTURE="$(basename "$manifest" .md)"
 fi

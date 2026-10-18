@@ -81,7 +81,7 @@ def output_root(structure: dict) -> Path:
     It resolves against the repository declaring the configuration — the directory holding its
     `registry/` — so a platform build and a domain build each write inside their own repository.
     """
-    from compiler.atoms.force import in_force
+    from compiler.atoms.force import in_force, superseded
     from compiler.structure_loader import (
         extract_yaml_from_machine_section,
         get_bootstrap_search_roots,
@@ -107,14 +107,17 @@ def output_root(structure: dict) -> Path:
         raise RuntimeError(f"{code} is not declared under a registry/ directory: {source}")
     repo = registry.parent
 
+    blocks: dict[Path, dict] = {}
     for other in sorted(registry.rglob("STRUCTURE_BUILD_*_CONFIG_*.md")):
-        if other == source:
-            continue
         try:
             block = yaml.safe_load(extract_yaml_from_machine_section(other.read_text(encoding="utf-8")))
         except (ValueError, yaml.YAMLError):
             continue
-        if not isinstance(block, dict) or not in_force(block):
+        if isinstance(block, dict):
+            blocks[other] = block
+    retired = superseded(blocks.values())
+    for other, block in blocks.items():
+        if other == source or not in_force(str(block.get("fqdn") or ""), retired):
             continue
         if (block.get("output_configuration") or {}).get("root") == declared:
             raise RuntimeError(

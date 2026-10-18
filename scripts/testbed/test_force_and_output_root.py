@@ -21,17 +21,19 @@ from types import SimpleNamespace
 os.environ.setdefault("PGC_PLATFORM_ROOT",
                       str(Path(__file__).resolve().parents[3] / "software_governance"))
 
-from compiler.atoms.force import in_force
+from compiler.atoms.force import in_force, predecessors, superseded
 from compiler.governance_engine.platform_root import output_root
 from compiler.graph.types import NodeKind
 from compiler.stages.s8_verify import _verify_superseded_not_in_force
 
-SUPERSEDED = {"superseded_by": ["probe::WF_UPDATE_V1"]}
+
+
+SUCCEEDS = {"supersedes": "probe::WF_UPDATE_V0"}
 
 
 def node(kind, address, frontmatter, code):
-    return SimpleNamespace(kind=kind, address=address, frontmatter=frontmatter, namespace="probe",
-                           artifact_code=code)
+    return SimpleNamespace(kind=kind, address=address, frontmatter={"fqdn": f"probe::{code}", **frontmatter},
+                           namespace="probe", artifact_code=code, fqdn=f"probe::{code}")
 
 
 def graph(*nodes):
@@ -42,28 +44,38 @@ def refused(content, coverage, g):
     return [e.fqdn_id for e in _verify_superseded_not_in_force(content, coverage, g)]
 
 
-def test_an_artifact_is_in_force_unless_it_declares_a_successor():
-    assert in_force({}) and in_force(None) and in_force({"superseded_by": []})
-    assert not in_force(SUPERSEDED)
+def test_an_artifact_is_out_of_force_when_a_successor_names_it():
+    retired = superseded([{"fqdn": "probe::WF_UPDATE_V1", "supersedes": "probe::WF_UPDATE_V0"},
+                          {"fqdn": "probe::CC_B_V1", "supersedes": ["CC_A_V0"]}, None, {}])
+    assert retired == {"probe::WF_UPDATE_V0", "probe::CC_A_V0"}
+    assert not in_force("probe::WF_UPDATE_V0", retired) and in_force("probe::WF_UPDATE_V1", retired)
+
+
+def test_a_predecessor_named_by_a_bare_code_is_read_in_the_successors_namespace():
+    assert predecessors({"fqdn": "probe::CC_B_V1", "supersedes": "CC_A_V0"}) == ("probe::CC_A_V0",)
+    assert predecessors({"supersedes": []}) == () and predecessors(None) == ()
 
 
 def test_a_superseded_workflow_with_an_entry_is_refused():
-    g = graph(node(NodeKind.WF, 5, SUPERSEDED, "WF_UPDATE_V0"), node(NodeKind.WF, 6, {}, "WF_UPDATE_V1"))
+    g = graph(node(NodeKind.WF, 5, {}, "WF_UPDATE_V0"), node(NodeKind.WF, 6, SUCCEEDS, "WF_UPDATE_V1"))
     assert refused({"entry": {"5": {}, "6": {}}}, [], g) == ["probe::WF_UPDATE_V0"]
     assert refused({"entry": {"6": {}}}, [], g) == []
 
 
 def test_a_superseded_intent_with_an_admission_contract_is_refused():
-    g = graph(node(NodeKind.IN, 7, SUPERSEDED, "IN_UPDATE_V0"))
+    g = graph(node(NodeKind.IN, 7, {}, "IN_UPDATE_V0"),
+              node(NodeKind.IN, 8, {"supersedes": "probe::IN_UPDATE_V0"}, "IN_UPDATE_V1"))
     assert refused({"admission": {"7": {}}}, [], g) == ["probe::IN_UPDATE_V0"]
     assert refused({"admission": {}}, [], g) == []
 
 
 def test_a_superseded_invariant_whose_assertion_ran_is_refused():
-    inv = node(None, -1, {**SUPERSEDED, "artifact_kind": "INVARIANT"}, "INVARIANT_OLD_RULE_V0")
+    inv = node(None, -1, {"artifact_kind": "INVARIANT"}, "INVARIANT_OLD_RULE_V0")
+    new = node(None, -1, {"artifact_kind": "INVARIANT", "supersedes": "probe::INVARIANT_OLD_RULE_V0"},
+               "INVARIANT_NEW_RULE_V0")
     ran = [{"fqdn_id": "probe::ASSERT_OLD_RULE_V0"}]
-    assert refused({}, ran, graph(inv)) == ["probe::INVARIANT_OLD_RULE_V0"]
-    assert refused({}, [], graph(inv)) == []
+    assert refused({}, ran, graph(inv, new)) == ["probe::INVARIANT_OLD_RULE_V0"]
+    assert refused({}, [], graph(inv, new)) == []
 
 
 def config(root_line):
@@ -110,9 +122,12 @@ def test_two_configurations_naming_one_root_are_refused():
 
 
 def test_a_superseded_configuration_does_not_hold_its_root():
-    retired = config("  root: snapshot\n").replace("artifact_kind: STRUCTURE\n",
-                                                  "artifact_kind: STRUCTURE\nsuperseded_by:\n- x::Y\n")
-    configs = {"STRUCTURE_BUILD_A_CONFIG_V1": config("  root: snapshot\n"),
+    successor = config("  root: snapshot\n").replace(
+        "artifact_kind: STRUCTURE\n",
+        "fqdn: x::STRUCTURE_BUILD_A_CONFIG_V1\nartifact_kind: STRUCTURE\nsupersedes: x::STRUCTURE_BUILD_A_CONFIG_V0\n")
+    retired = config("  root: snapshot\n").replace(
+        "artifact_kind: STRUCTURE\n", "fqdn: x::STRUCTURE_BUILD_A_CONFIG_V0\nartifact_kind: STRUCTURE\n")
+    configs = {"STRUCTURE_BUILD_A_CONFIG_V1": successor,
                "STRUCTURE_BUILD_A_CONFIG_V0": retired}
     assert resolve(configs, "STRUCTURE_BUILD_A_CONFIG_V1") == Path("snapshot")
 
