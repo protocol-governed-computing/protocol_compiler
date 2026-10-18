@@ -1,5 +1,5 @@
 """
-ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V1 Handler
+ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V0 Handler
 
 Every assertion a vector's case makes uses a declared mode and type. V0 of the invariant was bound to
 a compiler phase that does not exist and its check passed without reading a vector; this one reads
@@ -10,7 +10,7 @@ CONSTITUTIONAL: Pure rule checker - reads pre-computed structure from context
 
 from compiler.governance_engine.assertions.handlers._test_data import cases, vectors
 
-ASSERT = "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V1"
+ASSERT = "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V0"
 
 # type -> (required fields, optional fields), per mode. Declared by the invariant; restated here only
 # because a handler is the invariant's mechanism.

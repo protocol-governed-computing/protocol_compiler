@@ -1,5 +1,5 @@
 """
-ASSERT_CT_SURFACE_DERIVED_CLOSED_V1 Handler
+ASSERT_CT_SURFACE_DERIVED_CLOSED_V0 Handler
 
 Closes a domain's capability-transform surface by derivation: `declared == invoked`, within the
 domain, with neither side a list anyone maintains.
@@ -30,7 +30,7 @@ CONSTITUTIONAL: Pure rule checker — no side effects
 """
 from typing import Any
 
-RULE = "capability_transforms::INVARIANT_CT_SURFACE_DERIVED_CLOSED_V1"
+RULE = "capability_transforms::INVARIANT_CT_SURFACE_DERIVED_CLOSED_V0"
 
 
 def _frontmatter(artifact: dict) -> dict:
@@ -94,7 +94,7 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict[str, Any]:
 
     # A platform build is not a domain surface. Its transforms are invoked by the domains that
     # import it, so `declared == invoked` is false there for a reason that is not a defect, and
-    # `INVARIANT_CT_SURFACE_CLOSED_V1` is what closes it instead.
+    # `INVARIANT_CT_SURFACE_CLOSED_V0` is what closes it instead.
     if not compilation_context.get("is_domain_build", False):
         return {"assert_count": len(artifacts), "violations": [], "status": "PASSED"}
 

@@ -59,10 +59,10 @@ BINDINGS = {
     "SECURITY_DOMAIN_MUST_BE_DECLARED": "security_domain::INVARIANT_SECURITY_DOMAIN_DECLARED_V0",
     "CROSS_DOMAIN_FLOW_REQUIRES_AUTHORIZATION": "security_domain::INVARIANT_SECURITY_DOMAIN_DECLARED_V0",
     # Capability surfaces: the _V0 codes these referenced were superseded by _V1.
-    "CS_EXPLICIT_DECLARATION": "capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V1",
+    "CS_EXPLICIT_DECLARATION": "capability_side_effects::INVARIANT_CS_SURFACE_CLOSED_V0",
     "CS_IMPLEMENTATION_DECLARED": "execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
     "CT_IMPLEMENTATION_DECLARED": "execution::INVARIANT_IMPLEMENTATION_ADMISSIBLE_V0",
-    "CT_EXPLICIT_IO": "capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V1",
+    "CT_EXPLICIT_IO": "capability_transforms::INVARIANT_CT_SURFACE_CLOSED_V0",
     "CT_PURITY": "capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
     "CT_NO_SIDE_EFFECTS": "capability_transforms::INVARIANT_ATOM_OUTPUT_PURITY_V0",
     # Actor identity: only the authority-separation rule has an enforcing invariant.

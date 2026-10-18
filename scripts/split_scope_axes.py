@@ -37,8 +37,8 @@ MACHINE = re.compile(
 # read by a surface-scoped handler. Restored here to [PLATFORM]. Every other invariant's
 # stage-1 value was a kind token and moves wholesale to applies_to_kinds.
 LAYER_SCOPED = {
-    "INVARIANT_CT_SURFACE_CLOSED_V1": ["PLATFORM"],
-    "INVARIANT_CS_SURFACE_CLOSED_V1": ["PLATFORM"],
+    "INVARIANT_CT_SURFACE_CLOSED_V0": ["PLATFORM"],
+    "INVARIANT_CS_SURFACE_CLOSED_V0": ["PLATFORM"],
     "INVARIANT_RUNTIME_INVARIANT_WIRED_V0": ["PLATFORM"],
 }
 

@@ -146,7 +146,7 @@ def s9_attest(state: State) -> State:
     # The capabilities this build carried in from the surface it imports: executable here, supplied
     # there. Recorded because a carried copy is byte-identical to its supplier's and no name tells the
     # two apart; conformance reads this to judge only what the build supplies
-    # (conformance::CONSTITUTION_TEST_DATA_V2 §4). Present only when the build carried something.
+    # (conformance::CONSTITUTION_TEST_DATA_V0 §4). Present only when the build carried something.
     imported_capabilities = sorted(
         node.fqdn for node in state.graph.nodes.values()
         if (node.metadata or {}).get("import_role") == "execution"

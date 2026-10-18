@@ -1,7 +1,7 @@
 """
-ASSERT_EXECUTION_PLACEMENT_DECLARED_V1 Handler
+ASSERT_EXECUTION_PLACEMENT_DECLARED_V0 Handler
 
-Enforces INVARIANT_EXECUTION_PLACEMENT_DECLARED_V1: a composition carries exactly one execution
+Enforces INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0: a composition carries exactly one execution
 placement structure, and therefore records exactly one placement mode.
 
 Differs from V0 in what it counts rather than in how it counts. V0 selected by `status: active` on
@@ -17,13 +17,13 @@ because the configuration would read as correct while the composition carried pe
 never granted.
 """
 
-_ASSERT = "execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V1"
-_RULE = "execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V1"
+_ASSERT = "execution_placement::ASSERT_EXECUTION_PLACEMENT_DECLARED_V0"
+_RULE = "execution_placement::INVARIANT_EXECUTION_PLACEMENT_DECLARED_V0"
 
 # No copy of the authorized modes is held here. It was, and that was a second place for the set to
 # disagree with the constitution that declares it. Authorization is enforced where it can only be
 # stated once: a mode no structure declares resolves to nothing at selection and the build refuses,
-# and a surface carries a structure only for a mode CONSTITUTION_EXECUTION_PLACEMENT_V1 §1 admits.
+# and a surface carries a structure only for a mode CONSTITUTION_EXECUTION_PLACEMENT_V0 §1 admits.
 # What remains here is cardinality, which is what the invariant actually says.
 
 

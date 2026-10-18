@@ -8,7 +8,7 @@ check anything — which is how the rule these replace passed for as long as it 
 
 import sys
 
-from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v1 import execute as assertion_modes
+from compiler.governance_engine.assertions.handlers.assert_conformance_assertion_mode_valid_v0 import execute as assertion_modes
 from compiler.governance_engine.assertions.handlers.assert_test_data_records_match_purity_v0 import execute as records_match
 from compiler.governance_engine.assertions.handlers.assert_test_data_match_ct_output_v0 import execute as output_match
 from compiler.governance_engine.assertions.handlers.assert_ct_test_data_outcome_declared_v0 import execute as outcome_declared

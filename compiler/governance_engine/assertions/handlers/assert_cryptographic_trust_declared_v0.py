@@ -1,7 +1,7 @@
 """
-ASSERT_CRYPTOGRAPHIC_TRUST_DECLARED_V1 Handler
+ASSERT_CRYPTOGRAPHIC_TRUST_DECLARED_V0 Handler
 
-Enforces INVARIANT_CRYPTOGRAPHIC_TRUST_DECLARED_V1: a composition carries exactly one cryptographic
+Enforces INVARIANT_CRYPTOGRAPHIC_TRUST_DECLARED_V0: a composition carries exactly one cryptographic
 trust structure, and therefore declares exactly one trust mode.
 
 Differs from V0 in what it counts, as the placement handler's V1 did. V0 selected by `status: active`
@@ -11,12 +11,12 @@ it each wanted one. V1 counts what the composition carries. The surface may decl
 mode, and the build's selection reduces them to one.
 """
 
-_ASSERT = "cryptographic_trust::ASSERT_CRYPTOGRAPHIC_TRUST_DECLARED_V1"
-_RULE = "cryptographic_trust::INVARIANT_CRYPTOGRAPHIC_TRUST_DECLARED_V1"
+_ASSERT = "cryptographic_trust::ASSERT_CRYPTOGRAPHIC_TRUST_DECLARED_V0"
+_RULE = "cryptographic_trust::INVARIANT_CRYPTOGRAPHIC_TRUST_DECLARED_V0"
 
 # No copy of the authorized modes is held here. A mode no structure declares resolves to nothing at
 # selection and the build refuses, and a surface carries a structure only for a mode
-# CONSTITUTION_CRYPTOGRAPHIC_TRUST_V1 §1 admits. What remains here is cardinality.
+# CONSTITUTION_CRYPTOGRAPHIC_TRUST_V0 §1 admits. What remains here is cardinality.
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:

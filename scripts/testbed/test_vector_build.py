@@ -33,7 +33,7 @@ CLEAN = '''# TEST_DATA_CT_PURE_COLLATZ_STEP_V0
 fqdn: workload::TEST_DATA_CT_PURE_COLLATZ_STEP_V0
 artifact_kind: TEST_DATA
 version: V0
-governed_by: conformance::CONSTITUTION_TEST_DATA_V2
+governed_by: conformance::CONSTITUTION_TEST_DATA_V0
 authority: pgc.platform
 concern: workload
 core:
@@ -66,7 +66,7 @@ TAMPERS = {
     "an assertion mode nothing declares": (
         ("  expected_outcome: VIOLATION\n",
          "  expected_outcome: SUCCESS\n  assertions:\n    sequences: {mode: fuzzy}\n"),
-        "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V1"),
+        "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V0"),
     "a recorded result for an atom": (
         ("  expected_outcome: VIOLATION\n",
          "  expected_outcome: VIOLATION\n  recorded:\n    offered: {x: 1}\n"),

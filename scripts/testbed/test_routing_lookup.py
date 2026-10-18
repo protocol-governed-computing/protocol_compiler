@@ -3,18 +3,18 @@ Routing is a lookup with two answers, and a contract declares no condition.
 
 `ASSERT_TOPOLOGY_CONTRACT_CLOSED_V0` admitted a third routing answer, an evaluation target, and
 counted its `on_true`/`on_false` as the contract's exits. Nothing ran it, so a contract routing to one
-ended with its last step's outcome. `ASSERT_TOPOLOGY_CONTRACT_CLOSED_V1` refuses any answer but
+ended with its last step's outcome. `ASSERT_TOPOLOGY_CONTRACT_CLOSED_V0` refuses any answer but
 `continue` and `exit`, refuses an `evaluation` block, and counts exits only from those two answers. A
 contract not in force is not checked: it runs nowhere and stays as it was sealed. The same holds for
-`ASSERT_TOPOLOGY_ROUTING_COMPLETE_V1`, which compares a step's surface with its capability.
+`ASSERT_TOPOLOGY_ROUTING_COMPLETE_V0`, which compares a step's surface with its capability.
 
 Run:  python scripts/testbed/test_routing_lookup.py
 """
 import sys
 
-from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v1 import (
+from compiler.governance_engine.assertions.handlers.assert_topology_contract_closed_v0 import (
     execute as contract_closed)
-from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v1 import (
+from compiler.governance_engine.assertions.handlers.assert_topology_routing_complete_v0 import (
     execute as routing_complete)
 
 

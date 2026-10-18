@@ -1,7 +1,7 @@
 """
 What a declaration's parts are: which name another artifact, and which carry no meaning.
 
-The platform declares it once, in `artifact::VOCAB_DECLARATION_REPRESENTATION_V1`. Every place that
+The platform declares it once, in `artifact::VOCAB_DECLARATION_REPRESENTATION_V0`. Every place that
 finds a reference reads it from here: the record of references S1 builds, the check that nothing
 reaches a stood-down artifact, and the check that a reference is written in full. Before it was
 declared, four places each kept a list of their own, and they disagreed about what a reference is.
@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V1"
+DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V0"
 
 FULL_NAME = re.compile(r"^[a-z_][a-z0-9_]*::[A-Z][A-Z0-9_]*$")
 

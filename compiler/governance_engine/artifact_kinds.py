@@ -121,7 +121,7 @@ _DESCRIPTORS: tuple[ArtifactKindDescriptor, ...] = (
     _d("ASSERT", "ASSERT", DECLARATIVE, "assertions", ak="ASSERT",
        category=NORMATIVE, provenance=DERIVED),
     # A test vector states what a transform must produce: a normative declaration, gated the way its
-    # transform is (conformance::CONSTITUTION_TEST_DATA_V2 §5).
+    # transform is (conformance::CONSTITUTION_TEST_DATA_V0 §5).
     _d("TEST_DATA", "TEST_DATA", DECLARATIVE, "test_data", ak="TEST_DATA",
        category=NORMATIVE, provenance=AUTHORED),
     # DECLARATIVE — ride NodeKind.GOVERNANCE, keep their prefix (old _GOVERNANCE_PREFIXES)

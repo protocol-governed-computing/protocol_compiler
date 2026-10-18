@@ -179,7 +179,7 @@ compiler/
 ## 9. How to know it works
 
 ```bash
-./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V2   # the governance surface compiles
+./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V0   # the governance surface compiles
 ./compile_domain.sh <domain-root>  # one domain compiles against it
 ```
 

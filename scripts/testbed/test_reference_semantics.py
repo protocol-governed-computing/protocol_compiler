@@ -3,7 +3,7 @@ One declaration says what a reference is, and every place that finds one reads i
 
 The record of references read a fixed list of nine parts, the reach check read every value, the
 FQDN-only check kept a list of four, and nothing compared two declarations at all. The platform now
-declares the parts in `artifact::VOCAB_DECLARATION_REPRESENTATION_V1`: the reference parts, the
+declares the parts in `artifact::VOCAB_DECLARATION_REPRESENTATION_V0`: the reference parts, the
 keyed ones, the ones that require a full name, the ones that declare supersession, and the ones
 that hold data. S1 records
 from it and refuses a full name written anywhere else; both reference checks read it.
@@ -23,7 +23,7 @@ from compiler.governance_engine.assertions.handlers.assert_superseded_not_refere
 
 WORKSPACE = Path(__file__).resolve().parents[3]
 SOURCE = (WORKSPACE / "software_governance" / "registry" / "artifact" / "vocabulary"
-          / "VOCAB_DECLARATION_REPRESENTATION_V1.md")
+          / "VOCAB_DECLARATION_REPRESENTATION_V0.md")
 
 
 def declared() -> dict:

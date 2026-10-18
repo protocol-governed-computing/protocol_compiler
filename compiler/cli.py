@@ -61,7 +61,7 @@ def cli() -> None:
     "--structure",
     type=str,
     multiple=True,
-    help="STRUCTURE artifact code(s) (e.g. STRUCTURE_BUILD_PLATFORM_CONFIG_V2)",
+    help="STRUCTURE artifact code(s) (e.g. STRUCTURE_BUILD_PLATFORM_CONFIG_V0)",
 )
 @click.option(
     "--verbose",

@@ -295,7 +295,7 @@ class LayerResolver:
         Args:
             output_type: Output type key ("artifacts", "conformance", "layer_outputs")
             layer: Target layer code ("GOVERNANCE", "BLOCKCHAIN", etc.)
-            structure: STRUCTURE artifact dict (e.g., STRUCTURE_BUILD_PLATFORM_CONFIG_V2)
+            structure: STRUCTURE artifact dict (e.g., STRUCTURE_BUILD_PLATFORM_CONFIG_V0)
             domain: Optional domain name (for legacy DOMAINS layer federation)
 
         Returns:
@@ -308,7 +308,7 @@ class LayerResolver:
 
         Governed By:
             INVARIANT_NO_UNDECLARED_BEHAVIOR_SURFACE_V0
-            STRUCTURE_BUILD_PLATFORM_CONFIG_V2
+            STRUCTURE_BUILD_PLATFORM_CONFIG_V0
         """
         if "output_configuration" not in structure:
             raise RuntimeError(
@@ -360,7 +360,7 @@ class LayerResolver:
                 raise RuntimeError(
                     f"Layer '{layer}' not declared in layer_outputs. "
                     f"Available layers: {list(layer_configs.keys())}. "
-                    f"Add to STRUCTURE_BUILD_PLATFORM_CONFIG_V2 layer_outputs."
+                    f"Add to STRUCTURE_BUILD_PLATFORM_CONFIG_V0 layer_outputs."
                 )
             config = layer_configs[layer]
         else:

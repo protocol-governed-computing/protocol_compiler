@@ -3,24 +3,28 @@ ASSERT_TOPOLOGY_CONTRACT_CLOSED_V0
 
 Enforces INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0 at compile time.
 
-Validates that the union of all status codes that can exit a CC execution
-topology exactly matches result_status_contract.allowed. Two failure modes:
+Routing is a lookup with two answers, and a decision is a capability's. V0 admitted a third answer,
+an evaluation target, and counted its `on_true`/`on_false` as exits. Nothing ran it: execution read
+the answer as going on, so a contract routing to one ended with its last step's outcome whatever the
+condition said. The Collatz gate could not fail that way.
 
-- Uncontracted exit: a code exits the topology but is not in allowed
-- Unreachable code: a code is in allowed but no execution path exits with it
+For every CC in force:
 
-A code is reachable as a CC exit when ANY of the following hold:
-1. A step routes it as 'exit' in on_result (and the code is in that step's result_surface)
-2. The LAST step routes it as 'continue' (last-step continue exits the CC)
-3. An evaluation block names it as on_true or on_false
+- every value in a step's `on_result` is `continue` or `exit`, or the build is refused by contract,
+  step and answer;
+- the CC declares no `evaluation` block;
+- the codes that can exit the topology equal `result_status_contract.allowed` exactly. A code exits
+  when a step routes it as `exit`, or when the last step routes it as `continue`.
 
-Codes routed as 'continue' in non-last steps remain in-pipeline — they do not
-exit the CC. Codes routed to an evaluation target (e.g. SUCCESS: evaluate_cap)
-exit via the evaluation's on_true/on_false outcomes, not directly.
-
-Validation scope: CC-level contract closure.
-Execution topology validation is structural, not semantic.
+A CC not in force (`INVARIANT_SUPERSEDED_NOT_IN_FORCE_V0`) is not checked. It runs nowhere, and it
+stays in the record as it was sealed — a stood-down contract may still carry the condition its
+successor replaced.
 """
+
+from compiler.atoms.force import in_force
+
+RULE = "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0"
+ROUTING_ANSWERS = ("continue", "exit")
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -30,56 +34,58 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
     for artifact in artifacts:
         if artifact.get("artifact_type") != "CC":
             continue
+        frontmatter = artifact.get("frontmatter", {}) or {}
+        if not in_force(frontmatter):
+            continue
 
         cc_count += 1
         fqdn = artifact.get("fqdn_id", "unknown")
-        core = artifact.get("frontmatter", {}).get("core", {})
+        core = frontmatter.get("core", {}) or {}
         pipeline = core.get("pipeline", [])
-        result_contract = core.get("result_status_contract", {})
-        allowed = set(result_contract.get("allowed", []))
+        allowed = set((core.get("result_status_contract", {}) or {}).get("allowed", []))
+
+        if core.get("evaluation"):
+            violations.append({
+                "fqdn": fqdn,
+                "rule": RULE,
+                "message": (
+                    f"declares an evaluation block ({', '.join(sorted(core['evaluation']))}) — a "
+                    "condition over a step's result is run by nothing; routing is a lookup"
+                ),
+                "fix": "Make the decision with a capability, a step whose outcome is routed",
+            })
 
         if not isinstance(pipeline, list):
             continue
 
+        steps = [s for s in pipeline if isinstance(s, dict)]
+        last = steps[-1] if steps else None
         reachable: set[str] = set()
 
-        # Collect evaluation outcomes — these are always CC exits
-        evaluations = core.get("evaluation", {})
-        if isinstance(evaluations, dict):
-            for eval_def in evaluations.values():
-                if isinstance(eval_def, dict):
-                    if on_true := eval_def.get("on_true"):
-                        reachable.add(on_true)
-                    if on_false := eval_def.get("on_false"):
-                        reachable.add(on_false)
-
-        # Walk pipeline to determine per-step exit contributions
-        all_steps = [s for s in pipeline if isinstance(s, dict)]
-        last_step = all_steps[-1] if all_steps else None
-
-        for step in all_steps:
-            is_last = step is last_step
-            surface = set(step.get("result_surface", []))
+        for step in steps:
             on_result = step.get("on_result") or {}
             if not isinstance(on_result, dict):
                 continue
-
-            for code in surface:
-                routing = on_result.get(code)
-                if routing == "exit":
+            for code, answer in on_result.items():
+                if answer not in ROUTING_ANSWERS:
+                    violations.append({
+                        "fqdn": fqdn,
+                        "rule": RULE,
+                        "message": (
+                            f"step '{step.get('step')}' routes '{code}' to '{answer}' — a routing "
+                            "answer is continue or exit, and anything else is performed by nothing"
+                        ),
+                        "fix": "Route the outcome to continue or exit; make any decision a capability's",
+                    })
+            for code in step.get("result_surface", []) or []:
+                answer = on_result.get(code)
+                if answer == "exit" or (step is last and answer == "continue"):
                     reachable.add(code)
-                elif is_last and routing == "continue":
-                    # Last-step continue exits the CC with this code
-                    reachable.add(code)
-                # routing to an evaluation target: exits captured above via evaluation.on_true/on_false
-                # routing == "continue" in non-last step: stays in pipeline, does not exit
 
-        # Uncontracted exits: reachable but not in allowed
-        uncontracted = reachable - allowed
-        for code in sorted(uncontracted):
+        for code in sorted(reachable - allowed):
             violations.append({
                 "fqdn": fqdn,
-                "rule": "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
+                "rule": RULE,
                 "message": (
                     f"Topology can exit with '{code}' but '{code}' is not declared in "
                     "result_status_contract.allowed — uncontracted exit"
@@ -90,12 +96,10 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                 ),
             })
 
-        # Unreachable contract codes: in allowed but no execution path exits with them
-        unreachable = allowed - reachable
-        for code in sorted(unreachable):
+        for code in sorted(allowed - reachable):
             violations.append({
                 "fqdn": fqdn,
-                "rule": "execution_topology::INVARIANT_TOPOLOGY_CONTRACT_CLOSED_V0",
+                "rule": RULE,
                 "message": (
                     f"Contract declares '{code}' in result_status_contract.allowed but "
                     "no execution path exits the CC with this code — unreachable contract code"

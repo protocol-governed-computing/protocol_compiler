@@ -3,8 +3,8 @@
 # PGC compile runner — no PYTHONPATH / env fuss.
 #
 # Usage:
-#   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V2
-#   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V2 -v
+#   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V0
+#   ./compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V0 -v
 #
 # The STRUCTURE is REQUIRED. There is no default platform: a governance surface is whatever a
 # build config declares, and defaulting one presumes *the* platform the way a defaulted profile
@@ -34,7 +34,7 @@ for arg in "$@"; do
 done
 if [[ -z "$STRUCTURE" ]]; then
   echo "usage: compile.sh <STRUCTURE_CODE> [flags]" >&2
-  echo "  e.g. compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V2" >&2
+  echo "  e.g. compile.sh STRUCTURE_BUILD_PLATFORM_CONFIG_V0" >&2
   echo "  No default: a platform is whatever a build config declares, and none is minimal by" >&2
   echo "  nature (6a §8). Name the structure you mean." >&2
   exit 2
@@ -55,6 +55,6 @@ echo
 "$PYTHON" -m compiler.cli compile --structure "$STRUCTURE" ${FLAGS[@]+"${FLAGS[@]}"}
 echo
 # The platform supplies transforms of its own, so its build proves them, as a domain's build proves
-# a domain's (conformance::CONSTITUTION_TEST_DATA_V2 §4). A placement build writes to its own root,
+# a domain's (conformance::CONSTITUTION_TEST_DATA_V0 §4). A placement build writes to its own root,
 # so the runner is told where this build wrote, and which of the platform's build declarations it built.
 exec "$SCRIPT_DIR/../protocol_runtime/run.sh" conformance "$PGC_PLATFORM_ROOT" --snapshot-root "$OUT" --structure "$STRUCTURE"

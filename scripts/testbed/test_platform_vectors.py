@@ -3,7 +3,7 @@ The platform's own test vectors through a real platform build — the compiler's
 software_governance/dossiers/platform_test_data (held at the v5 tag).
 
 The platform supplies transforms of its own, so its build compiles their vectors and proves them
-(conformance::CONSTITUTION_TEST_DATA_V2 §4). Shown here, against a copy of the governance surface
+(conformance::CONSTITUTION_TEST_DATA_V0 §4). Shown here, against a copy of the governance surface
 compiled exactly as `compile.sh` compiles it: every platform vector is materialized as a declaration and
 has its runnable cases written; each declaration defect in a platform vector stops the platform's build
 on the rule that names it, so the rules written for vectors judge the platform's as they judge a
@@ -22,7 +22,7 @@ from pathlib import Path
 
 W = Path(__file__).resolve().parents[3]
 SURFACE = W / "software_governance"
-PLATFORM = "STRUCTURE_BUILD_PLATFORM_CONFIG_V2"
+PLATFORM = "STRUCTURE_BUILD_PLATFORM_CONFIG_V0"
 VECTOR = "capability_transforms/registry/test_data/TEST_DATA_CT_PURE_LOOKUP_V0.md"
 DOMAIN = W / "business_domains" / "ai_governance"
 PLATFORM_TRANSFORMS = 13
@@ -34,7 +34,7 @@ TAMPERS = {
         "ASSERT_TEST_DATA_MATCH_CT_OUTPUT_V0"),
     "an assertion mode nothing declares": (
         ("  expected:\n    result: active\n", "  assertions:\n    result: {mode: fuzzy}\n"),
-        "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V1"),
+        "ASSERT_CONFORMANCE_ASSERTION_MODE_VALID_V0"),
     "a recorded result for an atom": (
         ("  expected:\n    result: active\n", "  expected:\n    result: active\n  recorded:\n    x: {y: 1}\n"),
         "ASSERT_TEST_DATA_RECORDS_MATCH_PURITY_V0"),

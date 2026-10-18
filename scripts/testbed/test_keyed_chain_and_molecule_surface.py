@@ -13,7 +13,7 @@ over its own node keys; a routing loop is still refused.
 import sys
 from types import SimpleNamespace
 
-from compiler.governance_engine.assertions.handlers.assert_ct_surface_derived_closed_v1 import execute as closed
+from compiler.governance_engine.assertions.handlers.assert_ct_surface_derived_closed_v0 import execute as closed
 from compiler.graph.types import NodeKind
 from compiler.stages.s4_govern import _workflows_with_routing_cycles
 
