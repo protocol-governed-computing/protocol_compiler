@@ -166,10 +166,9 @@ def make_metadata(
     )
 
 
-# Release ordinal — derived from the repo's single version declaration, never restated here.
-# PGC versions the *composition*: all repos release together and the governance closure forces
-# lockstep, so a monotonic integer names which composition this repo belongs to. `VERSION` is the
-# sole declaration; pyproject derives it and so does this. Two statements of one fact drift apart.
+# Cycle ordinal — read from the repo's `VERSION` file, never restated here. It names the
+# development cycle a projection was compiled in. It is not the published version, which
+# `pyproject.toml` declares on its own. Two statements of one fact drift apart.
 def _release() -> str:
     from pathlib import Path
     # Source tree and editable installs: the repo-root VERSION is authoritative.
