@@ -12,7 +12,7 @@ Two builders produce an IPM, both from compiler outputs alone (never authoring m
   * `reverse_project`    — the *compiled* model, reconstructed from the evidence graph
                            (the Behavioral Layer); see `reverse.py`.
 
-The Semantic Equivalence Oracle (in pgs_change_mgmt) consumes ONLY two IPMs and asserts they are
+A semantic equivalence oracle consumes ONLY two IPMs and asserts they are
 equivalent axis-by-axis. Behavioral axes (Workflow, …) prove **Semantic Preservation**; definitional
 axes (Entities, Lifecycle, …) prove **Compilation Fidelity**. These are orthogonal compiler contracts.
 

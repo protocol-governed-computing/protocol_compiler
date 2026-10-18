@@ -1,10 +1,9 @@
 """
 platform_root.py — PGC source resolution.
 
-The normative surface (registry + structural schemas) lives in the PGC `platform`
-repository, not in any `pgs_*` package. This module is the single place that resolves it,
-from an explicit environment anchor — replacing RI-0's `pgs_governance.__file__` package
-location. Fail-hard, cwd-independent, zero inference.
+The normative surface (registry + structural schemas) lives in the `software_governance`
+repository. This module is the single place that resolves it, from an explicit environment
+anchor, never from a package location. Fail-hard, cwd-independent, zero inference.
 
   PGC_PLATFORM_ROOT  — absolute path to the platform repo (dir containing `registry/`).
   PGC_BUILD_ROOT     — absolute path for compiled output (keeps `platform` read-only).

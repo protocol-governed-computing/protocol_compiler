@@ -65,8 +65,8 @@ class LayerResolver:
 
         Args:
             environment: Environment name (kept for API compatibility)
-            project_root: Explicit project root (if None, resolves from installed
-                          pgs_governance package location — CWD-independent)
+            project_root: Explicit project root (if None, the platform root —
+                          CWD-independent)
         """
         if project_root is None:
             from compiler.governance_engine.platform_root import platform_root
@@ -75,7 +75,6 @@ class LayerResolver:
         self._project_root = project_root
         self._layer_paths: dict[str, Path] = {}
         self._layer_configs: dict[str, dict] = {}
-        self._layer_directories: dict[str, str] = {}
         self._loaded = False
 
     # -------------------------------------------------------------------------
@@ -106,7 +105,7 @@ class LayerResolver:
 
         Maps the declared module name to a subdir of PGC_PLATFORM_ROOT. Layers not present
         in the platform surface return None (they are absent from the platform compile
-        scope, by design — no importlib, no sibling-repo fallback, no pgs_* dep).
+        scope, by design — no importlib, no sibling-repo fallback).
         """
         from compiler.governance_engine.platform_root import platform_root
 
@@ -126,8 +125,8 @@ class LayerResolver:
              the protocol (its build manifest's layer_definitions), with NO compiler edits.
           2. platform_subpath — the layer declares its own subdir of the platform repo.
              For layers that genuinely belong to the platform surface.
-          3. registry_module — RI-0 harvest package names, mapped via _PGC_MODULE_MAP
-             (the platform surface layers; kept for backward compatibility).
+          3. registry_module — a platform surface layer's module name, mapped via
+             _PGC_MODULE_MAP.
         """
         from compiler.governance_engine.platform_root import domain_root, platform_root
 
@@ -190,35 +189,8 @@ class LayerResolver:
             return
 
         self._load_layer_paths_from_discovery()
-        self._load_module_data_roots()
 
         self._loaded = True
-
-    def _load_module_data_roots(self) -> None:
-        """Load STRUCTURE_MODULE_DATA_ROOTS_V0 artifact."""
-        from compiler.governance_engine.platform_root import governance_registry_root
-        path = (
-            governance_registry_root() /
-            "structure" / "structures" / "STRUCTURE_MODULE_DATA_ROOTS_V0.md"
-        )
-
-        if not path.exists():
-            self._layer_directories = {}
-            return
-
-        content = path.read_text(encoding="utf-8")
-        data = self._parse_yaml_block(content)
-        self._layer_directories = data.get("layer_directories", {})
-
-    def _get_layer_directory(self, dir_key: str, default: str = "") -> str:
-        """
-        Get directory name from MODULE_DATA_ROOTS layer_directories.
-
-        Args:
-            dir_key: Directory key (e.g., "compiled_root", "runtime_root")
-            default: Default value if key not found
-        """
-        return self._layer_directories.get(dir_key, default)
 
     def _resolve_layer_path(self, layer_code: str) -> Path:
         """

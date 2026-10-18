@@ -252,8 +252,8 @@ def resolve_artifact(artifact_code: str, search_roots: List[Path]) -> Dict[str, 
     Strict protocol resolution: filename must match the FQDN (with :: replaced by _).
 
     Protocol: search_roots can be either:
-    1. Layer roots (e.g., /pgs_governance) - resolution adds /compiled/artifacts/{type}/
-    2. Complete artifact paths (e.g., /pgs_domains/domains/blockchain/compiled/artifacts/workflows) - resolution uses directly
+    1. Layer roots (e.g., /repo/software_governance) - resolution adds /compiled/artifacts/{type}/
+    2. Complete artifact paths (e.g., /repo/domains/blockchain/compiled/artifacts/workflows) - resolution uses directly
 
     Detection rule (declared, not heuristic):
     - If root ends with artifact type directory name → use directly
@@ -300,8 +300,8 @@ def resolve_artifact_with_path(artifact_code: str, search_roots: List[Path]) -> 
     Strict protocol resolution: filename must match the FQDN (with :: replaced by _).
 
     Protocol: search_roots can be either:
-    1. Layer roots (e.g., /pgs_governance) - resolution adds /compiled/artifacts/{type}/
-    2. Complete artifact paths (e.g., /pgs_domains/domains/blockchain/compiled/artifacts/workflows) - resolution uses directly
+    1. Layer roots (e.g., /repo/software_governance) - resolution adds /compiled/artifacts/{type}/
+    2. Complete artifact paths (e.g., /repo/domains/blockchain/compiled/artifacts/workflows) - resolution uses directly
 
     Detection rule (declared, not heuristic):
     - If root ends with artifact type directory name → use directly

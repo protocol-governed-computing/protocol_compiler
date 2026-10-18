@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
-from compiler.governance_engine.structure.resolution.path_registry import bootstrap, paths
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:
@@ -30,7 +29,6 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
 
     # Scan execution layer files
     # PROTOCOL: Use LayerResolver for layer path discovery
-    bootstrap()
     resolver = LayerResolver()
     # PGC: the EXECUTION (runtime) layer is not part of the normative platform snapshot.
     # When it is absent/unmapped, there is no execution code to scan → N/A (PASSED).

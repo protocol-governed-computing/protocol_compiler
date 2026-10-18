@@ -157,7 +157,7 @@ def _check_runtime_exists(artifact_code: str, layer_resolver) -> tuple[bool, Pat
     Check if runtime implementation exists for CT.
 
     Expected pattern:
-        CT_X_V0 → pgs_transforms/implementation/transforms/{atoms,molecules}/ct_x_v0.py
+        CT_X_V0 → capability_transforms/implementation/ct_x_v0.py
 
     Returns:
         (exists: bool, expected_path: Path)

@@ -1,11 +1,10 @@
 """
 STRUCTURE artifact loader for compiler.
 
-Bootstrap mechanism for loading STRUCTURE artifacts without PGS dependencies.
+Bootstrap mechanism for loading STRUCTURE artifacts.
 
 Design:
-- No imports from pgs_governance, pgs_structure, etc.
-- Direct filesystem reads
+- No package imports: direct filesystem reads
 - YAML parsing only
 - Fail hard on missing artifacts
 - FORBIDDEN_STRUCTURE guard to prevent legacy drift
@@ -29,7 +28,7 @@ def get_bootstrap_search_roots() -> list[Path]:
     After bootstrap, all paths come from STRUCTURE.
 
     Resolves relative to the explicit PGC platform root, not cwd — so the compiler
-    works from any directory and takes zero dependency on any pgs_* package.
+    works from any directory and depends on no installed package's location.
     """
     import os
     from compiler.governance_engine.platform_root import governance_registry_root

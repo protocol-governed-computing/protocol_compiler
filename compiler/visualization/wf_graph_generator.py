@@ -17,7 +17,7 @@ used for:
 
 **COMPILER-OWNED**: Self-sufficient graph construction, no external dependencies.
 This is COMPILE-TIME graph generation (static WF structure).
-Runtime trace visualization is separate (lives in pgs_tooling/visualization).
+Runtime trace visualization is separate (the runtime draws it from a trace).
 """
 
 import json

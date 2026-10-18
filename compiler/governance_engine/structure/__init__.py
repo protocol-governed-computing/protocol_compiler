@@ -1,24 +1,18 @@
 """
-structure — PGS Structure Layer (Foundational)
+structure — the compiler's structure layer
 
-The structure layer provides foundational runtime services for all other layers:
 - Discovery: Artifact discovery and scanning
 - Loading: Protocol file loading and parsing
-- Resolution: Path and layer resolution
-
-Public API organized by concern:
-- structure.discovery.*
-- structure.loading.*
-- structure.resolution.*
+- Resolution: Layer resolution
 
 Quick imports for common use:
-- from compiler.governance_engine.structure.resolution import bootstrap, paths, LayerResolver
+- from compiler.governance_engine.structure.resolution import LayerResolver
 - from compiler.governance_engine.structure.loading import load_trace, parse_yaml_simple
 - from compiler.governance_engine.structure.discovery import extract_codes, scan_artifacts_by_type
 """
 
 # Re-export commonly used items for convenience
-from compiler.governance_engine.structure.resolution import bootstrap, paths, LayerResolver
+from compiler.governance_engine.structure.resolution import LayerResolver
 from compiler.governance_engine.structure.loading import (
     ProtocolFSReader,
     ProtocolLoader,
@@ -36,9 +30,7 @@ from compiler.governance_engine.structure.discovery import (
 )
 
 __all__ = [
-    # Resolution (most commonly used)
-    "bootstrap",
-    "paths",
+    # Resolution
     "LayerResolver",
     # Loading (commonly used)
     "ProtocolFSReader",

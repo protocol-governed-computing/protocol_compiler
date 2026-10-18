@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
-from compiler.governance_engine.structure.resolution.path_registry import bootstrap
 
 
 def execute(artifacts: list[dict], compilation_context: dict) -> dict:

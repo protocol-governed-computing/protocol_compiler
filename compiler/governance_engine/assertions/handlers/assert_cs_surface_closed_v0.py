@@ -219,8 +219,7 @@ def _get_side_effects_implementation_root() -> Path:
     """
     Get side effects implementation root using LayerResolver (STRUCTURE_DISCOVERY_V0).
 
-    REUSABLE_SIDE_EFFECTS registry_module resolves to pgs_side_effects/registry/.
-    Implementation lives at the sibling path: pgs_side_effects/implementation/side_effects/.
+    Implementations live beside the declarations: <platform>/capability_side_effects/implementation/.
     """
     from compiler.governance_engine.platform_root import cs_implementation_root
     return cs_implementation_root()
@@ -231,7 +230,7 @@ def _check_runtime_exists(cs_code: str) -> tuple[bool, Path]:
     Check if runtime implementation exists for CS.
 
     Expected pattern:
-        CS_X_V0 → pgs_side_effects/implementation/side_effects/{persistent,internal,external}/CS_X_V0/runtime.py
+        CS_X_V0 → capability_side_effects/implementation/CS_X_V0/runtime.py
 
     Returns:
         (exists: bool, expected_path: Path)

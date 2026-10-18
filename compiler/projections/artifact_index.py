@@ -6,7 +6,7 @@ inspection surface (si). Maps every compiled artifact FQDN to its
 domain, owning STRUCTURE(s), artifact kind, canonical path, evidence
 path, and per-structure vocabulary address.
 
-Emitted by `compiler.cli build` (scripts/pgs_build.py) after the
+Emitted by `compiler.cli build` after the
 snapshot sync step — the only point with the full federated view of
 all materialized projections. Written to:
 
@@ -84,7 +84,7 @@ def build_artifact_index(workspace: Path) -> dict[str, Any]:
     Build the artifact index content from materialized projections.
 
     Args:
-        workspace: Absolute path to the pgs_workspace root.
+        workspace: Absolute path to the workspace root.
 
     Returns:
         Index content dict (JSON-serializable, deterministic ordering).

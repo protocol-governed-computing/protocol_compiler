@@ -21,7 +21,7 @@ def assert_snapshot_valid(workspace: Path) -> None:
     message if the file is missing, unreadable, or reports a non-VALID status.
 
     Args:
-        workspace: Absolute path to pgs_workspace root.
+        workspace: Absolute path to the workspace root.
 
     Raises:
         SystemExit(1): If snapshot is absent or not VALID.

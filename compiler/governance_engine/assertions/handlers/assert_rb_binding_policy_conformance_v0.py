@@ -10,8 +10,8 @@ is processed, leaving an empty trace.
 
 CS types with other policy schemas are not checked by this assertion:
 - CS_MUTABLE_JSON_V0: STRUCTURE-based resolution via storage_structure_artifact
-- CS_APPENDONLY_JSONL_V0: entity-based __pgs_store_entity__ resolution
-- CS_REGISTRY_V0: entity-based __pgs_store_entity__ resolution (same pattern as
+- CS_APPENDONLY_JSONL_V0: entity-based __store_entity__ resolution
+- CS_REGISTRY_V0: entity-based __store_entity__ resolution (same pattern as
   CS_APPENDONLY_JSONL_V0 — StorageUnavailable raised loudly if entity unresolvable)
 
 CONSTITUTIONAL: Pure rule checker — reads artifact frontmatter only.
@@ -20,7 +20,7 @@ CONSTITUTIONAL: Pure rule checker — reads artifact frontmatter only.
 # CS types whose runtime implementations call policy['path'] directly.
 # These must declare a non-empty policy.path in every RB binding.
 # Currently empty: all current CS types use STRUCTURE-based or entity-based resolution.
-# CS_REGISTRY_V0 was removed when it migrated to entity-based __pgs_store_entity__
+# CS_REGISTRY_V0 was removed when it migrated to entity-based __store_entity__
 # resolution (same pattern as CS_APPENDONLY_JSONL_V0).
 _FILE_PATH_CS_TYPES = frozenset()
 

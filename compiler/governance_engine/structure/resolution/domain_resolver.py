@@ -26,11 +26,11 @@ def extract_domain_from_path(artifact_path: Path) -> str | None:
         or None if not a domain artifact
 
     Examples:
-        >>> p = Path("/pgs/pgs_domains/domains/blockchain/registry/registry/workflows/WF_CREATE_WALLET_V0.md")
+        >>> p = Path("/repo/domains/blockchain/registry/workflows/WF_CREATE_WALLET_V0.md")
         >>> extract_domain_from_path(p)
         'blockchain'
 
-        >>> p = Path("/pgs/pgs_governance/registry/registry/concerns/CONSTITUTION_WORKFLOW_V0.md")
+        >>> p = Path("/repo/software_governance/registry/workflow/constitutions/CONSTITUTION_WORKFLOW_V0.md")
         >>> extract_domain_from_path(p)
         None
     """
@@ -74,11 +74,11 @@ def extract_domain_from_artifact_path(artifact_path: Path) -> str:
         RuntimeError: If domain cannot be extracted from path
 
     Examples:
-        >>> p = Path("/pgs/pgs_domains/domains/blockchain/compiled/artifacts/workflows/WF_CREATE_WALLET_V0.json")
+        >>> p = Path("/repo/domains/blockchain/compiled/artifacts/workflows/WF_CREATE_WALLET_V0.json")
         >>> extract_domain_from_artifact_path(p)
         'blockchain'
 
-        >>> p = Path("/pgs/pgs_governance/registry/registry/CONSTITUTION_WORKFLOW_V0.md")
+        >>> p = Path("/repo/software_governance/registry/workflow/constitutions/CONSTITUTION_WORKFLOW_V0.md")
         >>> extract_domain_from_artifact_path(p)
         RuntimeError: DOMAIN_RESOLUTION_FAILED
     """

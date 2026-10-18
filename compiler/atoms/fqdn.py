@@ -4,12 +4,12 @@ FQDN (Fully Qualified Domain Name) utilities.
 Patch 1 Applied: FQDN is PRIMARY identity, never use artifact_code for uniqueness.
 
 FQDN Format: {namespace}::{artifact_code}
-Example: pgs_governance::CT_SCAN_ARTIFACTS_V0
+Example: governance::CT_SCAN_ARTIFACTS_V0
 
 Design:
 - FQDN is PRIMARY identity (all references use FQDN)
 - artifact_code is display/logging ONLY (not guaranteed unique)
-- Namespace prevents collision across layers (e.g., pgs_governance, compiler)
+- Namespace prevents collision across layers (e.g., governance, compiler)
 - Parse/build functions for deterministic construction
 """
 
@@ -33,7 +33,7 @@ class FQDN:
     - Prevents accidental reversion to partial identity
 
     Fields:
-        namespace: Package/layer namespace (e.g., "pgs_governance") [INTERNAL]
+        namespace: Package/layer namespace (e.g., "governance") [INTERNAL]
         artifact_code: Short code (e.g., "CT_SCAN_V0") [INTERNAL]
         fqdn: Full identifier (namespace::artifact_code) [PUBLIC]
     """
@@ -82,14 +82,14 @@ def parse_fqdn(fqdn_str: str) -> FQDN:
         ValueError: If FQDN format invalid
 
     Examples:
-        >>> parse_fqdn("pgs_governance::CT_SCAN_V0")
-        FQDN(namespace='pgs_governance', artifact_code='CT_SCAN_V0')
+        >>> parse_fqdn("governance::CT_SCAN_V0")
+        FQDN(namespace='governance', artifact_code='CT_SCAN_V0')
     """
     if "::" not in fqdn_str:
         raise ValueError(
             f"Invalid FQDN format: '{fqdn_str}'\n"
             f"Expected: {{namespace}}::{{artifact_code}}\n"
-            f"Example: pgs_governance::CT_SCAN_V0"
+            f"Example: governance::CT_SCAN_V0"
         )
 
     parts = fqdn_str.split("::", 1)
@@ -112,7 +112,7 @@ def build_fqdn(source_path: Path, layer_root: Path, artifact_code: str) -> FQDN:
     Build FQDN from source path and layer root.
 
     Derives namespace from directory structure:
-    - Namespace = layer_root.name (e.g., pgs_governance, compiler)
+    - Namespace = layer_root.name (e.g., governance, compiler)
 
     Args:
         source_path: Path to artifact source file
@@ -124,11 +124,11 @@ def build_fqdn(source_path: Path, layer_root: Path, artifact_code: str) -> FQDN:
 
     Examples:
         >>> build_fqdn(
-        ...     Path("/pgs/pgs_governance/registry/CT_FOO.md"),
-        ...     Path("/pgs/pgs_governance"),
+        ...     Path("/pgc/governance/registry/CT_FOO.md"),
+        ...     Path("/pgc/governance"),
         ...     "CT_FOO_V0"
         ... )
-        FQDN(namespace='pgs_governance', artifact_code='CT_FOO_V0')
+        FQDN(namespace='governance', artifact_code='CT_FOO_V0')
     """
     # Namespace is derived from layer root directory name
     # This ensures uniqueness across different layers/repos
@@ -190,11 +190,11 @@ def to_fqdn(ref: str, namespace: str) -> FQDN:
         FQDN object
 
     Examples:
-        >>> to_fqdn("pgs_governance::CT_SCAN_V0", "fallback")
-        FQDN('pgs_governance::CT_SCAN_V0')
+        >>> to_fqdn("governance::CT_SCAN_V0", "fallback")
+        FQDN('governance::CT_SCAN_V0')
 
-        >>> to_fqdn("CT_SCAN_V0", "pgs_governance")
-        FQDN('pgs_governance::CT_SCAN_V0')
+        >>> to_fqdn("CT_SCAN_V0", "governance")
+        FQDN('governance::CT_SCAN_V0')
     """
     if "::" in ref:
         # Already FQDN format

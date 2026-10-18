@@ -8,7 +8,7 @@ Verifies structural invariants of the compiler's own atom types:
 - Sorting and determinism utilities
 
 These are compiler.atoms — compiler-internal data structures.
-Not to be confused with capability atoms (CT transforms in pgs_capabilities).
+Not to be confused with capability atoms (atom capability transforms).
 """
 
 import sys

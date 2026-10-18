@@ -12,7 +12,7 @@ Pipeline: S1 EXTRACT → S2 CANONICALIZE → S3 SEMANTIC_ADDRESSING →
 Each stage is a pure function: State → State.
 
 ARCHITECTURAL INVARIANT:
-- Compiler MUST NOT import: execution, runtime, pgs_runtime
+- Compiler MUST NOT import: execution, runtime
 - Compiler is PURE: extract, canonicalize, address, govern, construct, project, materialize, verify, attest
 - Compiler outputs: JSON artifacts ONLY
 """
