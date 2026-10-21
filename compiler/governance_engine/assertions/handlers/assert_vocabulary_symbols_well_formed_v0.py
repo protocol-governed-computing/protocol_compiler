@@ -36,7 +36,7 @@ ARTIFACT_CODE = re.compile(r"^[A-Z][A-Z0-9_]*_V[0-9]+$")
 # The reserving declaration for each governed category — the artifact that owns the category and
 # decides whether it is extensible. Extension is authorized by that artifact, never assumed.
 _RESERVING = {
-    "node_types": "VOCAB_PROTOCOL_KINDS_V1",
+    "node_types": "VOCAB_PROTOCOL_KINDS_V0",
     "result_status": "VOCAB_EXECUTION_STATES_V0",
     "exit_reasons": "VOCAB_EXECUTION_STATES_V0",
 }
