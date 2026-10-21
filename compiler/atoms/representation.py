@@ -24,9 +24,11 @@ from compiler.atoms.force import predecessors
 DECLARATION = "artifact::VOCAB_DECLARATION_REPRESENTATION_V0"
 
 FULL_NAME = re.compile(r"^[a-z_][a-z0-9_]*::[A-Z][A-Z0-9_]*$")
+# An artifact's code, written without its namespace.
+CODE = re.compile(r"^[A-Z][A-Z0-9_]*_V[0-9]+$")
 
 GROUPS = ("documentation", "unordered", "reference", "reference_keyed", "full_name_required",
-          "supersession", "data", "sameness_rules")
+          "named_in_full", "supersession", "data", "sameness_rules")
 
 
 class RepresentationUnavailable(ValueError):
@@ -40,6 +42,7 @@ class Representation:
     reference: frozenset[str]
     reference_keyed: frozenset[str]
     full_name_required: frozenset[str]
+    named_in_full: frozenset[str]
     supersession: frozenset[str]
     data: frozenset[str]
     sameness_rules: frozenset[str]
@@ -102,17 +105,23 @@ class Representation:
     def short_codes(self, frontmatter: dict) -> list[tuple[str, str]]:
         """`(path, value)` for every value of a part that requires a full name and is not one.
 
-        Read where S1 read it: the value of the part itself, or each member of a list.
+        Read where S1 read it: the value of the part itself, or each member of a list. A
+        `full_name_required` part refuses any value without a namespace. A `named_in_full` part
+        holds other values too, such as kind tokens and paths, so it refuses only a value written as
+        an artifact's code.
         """
         out: list[tuple[str, str]] = []
 
         def walk(value: Any, path: str) -> None:
             if isinstance(value, dict):
                 for key, item in value.items():
+                    members = item if isinstance(item, list) else [item]
                     if key in self.full_name_required:
-                        members = item if isinstance(item, list) else [item]
                         out.extend((f"{path}.{key}", m) for m in members
                                    if isinstance(m, str) and "::" not in m)
+                    elif key in self.named_in_full:
+                        out.extend((f"{path}.{key}", m) for m in members
+                                   if isinstance(m, str) and CODE.match(m.strip()))
                     walk(item, f"{path}.{key}")
             elif isinstance(value, list):
                 for index, item in enumerate(value):

@@ -21,6 +21,8 @@ Rules:
   4. an extending vocabulary may only contribute to a category whose reserving declaration marks
      it `domain_extensible: true` (CONSTITUTION_VOCABULARY_V0 §9.1)
   5. an extension symbol may not collide with a reserved non-authorable word (§9.1)
+  6. a group that declares `names_kind` names artifacts by code: every entry is the code of an
+     artifact of that kind this build can see, its own or the imported surface's
 
 Rules 2 and 3 are evaluated only when the governing category is present in the closure. That skip
 is now near-unreachable by construction: a build carrying no vocabulary would have to have
@@ -155,6 +157,24 @@ def execute(artifacts: list[dict], compilation_context: dict) -> dict:
                          f"extension symbol '{symbol}' collides with a reserved non-authorable word",
                          "Choose a symbol outside "
                          f"{_RESERVED_WORDS_VOCAB}.{_RESERVED_WORDS_CATEGORY}")
+
+    # --- Rule 6: a group that names artifacts names ones that exist ---
+    visible: dict[str, set[str]] = {}
+    imported = (compilation_context.get("imported_frontmatter", {}) or {}).values()
+    for frontmatter in [a.get("frontmatter", {}) or {} for a in artifacts] + list(imported):
+        fqdn, kind = frontmatter.get("fqdn"), frontmatter.get("artifact_kind")
+        if isinstance(fqdn, str) and kind:
+            visible.setdefault(kind, set()).add(fqdn.split("::")[-1])
+    for v in vocabs:
+        for category, block in (v.get("frontmatter", {}) or {}).items():
+            kind = block.get("names_kind") if isinstance(block, dict) else None
+            if not kind:
+                continue
+            for symbol in _entries(v, category):
+                if symbol not in visible.get(kind, set()):
+                    flag(v.get("fqdn_id", "unknown"),
+                         f"'{category}' names {kind} '{symbol}', which this build cannot see",
+                         f"Name a {kind} the composition holds, or remove the entry")
 
     return {
         "assert_count": len(artifacts),

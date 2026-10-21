@@ -126,6 +126,18 @@ def test_a_short_code_in_a_part_requiring_a_full_name_is_refused():
     assert len(found) == 1 and "CONSTITUTION_WORKFLOW_V0" in found[0]["message"], found
 
 
+def test_a_code_carried_as_a_value_must_be_written_in_full():
+    a = artifact("probe::CC_V0", pipeline={"inputs": {"target_cs": "CS_STORE_V0"}})
+    found = fqdn_only([a], {"representation": REP})["violations"]
+    assert len(found) == 1 and "CS_STORE_V0" in found[0]["message"], found
+
+
+def test_a_kind_token_or_a_path_under_a_name_part_is_a_value():
+    constitution = artifact("probe::CONSTITUTION_V0", core={"governs": ["CC", "CS"]})
+    cc = artifact("probe::CC_V0", inputs={"record": {"event_type": "$.inputs.event_type"}})
+    assert fqdn_only([constitution, cc], {"representation": REP})["status"] == "PASSED"
+
+
 def test_binding_keys_are_not_held_to_a_full_name():
     # A workflow's admission keys its bindings by short code, as its requires and forbids do, and a
     # test case keys them by field name. Short-code references are parked; none is refused here.
