@@ -78,9 +78,11 @@ Both wrap the same CLI, which is also installed as a console script:
 
 ```bash
 protocol_compiler compile --structure STRUCTURE_BUILD_PLATFORM_CONFIG_V0
-protocol_compiler inspect --structure <CODE> --artifact <fqdn>     # identity + causality chain
-protocol_compiler inspect --structure <CODE> --upstream <fqdn>     # walk causality upstream
 ```
+
+How a build came to produce an artifact is read from the assembled snapshot by the inspector, not
+by the compiler: `si compile trace --artifact <fqdn>` gives its compile events, what led to them and
+what they led to.
 
 A domain is **self-describing**: its build manifest declares its own layer and namespace rule, so
 adding one requires no compiler edit. `PGC_PLATFORM_ROOT` overrides the default sibling path. Where a
