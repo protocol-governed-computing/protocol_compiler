@@ -1,12 +1,7 @@
 """
 Compiler visualization module.
 
-Provides workflow graph generation and other visualization utilities.
+Reads a build's compile trace (`evidence_graph.json`) for `protocol_compiler inspect`, through the
+consumer contract in `consumers`. Workflow graphs are a projection (`compiler.projections.workflow_graph`);
+drawing them is the inspector's.
 """
-
-from .wf_graph_generator import generate_workflow_graph, WorkflowGraphGenerator
-
-__all__ = [
-    "generate_workflow_graph",
-    "WorkflowGraphGenerator",
-]

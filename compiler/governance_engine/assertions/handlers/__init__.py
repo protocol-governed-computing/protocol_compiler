@@ -29,6 +29,7 @@ from compiler.governance_engine.assertions.handlers.assert_authority_constituted
 from compiler.governance_engine.assertions.handlers.assert_structure_paths_well_formed_v0 import execute as assert_structure_paths_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_schema_description_well_formed_v0 import execute as assert_schema_description_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_ac_declaration_well_formed_v0 import execute as assert_ac_declaration_well_formed_v0
+from compiler.governance_engine.assertions.handlers.assert_admission_covers_bindings_v0 import execute as assert_admission_covers_bindings_v0
 from compiler.governance_engine.assertions.handlers.assert_vocabulary_symbols_well_formed_v0 import execute as assert_vocabulary_symbols_well_formed_v0
 from compiler.governance_engine.assertions.handlers.assert_assert_not_runtime_referenced_v0 import execute as assert_assert_not_runtime_referenced_v0
 from compiler.governance_engine.assertions.handlers.assert_governance_declaration_resolves_v0 import execute as assert_governance_declaration_resolves_v0
@@ -188,6 +189,7 @@ HANDLER_REGISTRY = {
     "pgc_governance.handlers.assert_structure_paths_well_formed_v0": assert_structure_paths_well_formed_v0,
     "pgc_governance.handlers.assert_schema_description_well_formed_v0": assert_schema_description_well_formed_v0,
     "pgc_governance.handlers.assert_ac_declaration_well_formed_v0": assert_ac_declaration_well_formed_v0,
+    "pgc_governance.handlers.assert_admission_covers_bindings_v0": assert_admission_covers_bindings_v0,
     "pgc_governance.handlers.assert_vocabulary_symbols_well_formed_v0": assert_vocabulary_symbols_well_formed_v0,
     "pgc_governance.handlers.assert_assert_not_runtime_referenced_v0": assert_assert_not_runtime_referenced_v0,
     "pgc_governance.handlers.assert_governance_declaration_resolves_v0": assert_governance_declaration_resolves_v0,

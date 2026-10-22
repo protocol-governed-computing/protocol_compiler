@@ -28,6 +28,7 @@ from compiler.graph.evidence import EventFamily, EvidenceGraph
 from compiler.graph.hashing import compute_projection_hash
 from compiler.atoms.errors import CompilerError
 from compiler.atoms.error_codes import ErrorCode
+from compiler.projections.workflow_graph import build_graph, write_graph
 from compiler.governance_engine.platform_root import output_root
 from compiler.projections import (
     COMPILER_VERSION,
@@ -37,6 +38,29 @@ from compiler.projections import (
     Projection,
     get_structure_scope,
 )
+
+
+def _write_json(path: Path, data: Any, what: str, fqdn: str | None = None) -> CompilerError | None:
+    """Write data as sorted, indented JSON, atomically, creating its directory.
+
+    A reader sees the old file or the new one, never part of either. Returns the compile error that
+    stops this file, or None.
+    """
+    try:
+        text = json.dumps(data, indent=2, sort_keys=True)
+    except (TypeError, ValueError) as e:
+        return CompilerError(code=ErrorCode.E302_JSON_SERIALIZE_FAILED,
+                             message=f"JSON serialization failed for {what}: {e}",
+                             phase="S7_MATERIALIZE", fqdn_id=fqdn)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = path.with_suffix(".tmp")
+        temp_path.write_text(text, encoding="utf-8")
+        temp_path.replace(path)
+    except OSError as e:
+        return CompilerError(code=ErrorCode.E301_WRITE_FAILED, message=f"Failed to write {what}: {e}",
+                             phase="S7_MATERIALIZE", fqdn_id=fqdn)
+    return None
 
 
 def _recorded(path: Path, structure_config: dict[str, Any]) -> str:
@@ -128,44 +152,11 @@ def s7_materialize(state: State) -> State:
         type_dir = artifact_output_dir / type_dir_name
         output_path = type_dir / f"{encoded_fqdn}.json"
 
-        # Create directory
-        try:
-            type_dir.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to create directory: {e}",
-                phase="S7_MATERIALIZE",
-                fqdn_id=fqdn,
-            ))
+        error = _write_json(output_path, artifact, "artifact", fqdn=fqdn)
+        if error:
+            errors.append(error)
             continue
-
-        # Serialize
-        try:
-            json_content = json.dumps(artifact, indent=2, sort_keys=True)
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E302_JSON_SERIALIZE_FAILED,
-                message=f"JSON serialization failed: {e}",
-                phase="S7_MATERIALIZE",
-                fqdn_id=fqdn,
-            ))
-            continue
-
-        # Atomic write
-        try:
-            temp_path = output_path.with_suffix(".tmp")
-            temp_path.write_text(json_content, encoding="utf-8")
-            temp_path.replace(output_path)
-            materialized.append(str(output_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write: {e}",
-                phase="S7_MATERIALIZE",
-                fqdn_id=fqdn,
-            ))
-            continue
+        materialized.append(str(output_path))
 
         trace.append(TraceEvent.create(
             stage="S7_MATERIALIZE",
@@ -183,13 +174,11 @@ def s7_materialize(state: State) -> State:
     errors.extend(conf_errors)
     trace.extend(conf_trace)
 
-    # Post-materialization: generate workflow graphs into behavior_logic/ (best-effort)
-    graph_warnings = _generate_workflow_graphs(projections, structure_config, resolver)
-    if graph_warnings:
-        state = state.with_warnings(*(
-            CompilerError(code=ErrorCode.E901_INTERNAL_ERROR, message=w, phase="S7_MATERIALIZE")
-            for w in graph_warnings
-        ))
+    # The behaviour-logic projection: one execution graph per workflow, under behavior_logic/.
+    # They are not listed as materialized canonical output: the canonical metadata names canonical
+    # artifacts only.
+    _, graph_errors = _materialize_workflow_graphs(projections, structure_config, resolver)
+    errors.extend(graph_errors)
 
     # Write metadata.json for canonical projection
     meta_paths, meta_errors = _write_projection_metadata(canonical, materialized, structure_config, resolver)
@@ -256,16 +245,6 @@ def s7_materialize(state: State) -> State:
     errors.extend(eg_errors)
     trace.extend(eg_trace)
 
-    # Materialize evidence views (visualization PNGs — best-effort, written after evidence_graph.json)
-    if eg_paths:
-        view_warnings = _materialize_evidence_views(eg_paths[0], structure_config, resolver)
-        for w in view_warnings:
-            state = state.with_warnings(CompilerError(
-                code=ErrorCode.E901_INTERNAL_ERROR,
-                message=w,
-                phase="S7_MATERIALIZE",
-            ))
-
     materialized_sorted = tuple(sorted(materialized))
     state = state.with_materialized_paths(materialized_sorted)
 
@@ -315,18 +294,11 @@ def _write_projection_metadata(
 
     for output_root in sorted(output_roots):
         meta_path = output_root / "metadata.json"
-        try:
-            meta_json = json.dumps(meta_dict, indent=2, sort_keys=True)
-            temp_path = meta_path.with_suffix(".tmp")
-            temp_path.write_text(meta_json, encoding="utf-8")
-            temp_path.replace(meta_path)
+        error = _write_json(meta_path, meta_dict, f"projection metadata to {output_root}")
+        if error:
+            errors.append(error)
+        else:
             written.append(str(meta_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write projection metadata to {output_root}: {e}",
-                phase="S7_MATERIALIZE",
-            ))
 
     return written, errors
 
@@ -385,15 +357,6 @@ def _materialize_vocabulary(
 
     # Structure-specific subdirectory
     structure_dir = vocab_root / structure_id
-    try:
-        structure_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to create vocabulary directory: {e}",
-            phase="S7_MATERIALIZE",
-        ))
-        return written, errors, trace
 
     # Write forward.json, reverse.json, metadata.json
     # Note: forward/reverse are flat lookup tables (hex_addr → FQDN).
@@ -413,18 +376,11 @@ def _materialize_vocabulary(
 
     for filename, data in files_to_write.items():
         output_path = structure_dir / filename
-        try:
-            json_content = json.dumps(data, indent=2, sort_keys=True)
-            temp_path = output_path.with_suffix(".tmp")
-            temp_path.write_text(json_content, encoding="utf-8")
-            temp_path.replace(output_path)
+        error = _write_json(output_path, data, f"vocabulary {filename}")
+        if error:
+            errors.append(error)
+        else:
             written.append(str(output_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write vocabulary {filename}: {e}",
-                phase="S7_MATERIALIZE",
-            ))
 
     if written:
         trace.append(TraceEvent.create(
@@ -495,15 +451,6 @@ def _materialize_tokenized(
 
     # Structure-specific subdirectory
     structure_dir = tok_root / structure_id
-    try:
-        structure_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to create tokenized directory: {e}",
-            phase="S7_MATERIALIZE",
-        ))
-        return written, errors, trace
 
     # Write topology.json and metadata.json
     nodes = tokenized.content.get("nodes", [])
@@ -528,18 +475,11 @@ def _materialize_tokenized(
 
     for filename, data in files_to_write.items():
         output_path = structure_dir / filename
-        try:
-            json_content = json.dumps(data, indent=2, sort_keys=True)
-            temp_path = output_path.with_suffix(".tmp")
-            temp_path.write_text(json_content, encoding="utf-8")
-            temp_path.replace(output_path)
+        error = _write_json(output_path, data, f"tokenized {filename}")
+        if error:
+            errors.append(error)
+        else:
             written.append(str(output_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write tokenized {filename}: {e}",
-                phase="S7_MATERIALIZE",
-            ))
 
     if written:
         trace.append(TraceEvent.create(
@@ -602,15 +542,6 @@ def _materialize_dispatch_and_handlers(
         return written, errors, trace
 
     structure_dir = tok_root / structure_id
-    try:
-        structure_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to create tokenized directory for dispatch/handlers: {e}",
-            phase="S7_MATERIALIZE",
-        ))
-        return written, errors, trace
 
     files_to_write: dict[str, Any] = {}
 
@@ -641,18 +572,11 @@ def _materialize_dispatch_and_handlers(
 
     for filename, data in files_to_write.items():
         output_path = structure_dir / filename
-        try:
-            json_content = json.dumps(data, indent=2, sort_keys=True)
-            temp_path = output_path.with_suffix(".tmp")
-            temp_path.write_text(json_content, encoding="utf-8")
-            temp_path.replace(output_path)
+        error = _write_json(output_path, data, filename)
+        if error:
+            errors.append(error)
+        else:
             written.append(str(output_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write {filename}: {e}",
-                phase="S7_MATERIALIZE",
-            ))
 
     if written:
         trace.append(TraceEvent.create(
@@ -724,15 +648,6 @@ def _materialize_evidence(
 
     # Structure-specific subdirectory
     structure_dir = evi_root / structure_id
-    try:
-        structure_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to create evidence directory: {e}",
-            phase="S7_MATERIALIZE",
-        ))
-        return written, errors, trace
 
     # Write evidence.json and metadata.json
     nodes = list(evidence.content.get("nodes", []))
@@ -759,18 +674,11 @@ def _materialize_evidence(
 
     for filename, data in files_to_write.items():
         output_path = structure_dir / filename
-        try:
-            json_content = json.dumps(data, indent=2, sort_keys=True)
-            temp_path = output_path.with_suffix(".tmp")
-            temp_path.write_text(json_content, encoding="utf-8")
-            temp_path.replace(output_path)
+        error = _write_json(output_path, data, f"evidence {filename}")
+        if error:
+            errors.append(error)
+        else:
             written.append(str(output_path))
-        except Exception as e:
-            errors.append(CompilerError(
-                code=ErrorCode.E301_WRITE_FAILED,
-                message=f"Failed to write evidence {filename}: {e}",
-                phase="S7_MATERIALIZE",
-            ))
 
     if written:
         trace.append(TraceEvent.create(
@@ -843,15 +751,6 @@ def _materialize_evidence_graph(
         return written, errors, trace
 
     structure_dir = evi_root / structure_id
-    try:
-        structure_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to create evidence graph directory: {e}",
-            phase="S7_MATERIALIZE",
-        ))
-        return written, errors, trace
 
     # Build EvidenceGraph from all trace events accumulated so far (S1-S7)
     eg = EvidenceGraph.from_trace_events(state.trace_events)
@@ -870,18 +769,11 @@ def _materialize_evidence_graph(
     }
 
     output_path = structure_dir / "evidence_graph.json"
-    try:
-        json_content = json.dumps(data, indent=2, sort_keys=True)
-        temp_path = output_path.with_suffix(".tmp")
-        temp_path.write_text(json_content, encoding="utf-8")
-        temp_path.replace(output_path)
+    error = _write_json(output_path, data, "evidence graph")
+    if error:
+        errors.append(error)
+    else:
         written.append(str(output_path))
-    except Exception as e:
-        errors.append(CompilerError(
-            code=ErrorCode.E301_WRITE_FAILED,
-            message=f"Failed to write evidence graph: {e}",
-            phase="S7_MATERIALIZE",
-        ))
         return written, errors, trace
 
     trace.append(TraceEvent.create(
@@ -898,64 +790,6 @@ def _materialize_evidence_graph(
     ))
 
     return written, errors, trace
-
-
-def _materialize_evidence_views(
-    evidence_graph_path: str,
-    structure_config: dict[str, Any],
-    resolver: LayerResolver,
-) -> list[str]:
-    """
-    Generate visualization PNGs from evidence_graph.json — best-effort post-process.
-
-    Reads evidence_graph.json via load_evidence_graph (consumer contract: serialized
-    JSON schema only, no compiler internals), builds all four views, writes PNGs to
-    <evidence_root>/<structure_id>/views/*.png.
-
-    Returns a list of warning strings (empty = all succeeded).
-    PNG failures never block the build.
-    """
-    warnings: list[str] = []
-
-    try:
-        from compiler.visualization.consumers import load_evidence_graph
-        from compiler.visualization.views import (
-            build_family_view, write_family_view_png,
-            build_materialization_view, write_materialization_view_png,
-        )
-    except ImportError as e:
-        warnings.append(f"Evidence views skipped: visualization module not available ({e})")
-        return warnings
-
-    try:
-        query = load_evidence_graph(evidence_graph_path)
-    except Exception as e:
-        warnings.append(f"Evidence views skipped: failed to load evidence_graph.json ({e})")
-        return warnings
-
-    views_dir = Path(evidence_graph_path).parent / "views"
-    try:
-        views_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        warnings.append(f"Evidence views skipped: failed to create views directory ({e})")
-        return warnings
-
-    view_tasks = [
-        ("family_view.png",          build_family_view,           write_family_view_png),
-        ("materialization_view.png", build_materialization_view,  write_materialization_view_png),
-    ]
-
-    for filename, build_fn, write_fn in view_tasks:
-        output_path = views_dir / filename
-        try:
-            view = build_fn(query)
-            ok = write_fn(view, output_path)
-            if not ok:
-                warnings.append(f"Evidence view {filename}: graphviz unavailable or render failed (skipped)")
-        except Exception as e:
-            warnings.append(f"Evidence view {filename}: failed ({e})")
-
-    return warnings
 
 
 def _conformance_cases(
@@ -1049,8 +883,6 @@ def _generate_conformance_tests(
         ))
         return materialized, errors, trace
 
-    conf_dir.mkdir(parents=True, exist_ok=True)
-
     ct_by_fqdn: dict[str, dict] = {
         artifact["fqdn_id"]: artifact
         for artifact in projections.values()
@@ -1063,20 +895,11 @@ def _generate_conformance_tests(
         for runnable in cases:
             filename = runnable["fqdn"].replace("::", "__") + ".json"
             output_path = conf_dir / filename
-            try:
-                json_content = json.dumps(runnable, indent=2, sort_keys=True)
-                temp_path = output_path.with_suffix(".tmp")
-                temp_path.write_text(json_content, encoding="utf-8")
-                temp_path.replace(output_path)
-                materialized.append(str(output_path))
-            except Exception as e:
-                errors.append(CompilerError(
-                    code=ErrorCode.E301_WRITE_FAILED,
-                    message=f"Failed to write conformance case {filename}: {e}",
-                    phase="S7_MATERIALIZE",
-                    fqdn_id=td_node.fqdn,
-                ))
+            error = _write_json(output_path, runnable, f"conformance case {filename}", fqdn=td_node.fqdn)
+            if error:
+                errors.append(error)
                 continue
+            materialized.append(str(output_path))
             trace.append(TraceEvent.create(
                 stage="S7_MATERIALIZE",
                 operation="conformance_written",
@@ -1088,67 +911,39 @@ def _generate_conformance_tests(
     return materialized, errors, trace
 
 
-def _generate_workflow_graphs(
+def _materialize_workflow_graphs(
     projections: Any,
     structure_config: dict[str, Any],
     resolver: LayerResolver,
-) -> list[str]:
-    """Generate workflow graph artifacts (JSON, PNG) into behavior_logic/ — best-effort post-process."""
-    warnings: list[str] = []
+) -> tuple[list[str], list[CompilerError]]:
+    """Write each workflow's execution graph into behavior_logic/.
 
-    try:
-        from compiler.visualization.wf_graph_generator import generate_workflow_graph
-    except ImportError as e:
-        warnings.append(f"Graph generation skipped: visualization module not available ({e})")
-        return warnings
+    The graph is a sealed constituent of the snapshot that the runtime, the inspector and the
+    clients read, so a workflow whose graph cannot be written fails the build.
+    """
+    cc_artifacts = {a["artifact_code"]: a for a in projections.values()
+                    if a.get("artifact_type") == "CC" and a.get("artifact_code")}
+    written: list[str] = []
+    errors: list[CompilerError] = []
 
-    wf_artifacts: dict[str, dict] = {}
-    cc_artifacts: dict[str, dict] = {}
-
-    for fqdn, artifact in projections.items():
-        artifact_type = artifact.get("artifact_type")
-        if artifact_type == "WF":
-            wf_code = artifact.get("artifact_code")
-            if wf_code:
-                wf_artifacts[wf_code] = artifact
-        elif artifact_type == "CC":
-            cc_code = artifact.get("artifact_code")
-            if cc_code:
-                cc_artifacts[cc_code] = artifact
-
-    if not wf_artifacts:
-        return warnings
-
-    for wf_code, wf_artifact in wf_artifacts.items():
+    for fqdn, wf_artifact in sorted(projections.items()):
+        if wf_artifact.get("artifact_type") != "WF":
+            continue
+        layer_code = wf_artifact.get("layer_code")
+        if not layer_code:
+            errors.append(CompilerError(
+                code=ErrorCode.E301_WRITE_FAILED, message="Workflow missing layer_code",
+                phase="S7_MATERIALIZE", fqdn_id=fqdn))
+            continue
         try:
-            layer_code = wf_artifact.get("layer_code")
-            domain_name = wf_artifact.get("domain_name")
+            compiled_root = resolver.resolve_output_path(
+                "layer_outputs", layer_code, structure_config, domain=wf_artifact.get("domain_name"))
+            path = write_graph(build_graph(wf_artifact, cc_artifacts), compiled_root.parent / "behavior_logic")
+        except (OSError, RuntimeError, ValueError) as e:
+            errors.append(CompilerError(
+                code=ErrorCode.E301_WRITE_FAILED, message=f"Failed to write workflow graph: {e}",
+                phase="S7_MATERIALIZE", fqdn_id=fqdn))
+            continue
+        written.append(str(path))
 
-            if not layer_code:
-                warnings.append(f"{wf_code}: Missing layer_code")
-                continue
-
-            try:
-                compiled_root = resolver.resolve_output_path(
-                    "layer_outputs",
-                    layer_code,
-                    structure_config,
-                    domain=domain_name,
-                )
-                behavior_logic_root = compiled_root.parent / "behavior_logic"
-            except Exception as e:
-                warnings.append(f"{wf_code}: Failed to resolve behavior_logic path: {e}")
-                continue
-
-            result = generate_workflow_graph(wf_artifact, cc_artifacts, behavior_logic_root)
-
-            if result["status"] == "FAILED":
-                warnings.append(f"{wf_code}: Graph generation failed - {', '.join(result.get('errors', []))}")
-            elif result["status"] == "PARTIAL":
-                warnings.append(f"{wf_code}: Partial graph generation - {', '.join(result.get('errors', []))}")
-
-        except Exception as e:
-            warnings.append(f"{wf_code}: Unexpected error - {e}")
-
-    return warnings
-
+    return written, errors

@@ -10,10 +10,11 @@ Design:
 - FORBIDDEN_STRUCTURE guard to prevent legacy drift
 """
 
-import re
 import yaml
 from pathlib import Path
 from typing import Any
+
+from compiler.atoms.machine_block import machine_yaml
 
 
 # BOOTSTRAP: Minimal hardcoded anchor — governance package location only.
@@ -67,13 +68,9 @@ def extract_yaml_from_machine_section(content: str) -> str:
 
     CONSTITUTIONAL: Machine block is the ONLY format. No fallback to frontmatter.
     """
-    machine_pattern = re.compile(
-        r"##\s+Machine\s*\n+```yaml\s*\n(.*?)\n```",
-        re.DOTALL | re.IGNORECASE
-    )
-    match = machine_pattern.search(content)
+    machine = machine_yaml(content)
 
-    if not match:
+    if machine is None:
         raise ValueError(
             "No ## Machine section found.\n"
             "Expected format:\n"
@@ -83,7 +80,7 @@ def extract_yaml_from_machine_section(content: str) -> str:
             "```"
         )
 
-    return match.group(1)
+    return machine
 
 
 def locate_structure_artifact(artifact_code: str, search_roots: list[Path]) -> Path:

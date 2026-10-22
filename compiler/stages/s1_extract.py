@@ -32,13 +32,9 @@ from compiler.structure_loader import (
 )
 
 from compiler.governance_engine.structure.resolution.layer_resolver import LayerResolver
+from compiler.atoms.machine_block import MACHINE_BLOCK
 
 
-# Machine block pattern: ## Machine\n```yaml\n{yaml}\n```
-_MACHINE_BLOCK_PATTERN = re.compile(
-    r"^## Machine\s*\n+```yaml\s*\n(?P<machine_yaml>.*?)\n```",
-    re.MULTILINE | re.DOTALL,
-)
 
 # Artifact type → NodeKind mapping
 def _type_to_kind(artifact_type: str) -> NodeKind | None:
@@ -432,7 +428,7 @@ def _read_declared_fqdn(source_path: str) -> str | None:
         content = Path(source_path).read_text(encoding="utf-8")
     except Exception:
         return None
-    m = _MACHINE_BLOCK_PATTERN.search(content)
+    m = MACHINE_BLOCK.search(content)
     if not m:
         return None
     try:
@@ -802,7 +798,7 @@ def _parse_artifact_to_node(
         return None, [], errors, warnings
 
     # Extract Machine block
-    match = _MACHINE_BLOCK_PATTERN.search(content_raw)
+    match = MACHINE_BLOCK.search(content_raw)
     if not match:
         errors.append(CompilerError(
             code=ErrorCode.E101_INVALID_YAML,
@@ -928,5 +924,5 @@ def _parse_artifact_to_node(
 
 def _machine_block(path: Path) -> dict:
     """The parsed Machine block of one source artifact."""
-    match = _MACHINE_BLOCK_PATTERN.search(path.read_text(encoding="utf-8"))
+    match = MACHINE_BLOCK.search(path.read_text(encoding="utf-8"))
     return (yaml.safe_load(match.group("machine_yaml").rstrip()) or {}) if match else {}

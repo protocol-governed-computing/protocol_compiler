@@ -14,10 +14,11 @@ Resolution strategy:
 
 from __future__ import annotations
 
-import re
 import yaml
 from pathlib import Path
 from typing import Any
+
+from compiler.atoms.machine_block import machine_yaml
 
 
 # =============================================================================
@@ -83,10 +84,10 @@ class LayerResolver:
 
     def _parse_yaml_block(self, content: str) -> dict:
         """Extract YAML block from markdown code fence."""
-        match = re.search(r'```yaml\s*\n(.*?)```', content, re.DOTALL)
-        if not match:
-            raise ValueError("No YAML block found in artifact")
-        return yaml.safe_load(match.group(1))
+        machine = machine_yaml(content)
+        if machine is None:
+            raise ValueError("No machine block found in artifact")
+        return yaml.safe_load(machine)
 
     # PGC topology map — STRUCTURE_DISCOVERY_V0 registry_module names → subdirs of the
     # governance-surface repo. This map overrides importlib resolution so layers resolve
@@ -236,11 +237,11 @@ class LayerResolver:
 
         try:
             content = artifact_path.read_text(encoding="utf-8")
-            match = re.search(r'```yaml\s*\n(.*?)```', content, re.DOTALL)
-            if not match:
+            machine = machine_yaml(content)
+            if machine is None:
                 return {}
 
-            artifact_data = yaml.safe_load(match.group(1))
+            artifact_data = yaml.safe_load(machine)
             output_config = artifact_data.get("output_configuration", {})
             domain_federation = output_config.get("domain_federation", {})
             output_rules = output_config.get("output_rules", {})
